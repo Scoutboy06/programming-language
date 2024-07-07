@@ -1,7 +1,9 @@
 #![allow(unused)]
 
+mod ast;
 mod lexer;
-use crate::lexer::Lexer;
+mod parser;
+use crate::parser::Parser;
 
 fn main() {
     println!("Hello, world!");

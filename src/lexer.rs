@@ -1,6 +1,6 @@
 use std::str::Chars;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     Number,
     Operator,
@@ -9,12 +9,12 @@ pub enum TokenType {
     Invalid,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Token {
-    token_type: TokenType,
-    value: String,
-    line: usize,
-    column: usize,
+    pub token_type: TokenType,
+    pub value: String,
+    pub line: usize,
+    pub column: usize,
 }
 
 pub struct Lexer<'a> {
@@ -27,7 +27,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
-        let mut lexer = Lexer {
+        let mut lexer = Self {
             chars: source.chars(),
             curr_char: None,
             peek_char: None,
