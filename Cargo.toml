@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 lazy_static = "1.4.0"
+string_cache = "0.8.7"
