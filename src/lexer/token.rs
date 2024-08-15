@@ -4,7 +4,7 @@ use string_cache::DefaultAtom as Atom;
 
 use super::{keywords::Keyword, Span};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct Token {
     pub kind: Kind,
     pub value: TokenValue,
@@ -12,9 +12,19 @@ pub struct Token {
     pub end: usize,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq, Default)]
+pub enum TokenValue {
+    #[default]
+    None,
+    Number(f64),
+    String(Atom),
+    Keyword(Keyword),
+}
+
+#[derive(Debug, PartialEq, Clone, Default)]
 pub enum Kind {
     // Special tokens
+    #[default]
     Invalid,
     Eof,
     Shebang,
@@ -39,13 +49,16 @@ pub enum Kind {
     SemiColon,    // ;
 
     // Operators
-    Equals,     // =
-    Plus,       // +
-    Minus,      // -
-    Slash,      // /
-    Asterisk,   // *
-    LogicalOr,  // ||
-    LogicalAnd, // &&
+    Equals,         // =
+    Plus,           // +
+    Minus,          // -
+    Slash,          // /
+    Asterisk,       // *
+    Exponentiation, // **
+    Modulus,        // %
+    Increment,      // ++
+    Decrement,      // --
+    Ternary,        // ?
 
     // Compound operators
     PlusEquals,  // +=
@@ -54,6 +67,10 @@ pub enum Kind {
     DivEquals,   // /=
     PowerEquals, // **=
     ModEquals,   // %=
+
+    // Logical operators
+    LogicalOr,  // ||
+    LogicalAnd, // &&
 
     // Comparison operators
     DoubleEquals,       // ==
@@ -73,19 +90,34 @@ pub enum Kind {
     BitwiseLeftShift,          // >>
     BitwiseRightShift,         // <<
     BitwiseUnsignedRightShift, // >>>
-
-    // Other operators
-    Exponentiation, // **
-    Modulus,        // %
-    Increment,      // ++
-    Decrement,      // --
-    Ternary,        // ?
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum TokenValue {
-    None,
-    Number(f64),
-    String(Atom),
-    Keyword(Keyword),
+impl TokenValue {
+    pub fn expect_none(&self) {
+        match self {
+            TokenValue::None => {}
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn expect_number(&self) -> f64 {
+        match self {
+            TokenValue::Number(num) => num.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn expect_string(&self) -> &Atom {
+        match self {
+            TokenValue::String(atom) => atom,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn expect_keyword(&self) -> Keyword {
+        match self {
+            TokenValue::Keyword(kw) => kw.clone(),
+            _ => unreachable!(),
+        }
+    }
 }

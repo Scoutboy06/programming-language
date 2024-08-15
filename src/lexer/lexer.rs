@@ -383,7 +383,7 @@ mod tests {
 
         for i in 0.. {
             let token = lexer.next_token();
-            // dbg!(&token);
+            dbg!(&token);
 
             if token.kind == Kind::Eof {
                 assert_eq!(token.value, TokenValue::None);
@@ -394,6 +394,12 @@ mod tests {
             assert_eq!(token.kind, expected_tokens[i].0);
             assert_eq!(token.value, expected_tokens[i].1);
         }
+    }
+
+    #[test]
+    fn empty() {
+        let source_code = " ";
+        expect_tokens(&source_code, &vec![]);
     }
 
     #[test]

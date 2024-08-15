@@ -1,0 +1,4 @@
+if (false) {
+} else if (true) {
+} else {
+}

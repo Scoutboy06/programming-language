@@ -6,4 +6,4 @@ pub mod token;
 pub use keywords::Keyword;
 pub use lexer::Lexer;
 pub use span::{LineColumn, Span};
-pub use token::{Kind, TokenValue};
+pub use token::{Kind, Token, TokenValue};
