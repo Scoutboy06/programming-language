@@ -2,7 +2,9 @@ use std::rc::Rc;
 
 use string_cache::DefaultAtom as Atom;
 
-use super::{keywords::Keyword, Span};
+use crate::parser::ArithmeticOperator;
+
+use super::keywords::Keyword;
 
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct Token {
@@ -19,6 +21,36 @@ pub enum TokenValue {
     Number(f64),
     String(Atom),
     Keyword(Keyword),
+}
+
+impl TokenValue {
+    pub fn expect_none(&self) {
+        match self {
+            TokenValue::None => {}
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn expect_number(&self) -> f64 {
+        match self {
+            TokenValue::Number(num) => num.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn expect_string(&self) -> &Atom {
+        match self {
+            TokenValue::String(atom) => atom,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn expect_keyword(&self) -> Keyword {
+        match self {
+            TokenValue::Keyword(kw) => kw.clone(),
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Default)]
@@ -83,41 +115,76 @@ pub enum Kind {
     GreaterThanOrEqual, // >=
 
     // Bitwise operators
-    BitwiseAnd,                // &
-    BitwiseOr,                 // |
-    BitwiseNot,                // ~
-    BitwiseXor,                // ^
-    BitwiseLeftShift,          // >>
-    BitwiseRightShift,         // <<
-    BitwiseUnsignedRightShift, // >>>
+    BitwiseAnd,         // &
+    BitwiseOr,          // |
+    BitwiseNot,         // ~
+    BitwiseXor,         // ^
+    BitwiseLeftShift,   // >>
+    BitwiseRightShift,  // <<
+    ZeroFillRightShift, // >>>
+
+    // Other
+    ArrowFn,
 }
 
-impl TokenValue {
-    pub fn expect_none(&self) {
+impl Kind {
+    pub fn is_operator(&self) -> bool {
         match self {
-            TokenValue::None => {}
-            _ => unreachable!(),
+            Kind::Plus
+            | Kind::Minus
+            | Kind::Asterisk
+            | Kind::Slash
+            | Kind::Exponentiation
+            | Kind::BitwiseAnd
+            | Kind::BitwiseLeftShift
+            | Kind::BitwiseNot
+            | Kind::BitwiseOr
+            | Kind::BitwiseRightShift
+            | Kind::ZeroFillRightShift
+            | Kind::BitwiseXor => true,
+            _ => false,
         }
     }
 
-    pub fn expect_number(&self) -> f64 {
+    pub fn as_operator(&self) -> Option<ArithmeticOperator> {
         match self {
-            TokenValue::Number(num) => num.clone(),
-            _ => unreachable!(),
+            Kind::Plus => Some(ArithmeticOperator::Plus),
+            Kind::Minus => Some(ArithmeticOperator::Minus),
+            Kind::Asterisk => Some(ArithmeticOperator::Mult),
+            Kind::Slash => Some(ArithmeticOperator::Div),
+            Kind::Exponentiation => Some(ArithmeticOperator::Power),
+            Kind::BitwiseAnd => Some(ArithmeticOperator::BitwiseAnd),
+            Kind::BitwiseLeftShift => Some(ArithmeticOperator::BitwiseLeftShift),
+            Kind::BitwiseNot => Some(ArithmeticOperator::BitwiseNot),
+            Kind::BitwiseOr => Some(ArithmeticOperator::BitwiseOr),
+            Kind::BitwiseRightShift => Some(ArithmeticOperator::BitwiseRightShift),
+            Kind::ZeroFillRightShift => Some(ArithmeticOperator::ZeroFillRightShift),
+            Kind::BitwiseXor => Some(ArithmeticOperator::BitwiseXor),
+            _ => None,
         }
     }
 
-    pub fn expect_string(&self) -> &Atom {
+    pub fn as_term_operator(&self) -> Option<ArithmeticOperator> {
+        // TODO: Verify order of operations
         match self {
-            TokenValue::String(atom) => atom,
-            _ => unreachable!(),
+            Kind::Plus => Some(ArithmeticOperator::Plus),
+            Kind::Minus => Some(ArithmeticOperator::Minus),
+            Kind::BitwiseAnd => Some(ArithmeticOperator::BitwiseAnd),
+            Kind::BitwiseLeftShift => Some(ArithmeticOperator::BitwiseLeftShift),
+            Kind::BitwiseNot => Some(ArithmeticOperator::BitwiseNot),
+            Kind::BitwiseOr => Some(ArithmeticOperator::BitwiseOr),
+            Kind::BitwiseRightShift => Some(ArithmeticOperator::BitwiseRightShift),
+            Kind::ZeroFillRightShift => Some(ArithmeticOperator::ZeroFillRightShift),
+            Kind::BitwiseXor => Some(ArithmeticOperator::BitwiseXor),
+            _ => None,
         }
     }
 
-    pub fn expect_keyword(&self) -> Keyword {
+    pub fn as_factor_operator(&self) -> Option<ArithmeticOperator> {
         match self {
-            TokenValue::Keyword(kw) => kw.clone(),
-            _ => unreachable!(),
+            Kind::Asterisk => Some(ArithmeticOperator::Mult),
+            Kind::Slash => Some(ArithmeticOperator::Div),
+            _ => None,
         }
     }
 }

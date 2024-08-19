@@ -5,7 +5,10 @@ use super::{
     FunctionDeclaration, Identifier, Literal, Node, NumberLiteral, Shebang, Statement,
     VariableDeclarator, VariableKind,
 };
-use crate::lexer::{keywords::Keyword, Kind, Lexer, Span, Token, TokenValue};
+use crate::{
+    lexer::{keywords::Keyword, Kind, Lexer, Token, TokenValue},
+    parser::{ArithmeticOperator, NullLiteral, StringLiteral},
+};
 use string_cache::DefaultAtom as Atom;
 
 pub struct Parser<'a> {
@@ -82,6 +85,19 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_expression(&mut self) -> Result<Expression, ParserError> {
+        match self.current_token.kind {
+            Kind::Number | Kind::String | Kind::Null => {
+                let bin_exp = self.parse_binary_expression()?;
+                Ok(Expression::BinaryExpression(Box::new(bin_exp)))
+            }
+            Kind::OpenBrace => todo!(),
+            Kind::OpenBracket => todo!(),
+            Kind::OpenParen => todo!(),
+            _ => Err(ParserError::InvalidToken(self.current_token.clone())),
+        }
+    }
+
     fn parse_variable_declaration(&mut self) -> Result<VariableDeclaration, ParserError> {
         let start_pos = self.current_token.start;
 
@@ -130,16 +146,12 @@ impl<'a> Parser<'a> {
 
             let decl = match self.current_token.kind {
                 Kind::Number => {
-                    let value = self.current_token.value.expect_number();
-                    // TODO: support binary operations
+                    let bin_exp = self.parse_binary_expression()?;
 
                     VariableDeclarator {
                         node: Node::new(start, self.current_token.end),
                         id: identifier,
-                        init: Some(NumberLiteral::as_expression(
-                            Node::new(self.current_token.start, self.current_token.end),
-                            value,
-                        )),
+                        init: Some(Expression::BinaryExpression(Box::new(bin_exp))),
                     }
                 }
                 Kind::String => todo!(),
@@ -168,6 +180,93 @@ impl<'a> Parser<'a> {
 
     fn parse_function_declaration(&mut self) -> Result<FunctionDeclaration, ParserError> {
         todo!()
+    }
+
+    fn parse_binary_expression(&mut self) -> Result<BinaryExpression, ParserError> {
+        // Handles literals, identifiers, and parenthesized expressions
+        fn parse_lit(parser: &mut Parser) -> Result<Option<BinaryExpression>, ParserError> {
+            let left = parser.current_token.clone();
+            parser.advance();
+
+            let node = Node::new(left.start, left.end);
+
+            match left.kind {
+                Kind::Number => Ok(Some(NumberLiteral::as_bin_expression(
+                    node,
+                    left.value.expect_number(),
+                ))),
+                Kind::String => Ok(Some(StringLiteral::as_bin_expression(
+                    node,
+                    left.value.expect_string().clone(), // TODO: check if .clone() is cheap
+                ))),
+                Kind::Null => Ok(Some(NullLiteral::as_bin_expression(node))),
+                Kind::Identifier => Ok(Some(BinaryExpression::Identifier(Identifier {
+                    node: Node::new(left.start, left.end),
+                    name: Atom::from(left.value.expect_string().clone()), // TODO: check if .clone() is cheap
+                }))),
+                Kind::OpenParen => {
+                    let factor = parse_factor(parser)?;
+                    parser.expect_token_kind(
+                        Kind::CloseParen,
+                        ParserError::InvalidToken(parser.current_token.clone()),
+                    );
+                    parser.advance();
+                    Ok(factor)
+                }
+                Kind::OpenBrace => todo!(),
+                Kind::OpenBracket => todo!(),
+                Kind::Eof => Ok(None),
+                _ => Err(ParserError::InvalidToken(parser.current_token.clone())),
+            }
+        }
+
+        // Handles factor-level operations (like * and /)
+        fn parse_factor(parser: &mut Parser) -> Result<Option<BinaryExpression>, ParserError> {
+            let start_pos = parser.current_token.start;
+            let mut left = parse_lit(parser)?.unwrap();
+
+            while let Some(operator) = parser.current_token.kind.as_factor_operator() {
+                parser.advance();
+
+                let right = parse_factor(parser)?;
+
+                if right.is_none() {
+                    break;
+                }
+
+                left = BinaryExpression::BinaryOperation(BinaryOperation {
+                    node: Node::new(start_pos, parser.prev_token_end),
+                    operator,
+                    left: Box::new(left),
+                    right: Box::new(right.unwrap()),
+                });
+            }
+
+            Ok(Some(left))
+        }
+
+        let start_pos = self.current_token.start;
+        let mut left = parse_factor(self)?.unwrap();
+
+        // Handle term-level operators (like + and -)
+        while let Some(operator) = self.current_token.kind.as_term_operator() {
+            self.advance();
+
+            let right = parse_factor(self)?;
+
+            if right.is_none() {
+                break;
+            }
+
+            left = BinaryExpression::BinaryOperation(BinaryOperation {
+                node: Node::new(start_pos, self.prev_token_end),
+                operator,
+                left: Box::new(left),
+                right: Box::new(right.unwrap()),
+            });
+        }
+
+        Ok(left)
     }
 
     /* This method will handle the most basic component of an arithmetic
@@ -301,6 +400,55 @@ mod tests {
                         )))),
                     }],
                     kind: VariableKind::Let,
+                },
+            ))],
+        };
+
+        assert_eq!(result, Ok(expected));
+    }
+
+    #[test]
+    fn binary_operation() {
+        let source_code = "let y = 6 + 5 * x";
+        let mut parser = Parser::new(&source_code);
+        let result = parser.parse();
+
+        let expected = Program {
+            node: Node::new(0, source_code.len()),
+            shebang: None,
+            body: vec![Statement::VariableDeclaration(Box::new(
+                VariableDeclaration {
+                    node: Node::new(0, 17),
+                    kind: VariableKind::Let,
+                    declarations: vec![VariableDeclarator {
+                        node: Node::new(4, 17),
+                        id: Identifier::new("y".into(), 4, 5),
+                        init: Some(Expression::BinaryExpression(Box::new(
+                            BinaryExpression::BinaryOperation(BinaryOperation {
+                                node: Node::new(8, 17),
+                                operator: ArithmeticOperator::Plus,
+                                left: Box::new(BinaryExpression::Literal(Literal::Number(
+                                    NumberLiteral {
+                                        node: Node::new(8, 9),
+                                        value: 6.0,
+                                    },
+                                ))),
+                                right: Box::new(BinaryExpression::BinaryOperation(
+                                    BinaryOperation {
+                                        node: Node::new(12, 17),
+                                        operator: ArithmeticOperator::Mult,
+                                        left: Box::new(NumberLiteral::as_bin_expression(
+                                            Node::new(12, 13),
+                                            5.0,
+                                        )),
+                                        right: Box::new(BinaryExpression::Identifier(
+                                            Identifier::new("x".into(), 16, 17),
+                                        )),
+                                    },
+                                )),
+                            }),
+                        ))),
+                    }],
                 },
             ))],
         };

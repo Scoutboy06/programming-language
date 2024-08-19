@@ -1,6 +1,6 @@
 use super::{BlockStatement, FunctionDeclaration, Shebang, VariableDeclaration};
 use crate::{
-    lexer::{Lexer, Span},
+    lexer::Lexer,
     parser::{Expression, Node},
 };
 

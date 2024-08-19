@@ -15,6 +15,21 @@ pub enum ArithmeticOperator {
     ZeroFillRightShift, // >>>
     Increment,          // ++
     Decrement,          // --
+
+    // Comparison operators
+    Equals,              // ==
+    NotEquals,           // !=
+    StrictEquals,        // ===
+    StrictNotEquals,     // !==
+    GreaterThan,         // >
+    GreaterOrEqualsThan, // >=
+    LessThan,            // <
+    LessOrEqualsThan,    // <=
+
+    // Logical operators
+    And, // &&
+    Or,  // ||
+    Not, // !
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,23 +48,4 @@ pub enum AssignmentOperator {
     BitwiseLeftShift,          // <<=
     BitwiseSignedRightShift,   // >>=
     BitwiseZeroFillRightShift, // >>>=
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ComparisonOperator {
-    Equals,              // ==
-    NotEquals,           // !=
-    StrictEquals,        // ===
-    StrictNotEquals,     // !==
-    GreaterThan,         // >
-    GreaterOrEqualsThan, // >=
-    LessThan,            // <
-    LessOrEqualsThan,    // <=
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum LogicalOperator {
-    And, // &&
-    Or,  // ||
-    Not, // !
 }

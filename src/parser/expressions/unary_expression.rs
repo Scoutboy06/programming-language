@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 use super::Expression;
-use crate::{lexer::Span, parser::Node};
+use crate::parser::Node;
 
 #[derive(Debug, PartialEq)]
 pub struct UnaryExpression {

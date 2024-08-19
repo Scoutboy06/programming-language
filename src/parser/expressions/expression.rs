@@ -1,8 +1,5 @@
 use super::{AssignmentExpression, BinaryExpression, BinaryOperation, Literal, UnaryExpression};
-use crate::{
-    lexer::Span,
-    parser::{Node, Statement},
-};
+use crate::parser::{Node, Statement};
 
 #[derive(Debug, PartialEq)]
 pub enum Expression {

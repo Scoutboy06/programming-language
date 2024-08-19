@@ -1,7 +1,6 @@
 extern crate string_cache;
 use super::{
     keywords::Keyword,
-    span::Span,
     token::{self, Kind, Token, TokenValue},
 };
 use std::{collections::HashMap, rc::Rc, str::Chars};
@@ -207,6 +206,10 @@ impl<'a> Lexer<'a> {
                             _ => (Kind::DoubleEquals, TokenValue::None),
                         }
                     }
+                    Some('>') => {
+                        self.advance();
+                        (Kind::ArrowFn, TokenValue::None)
+                    }
                     _ => (Kind::Equals, TokenValue::None),
                 }
             }
@@ -383,7 +386,7 @@ mod tests {
 
         for i in 0.. {
             let token = lexer.next_token();
-            dbg!(&token);
+            // dbg!(&token);
 
             if token.kind == Kind::Eof {
                 assert_eq!(token.value, TokenValue::None);

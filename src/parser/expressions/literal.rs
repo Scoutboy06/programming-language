@@ -1,4 +1,4 @@
-use super::Expression;
+use super::{BinaryExpression, Expression};
 use crate::parser::Node;
 use string_cache::DefaultAtom as Atom;
 
@@ -13,6 +13,12 @@ pub enum Literal {
     JSXText(JSXTextLiteral),
 }
 
+impl Literal {
+    pub fn as_expression(value: Self) -> Expression {
+        Expression::Literal(Box::new(value))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct StringLiteral {
     pub node: Node,
@@ -22,6 +28,10 @@ pub struct StringLiteral {
 impl StringLiteral {
     pub fn as_expression(node: Node, value: Atom) -> Expression {
         Expression::Literal(Box::new(Literal::String(Self { node, value })))
+    }
+
+    pub fn as_bin_expression(node: Node, value: Atom) -> BinaryExpression {
+        BinaryExpression::Literal(Literal::String(Self { node, value }))
     }
 }
 
@@ -35,6 +45,10 @@ impl BooleanLiteral {
     pub fn as_expression(node: Node, value: bool) -> Expression {
         Expression::Literal(Box::new(Literal::Boolean(Self { node, value })))
     }
+
+    pub fn as_bin_expression(node: Node, value: bool) -> BinaryExpression {
+        BinaryExpression::Literal(Literal::Boolean(Self { node, value }))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -45,6 +59,10 @@ pub struct NullLiteral {
 impl NullLiteral {
     pub fn as_expression(node: Node) -> Expression {
         Expression::Literal(Box::new(Literal::Null(Self { node })))
+    }
+
+    pub fn as_bin_expression(node: Node) -> BinaryExpression {
+        BinaryExpression::Literal(Literal::Null(Self { node }))
     }
 }
 
@@ -57,6 +75,10 @@ pub struct NumberLiteral {
 impl NumberLiteral {
     pub fn as_expression(node: Node, value: f64) -> Expression {
         Expression::Literal(Box::new(Literal::Number(Self { node, value })))
+    }
+
+    pub fn as_bin_expression(node: Node, value: f64) -> BinaryExpression {
+        BinaryExpression::Literal(Literal::Number(Self { node, value }))
     }
 }
 

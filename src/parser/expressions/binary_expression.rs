@@ -1,8 +1,5 @@
 use super::{Expression, Literal, NumberLiteral};
-use crate::{
-    lexer::Span,
-    parser::{ArithmeticOperator, Node},
-};
+use crate::parser::{ArithmeticOperator, Identifier, Node};
 
 #[derive(Debug, PartialEq)]
 pub struct BinaryOperation {
@@ -15,5 +12,6 @@ pub struct BinaryOperation {
 #[derive(Debug, PartialEq)]
 pub enum BinaryExpression {
     Literal(Literal),
+    Identifier(Identifier),
     BinaryOperation(BinaryOperation),
 }

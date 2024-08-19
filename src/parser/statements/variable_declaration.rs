@@ -1,7 +1,7 @@
 use string_cache::DefaultAtom as Atom;
 
 use crate::{
-    lexer::{Keyword, Kind, Span},
+    lexer::{Keyword, Kind},
     parser::{Expression, Node},
 };
 
