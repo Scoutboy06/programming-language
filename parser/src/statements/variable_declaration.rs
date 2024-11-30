@@ -1,4 +1,4 @@
-use crate::expressions::Expression;
+use crate::expressions::{BinaryExpression, Expression};
 use crate::nodes::Node;
 use string_cache::DefaultAtom as Atom;
 
@@ -28,6 +28,18 @@ impl Identifier {
             node: Node::new(start, end),
             name,
         }
+    }
+}
+
+impl From<Identifier> for BinaryExpression {
+    fn from(value: Identifier) -> Self {
+        BinaryExpression::Identifier(value)
+    }
+}
+
+impl From<Identifier> for Box<BinaryExpression> {
+    fn from(value: Identifier) -> Self {
+        Box::new(value.into())
     }
 }
 

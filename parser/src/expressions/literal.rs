@@ -13,10 +13,26 @@ pub enum Literal {
     JSXText(JSXTextLiteral),
 }
 
-impl Literal {
-    pub fn as_expression(value: Self) -> Expression {
-        Expression::Literal(Box::new(value))
-    }
+macro_rules! init_literal {
+    ($literal_type:ident, $variant:path) => {
+        impl From<$literal_type> for Expression {
+            fn from(value: $literal_type) -> Self {
+                Expression::Literal(Box::new($variant(value)))
+            }
+        }
+
+        impl From<$literal_type> for BinaryExpression {
+            fn from(value: $literal_type) -> Self {
+                BinaryExpression::Literal($variant(value))
+            }
+        }
+
+        impl From<$literal_type> for Box<BinaryExpression> {
+            fn from(value: $literal_type) -> Self {
+                Box::new(value.into())
+            }
+        }
+    };
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -24,93 +40,42 @@ pub struct StringLiteral {
     pub node: Node,
     pub value: Atom,
 }
-
-impl StringLiteral {
-    pub fn as_expression(node: Node, value: Atom) -> Expression {
-        Expression::Literal(Box::new(Literal::String(Self { node, value })))
-    }
-
-    pub fn as_bin_expression(node: Node, value: Atom) -> BinaryExpression {
-        BinaryExpression::Literal(Literal::String(Self { node, value }))
-    }
-}
+init_literal!(StringLiteral, Literal::String);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BooleanLiteral {
     pub node: Node,
     pub value: bool,
 }
-
-impl BooleanLiteral {
-    pub fn as_expression(node: Node, value: bool) -> Expression {
-        Expression::Literal(Box::new(Literal::Boolean(Self { node, value })))
-    }
-
-    pub fn as_bin_expression(node: Node, value: bool) -> BinaryExpression {
-        BinaryExpression::Literal(Literal::Boolean(Self { node, value }))
-    }
-}
+init_literal!(BooleanLiteral, Literal::Boolean);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NullLiteral {
     pub node: Node,
 }
-
-impl NullLiteral {
-    pub fn as_expression(node: Node) -> Expression {
-        Expression::Literal(Box::new(Literal::Null(Self { node })))
-    }
-
-    pub fn as_bin_expression(node: Node) -> BinaryExpression {
-        BinaryExpression::Literal(Literal::Null(Self { node }))
-    }
-}
+init_literal!(NullLiteral, Literal::Null);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NumberLiteral {
     pub node: Node,
     pub value: f64,
 }
-
-impl NumberLiteral {
-    pub fn as_expression(node: Node, value: f64) -> Expression {
-        Expression::Literal(Box::new(Literal::Number(Self { node, value })))
-    }
-
-    pub fn as_bin_expression(node: Node, value: f64) -> BinaryExpression {
-        BinaryExpression::Literal(Literal::Number(Self { node, value }))
-    }
-}
+init_literal!(NumberLiteral, Literal::Number);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BigIntLiteral {
     pub node: Node,
 }
-
-impl BigIntLiteral {
-    pub fn as_expression(node: Node) -> Expression {
-        todo!()
-    }
-}
+init_literal!(BigIntLiteral, Literal::BigInt);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RegexLiteral {
     pub node: Node,
 }
-
-impl RegexLiteral {
-    pub fn as_expression(node: Node) -> Expression {
-        todo!()
-    }
-}
+init_literal!(RegexLiteral, Literal::Regex);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JSXTextLiteral {
     pub node: Node,
 }
-
-impl JSXTextLiteral {
-    pub fn as_expression(node: Node) -> Expression {
-        todo!()
-    }
-}
+init_literal!(JSXTextLiteral, Literal::JSXText);

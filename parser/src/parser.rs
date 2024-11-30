@@ -1,6 +1,7 @@
 // use super::{ArithmeticOperator, NullLiteral, StringLiteral};
 use crate::expressions::{
-    BinaryExpression, BinaryOperation, Expression, NullLiteral, NumberLiteral, StringLiteral,
+    BinaryExpression, BinaryOperation, BooleanLiteral, Expression, Literal, NullLiteral,
+    NumberLiteral, StringLiteral,
 };
 use crate::nodes::program::Program;
 use crate::nodes::Node;
@@ -15,12 +16,14 @@ pub struct Parser<'a> {
     source: &'a str,
     lexer: Lexer<'a>,
     current_token: Token,
+    peek_token: Token,
     prev_token_end: usize,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum ParserError {
     InvalidToken(Token),
+    ExpectedClosingParen(Token),
 }
 
 impl<'a> Parser<'a> {
@@ -29,6 +32,7 @@ impl<'a> Parser<'a> {
             source,
             lexer: Lexer::new(source),
             current_token: Token::default(),
+            peek_token: Token::default(),
             prev_token_end: 0,
         }
     }
@@ -37,7 +41,9 @@ impl<'a> Parser<'a> {
         let mut body: Vec<Statement> = Vec::new();
         let source_len = self.source.len();
 
-        self.advance(); // Initialize first token
+        // Initialize tokens
+        self.advance();
+        self.advance();
 
         loop {
             if self.current_token.kind == TokenKind::Eof {
@@ -57,7 +63,9 @@ impl<'a> Parser<'a> {
 
     fn advance(&mut self) {
         self.prev_token_end = self.current_token.end;
-        self.current_token = self.lexer.next_token();
+
+        self.current_token = self.peek_token.clone();
+        self.peek_token = self.lexer.next_token();
     }
 
     fn expect_token_kind(&self, kind: TokenKind, error: ParserError) -> Result<(), ParserError> {
@@ -79,7 +87,7 @@ impl<'a> Parser<'a> {
                     let fn_dec = self.parse_function_declaration()?;
                     Ok(Statement::FunctionDeclaration(fn_dec.into()))
                 }
-                _ => unreachable!(),
+                _ => todo!(),
             },
             _ => Err(ParserError::InvalidToken(self.current_token.clone())),
         }
@@ -87,13 +95,55 @@ impl<'a> Parser<'a> {
 
     fn parse_expression(&mut self) -> Result<Expression, ParserError> {
         match self.current_token.kind {
-            TokenKind::Number | TokenKind::String | TokenKind::Null => {
-                let bin_exp = self.parse_binary_expression()?;
-                Ok(Expression::BinaryExpression(Box::new(bin_exp)))
+            TokenKind::String | TokenKind::Boolean | TokenKind::Number | TokenKind::Null => {
+                if self.peek_token.kind.is_operator() {
+                    let bin_exp = self.parse_binary_expression()?;
+                    return Ok(Expression::BinaryExpression(bin_exp.into()));
+                }
+
+                // Literal
+
+                let node = Node::new(self.current_token.start, self.current_token.end);
+
+                let expr: Expression = match self.current_token.kind {
+                    TokenKind::String => StringLiteral {
+                        node,
+                        value: self.current_token.value.expect_string().clone(),
+                    }
+                    .into(),
+                    TokenKind::Boolean => BooleanLiteral {
+                        node,
+                        value: self.current_token.value.expect_boolean(),
+                    }
+                    .into(),
+                    TokenKind::Number => NumberLiteral {
+                        node,
+                        value: self.current_token.value.expect_number(),
+                    }
+                    .into(),
+                    _ => return Err(ParserError::InvalidToken(self.current_token.clone())),
+                };
+
+                self.advance(); // Consume Literal token
+
+                Ok(expr)
             }
-            TokenKind::OpenBrace => todo!(),
+            TokenKind::OpenParen => {
+                self.advance(); // Consume OpenParen token
+                let expr = self.parse_expression()?;
+                match self.current_token.kind {
+                    TokenKind::Comma => todo!("Arrow function"),
+                    TokenKind::CloseParen => {
+                        self.advance();
+                        Ok(expr)
+                    }
+                    _ => Err(ParserError::ExpectedClosingParen(
+                        self.current_token.clone(),
+                    )),
+                }
+            }
             TokenKind::OpenBracket => todo!(),
-            TokenKind::OpenParen => todo!(),
+            TokenKind::OpenBrace => todo!(),
             _ => Err(ParserError::InvalidToken(self.current_token.clone())),
         }
     }
@@ -107,10 +157,9 @@ impl<'a> Parser<'a> {
             Keyword::Const => VariableKind::Const,
             _ => unreachable!(),
         };
+        self.advance();
 
         let mut declarations = Vec::new();
-
-        self.advance();
 
         loop {
             let start = self.current_token.start;
@@ -121,50 +170,33 @@ impl<'a> Parser<'a> {
             )?;
             let identifier = Identifier {
                 node: Node::new(start, self.current_token.end),
-                name: self.current_token.value.expect_string().clone(), // TODO: check if .clone() is cheap?
+                name: self.current_token.value.expect_string().clone(),
             };
-
             self.advance();
 
-            if self.current_token.kind == TokenKind::Comma {
-                declarations.push(VariableDeclarator {
-                    node: Node::new(start, self.current_token.end),
-                    id: identifier,
-                    init: None,
-                });
-
-                continue;
-            }
-
-            if self.current_token.kind != TokenKind::Equals {
-                break;
-            }
-
-            // TODO: support explicit types ("let a: number")
-
-            self.advance();
-
-            let decl = match self.current_token.kind {
-                TokenKind::Number => {
-                    let bin_exp = self.parse_binary_expression()?;
-
-                    VariableDeclarator {
+            match self.current_token.kind {
+                TokenKind::Comma => {
+                    declarations.push(VariableDeclarator {
                         node: Node::new(start, self.current_token.end),
                         id: identifier,
-                        init: Some(Expression::BinaryExpression(Box::new(bin_exp))),
-                    }
+                        init: None,
+                    });
+                    self.advance();
+                    continue;
                 }
-                TokenKind::String => todo!(),
-                TokenKind::Null => todo!(),
-                TokenKind::OpenBracket => todo!(),
-                TokenKind::OpenBrace => todo!(),
-                TokenKind::OpenParen => todo!(),
-                _ => return Err(ParserError::InvalidToken(self.current_token.clone())),
+                TokenKind::Colon => todo!(),
+                TokenKind::Equals => self.advance(),
+                _ => break,
+            }
+
+            let expr = self.parse_expression()?;
+            let decl = VariableDeclarator {
+                node: Node::new(start, self.current_token.end),
+                id: identifier,
+                init: Some(expr),
             };
 
             declarations.push(decl);
-
-            self.advance();
 
             if self.current_token.kind != TokenKind::Comma {
                 break;
@@ -191,15 +223,21 @@ impl<'a> Parser<'a> {
             let node = Node::new(left.start, left.end);
 
             match left.kind {
-                TokenKind::Number => Ok(Some(NumberLiteral::as_bin_expression(
-                    node,
-                    left.value.expect_number(),
-                ))),
-                TokenKind::String => Ok(Some(StringLiteral::as_bin_expression(
-                    node,
-                    left.value.expect_string().clone(), // TODO: check if .clone() is cheap
-                ))),
-                TokenKind::Null => Ok(Some(NullLiteral::as_bin_expression(node))),
+                TokenKind::Number => Ok(Some(
+                    NumberLiteral {
+                        node,
+                        value: left.value.expect_number(),
+                    }
+                    .into(),
+                )),
+                TokenKind::String => Ok(Some(
+                    StringLiteral {
+                        node,
+                        value: left.value.expect_string().clone(),
+                    }
+                    .into(),
+                )),
+                TokenKind::Null => Ok(Some(NullLiteral { node }.into())),
                 TokenKind::Identifier => Ok(Some(BinaryExpression::Identifier(Identifier {
                     node: Node::new(left.start, left.end),
                     name: Atom::from(left.value.expect_string().clone()), // TODO: check if .clone() is cheap

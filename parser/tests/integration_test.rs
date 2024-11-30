@@ -6,7 +6,6 @@ use parser::{
     Parser,
 };
 use pretty_assertions::assert_eq;
-use string_cache::Atom;
 
 #[test]
 fn lexer_works() {
@@ -38,7 +37,7 @@ fn empty_program() {
 }
 
 #[test]
-fn variable_decl() {
+fn assignment_number_literal() {
     let source_code = "let a = 50.5";
     let mut parser = Parser::new(&source_code);
     let result = parser.parse();
@@ -51,7 +50,7 @@ fn variable_decl() {
                 node: Node::new(0, source_code.len()),
                 declarations: vec![VariableDeclarator {
                     node: Node::new(4, source_code.len()),
-                    id: Identifier::new(Atom::from("a"), 4, 5),
+                    id: Identifier::new("a".into(), 4, 5),
                     init: Some(Expression::Literal(Box::new(Literal::Number(
                         NumberLiteral {
                             node: Node::new(8, source_code.len()),
@@ -68,8 +67,8 @@ fn variable_decl() {
 }
 
 #[test]
-fn binary_operation() {
-    let source_code = "let y = 6 + 5 * x";
+fn assignment_paren_literal() {
+    let source_code = "const a = (50.5)";
     let mut parser = Parser::new(&source_code);
     let result = parser.parse();
 
@@ -78,39 +77,75 @@ fn binary_operation() {
         shebang: None,
         body: vec![Statement::VariableDeclaration(Box::new(
             VariableDeclaration {
+                node: Node::new(0, source_code.len()),
+                declarations: vec![VariableDeclarator {
+                    node: Node::new(6, 16),
+                    id: Identifier::new("a".into(), 6, 7),
+                    init: Some(
+                        NumberLiteral {
+                            node: Node::new(11, 15),
+                            value: 50.5,
+                        }
+                        .into(),
+                    ),
+                }],
+                kind: VariableKind::Const,
+            },
+        ))],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn binary_operation() {
+    let source_code = "let y = 6 + 5 * x";
+    let mut parser = Parser::new(&source_code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, source_code.len()),
+        shebang: None,
+        body: vec![Statement::VariableDeclaration(
+            VariableDeclaration {
                 node: Node::new(0, 17),
                 kind: VariableKind::Let,
                 declarations: vec![VariableDeclarator {
                     node: Node::new(4, 17),
-                    id: Identifier::new("y".into(), 4, 5),
-                    init: Some(Expression::BinaryExpression(Box::new(
+                    id: Identifier {
+                        node: Node::new(4, 5),
+                        name: "y".into(),
+                    },
+                    init: Some(Expression::BinaryExpression(
                         BinaryExpression::BinaryOperation(BinaryOperation {
                             node: Node::new(8, 17),
                             operator: ArithmeticOperator::Plus,
-                            left: Box::new(BinaryExpression::Literal(Literal::Number(
-                                NumberLiteral {
-                                    node: Node::new(8, 9),
-                                    value: 6.0,
-                                },
-                            ))),
+                            left: NumberLiteral {
+                                node: Node::new(8, 9),
+                                value: 6.0,
+                            }
+                            .into(),
                             right: Box::new(BinaryExpression::BinaryOperation(BinaryOperation {
                                 node: Node::new(12, 17),
                                 operator: ArithmeticOperator::Mult,
-                                left: Box::new(NumberLiteral::as_bin_expression(
-                                    Node::new(12, 13),
-                                    5.0,
-                                )),
-                                right: Box::new(BinaryExpression::Identifier(Identifier::new(
-                                    "x".into(),
-                                    16,
-                                    17,
-                                ))),
+                                left: NumberLiteral {
+                                    node: Node::new(12, 13),
+                                    value: 5.0,
+                                }
+                                .into(),
+                                right: Identifier {
+                                    node: Node::new(16, 17),
+                                    name: "x".into(),
+                                }
+                                .into(),
                             })),
-                        }),
-                    ))),
+                        })
+                        .into(),
+                    )),
                 }],
-            },
-        ))],
+            }
+            .into(),
+        )],
     };
 
     assert_eq!(result, Ok(expected));

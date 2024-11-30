@@ -46,7 +46,11 @@ impl<'a> Lexer<'a> {
             'a'..='z' | 'A'..='Z' | '_' | '$' => {
                 let word = self.parse_identifier();
                 if let Some(keyword) = Keyword::from_str(word) {
-                    (TokenKind::Keyword, TokenValue::Keyword(keyword))
+                    match keyword {
+                        Keyword::True => (TokenKind::Boolean, TokenValue::Boolean(true)),
+                        Keyword::False => (TokenKind::Boolean, TokenValue::Boolean(false)),
+                        _ => (TokenKind::Keyword, TokenValue::Keyword(keyword)),
+                    }
                 } else {
                     (TokenKind::Identifier, TokenValue::String(Atom::from(word)))
                 }

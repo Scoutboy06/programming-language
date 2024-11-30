@@ -1,9 +1,10 @@
 use super::{AssignmentExpression, BinaryExpression, Literal, UnaryExpression};
+use crate::statements::Identifier;
 
 #[derive(Debug, PartialEq)]
 pub enum Expression {
     Literal(Box<Literal>),
-    Identifier(Box<()>),
+    Identifier(Box<Identifier>),
     BinaryExpression(Box<BinaryExpression>),
     UnaryExpression(Box<UnaryExpression>),
     AssignmentExpression(Box<AssignmentExpression>),

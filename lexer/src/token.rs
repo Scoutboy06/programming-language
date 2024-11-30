@@ -16,6 +16,7 @@ pub enum TokenValue {
     None,
     Number(f64),
     String(Atom),
+    Boolean(bool),
     Keyword(Keyword),
 }
 
@@ -30,6 +31,13 @@ impl TokenValue {
     pub fn expect_number(&self) -> f64 {
         match self {
             TokenValue::Number(num) => num.clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn expect_boolean(&self) -> bool {
+        match self {
+            TokenValue::Boolean(b) => *b,
             _ => unreachable!(),
         }
     }
@@ -62,6 +70,7 @@ pub enum TokenKind {
     Identifier,
     String,
     Number,
+    Boolean,
     Null,
 
     // Punctuation
