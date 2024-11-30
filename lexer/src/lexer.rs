@@ -55,10 +55,13 @@ impl<'a> Lexer<'a> {
                     (TokenKind::Identifier, TokenValue::String(Atom::from(word)))
                 }
             }
-            '"' | '\'' | '`' => (
-                TokenKind::String,
-                TokenValue::String(Atom::from(self.parse_string_literal())),
-            ),
+            '"' | '\'' | '`' => {
+                let val = self.parse_string_literal();
+                (
+                    TokenKind::String,
+                    TokenValue::String(Atom::from(&val[1..val.len() - 1])),
+                )
+            }
             '+' => {
                 self.advance();
                 match self.curr_char {

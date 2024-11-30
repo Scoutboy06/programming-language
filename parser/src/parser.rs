@@ -1,7 +1,7 @@
 // use super::{ArithmeticOperator, NullLiteral, StringLiteral};
 use crate::expressions::{
-    BinaryExpression, BinaryOperation, BooleanLiteral, Expression, Literal, NullLiteral,
-    NumberLiteral, StringLiteral,
+    BinaryExpression, BinaryOperation, BooleanLiteral, CallExpression, Expression, Literal,
+    NullLiteral, NumberLiteral, StringLiteral,
 };
 use crate::nodes::program::Program;
 use crate::nodes::Node;
@@ -89,23 +89,28 @@ impl<'a> Parser<'a> {
                 }
                 _ => todo!(),
             },
-            _ => Err(ParserError::InvalidToken(self.current_token.clone())),
+            _ => {
+                let expr = self.parse_expression()?;
+                Ok(Statement::ExpressionStatement(expr.into()))
+            }
         }
     }
 
     fn parse_expression(&mut self) -> Result<Expression, ParserError> {
         match self.current_token.kind {
-            TokenKind::String | TokenKind::Boolean | TokenKind::Number | TokenKind::Null => {
+            TokenKind::String
+            | TokenKind::Boolean
+            | TokenKind::Number
+            | TokenKind::Null
+            | TokenKind::Identifier => {
                 if self.peek_token.kind.is_operator() {
                     let bin_exp = self.parse_binary_expression()?;
                     return Ok(Expression::BinaryExpression(bin_exp.into()));
                 }
 
-                // Literal
-
                 let node = Node::new(self.current_token.start, self.current_token.end);
 
-                let expr: Expression = match self.current_token.kind {
+                let literal: Expression = match self.current_token.kind {
                     TokenKind::String => StringLiteral {
                         node,
                         value: self.current_token.value.expect_string().clone(),
@@ -121,12 +126,31 @@ impl<'a> Parser<'a> {
                         value: self.current_token.value.expect_number(),
                     }
                     .into(),
+                    TokenKind::Identifier => Identifier {
+                        node,
+                        name: self.current_token.value.expect_string().clone(),
+                    }
+                    .into(),
                     _ => return Err(ParserError::InvalidToken(self.current_token.clone())),
                 };
 
                 self.advance(); // Consume Literal token
 
-                Ok(expr)
+                match self.current_token.kind {
+                    TokenKind::OpenParen => {
+                        let arguments = self.parse_argument_call_list()?;
+                        Ok(Expression::CallExpression(
+                            CallExpression {
+                                node: Node::new(node.start, self.prev_token_end), // parse_argument_call_list consumes the CloseParen token
+                                callee: literal,
+                                arguments,
+                            }
+                            .into(),
+                        ))
+                    }
+                    TokenKind::Dot => todo!("MemberExpression"),
+                    _ => Ok(literal),
+                }
             }
             TokenKind::OpenParen => {
                 self.advance(); // Consume OpenParen token
@@ -305,5 +329,28 @@ impl<'a> Parser<'a> {
         }
 
         Ok(left)
+    }
+
+    fn parse_argument_call_list(&mut self) -> Result<Vec<Expression>, ParserError> {
+        assert_eq!(self.current_token.kind, TokenKind::OpenParen);
+        self.advance();
+
+        let mut arguments: Vec<Expression> = Vec::new();
+
+        loop {
+            let arg = self.parse_expression()?;
+            arguments.push(arg);
+
+            match self.current_token.kind {
+                TokenKind::Comma => self.advance(),
+                TokenKind::CloseParen => {
+                    self.advance();
+                    break;
+                }
+                _ => return Err(ParserError::InvalidToken(self.current_token.clone())),
+            }
+        }
+
+        Ok(arguments)
     }
 }

@@ -43,6 +43,12 @@ impl From<Identifier> for Box<BinaryExpression> {
     }
 }
 
+impl From<Identifier> for Expression {
+    fn from(value: Identifier) -> Self {
+        Expression::Identifier(Box::new(value))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VariableKind {
     Var,

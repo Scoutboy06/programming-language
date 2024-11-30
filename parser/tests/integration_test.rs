@@ -1,6 +1,9 @@
 use lexer::{ArithmeticOperator, Lexer, Token, TokenKind};
 use parser::{
-    expressions::{BinaryExpression, BinaryOperation, Expression, Literal, NumberLiteral},
+    expressions::{
+        BinaryExpression, BinaryOperation, CallExpression, Expression, Literal, MemberExpression,
+        NumberLiteral, StringLiteral,
+    },
     nodes::{program::Program, Node},
     statements::{Identifier, Statement, VariableDeclaration, VariableDeclarator, VariableKind},
     Parser,
@@ -149,4 +152,92 @@ fn binary_operation() {
     };
 
     assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn function_call() {
+    let source_code = "my_func(50.5, \"abc123\")";
+    let mut parser = Parser::new(&source_code);
+    let result = parser.parse();
+
+    let expected = Ok(Program {
+        node: Node::new(0, source_code.len()),
+        shebang: None,
+        body: vec![Statement::ExpressionStatement(
+            Expression::CallExpression(
+                CallExpression {
+                    node: Node::new(0, source_code.len()),
+                    callee: Expression::Identifier(
+                        Identifier {
+                            node: Node::new(0, 7),
+                            name: "my_func".into(),
+                        }
+                        .into(),
+                    ),
+                    arguments: vec![
+                        NumberLiteral {
+                            node: Node::new(8, 12),
+                            value: 50.5,
+                        }
+                        .into(),
+                        StringLiteral {
+                            node: Node::new(14, 22),
+                            value: "abc123".into(),
+                        }
+                        .into(),
+                    ],
+                }
+                .into(),
+            )
+            .into(),
+        )],
+    });
+
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn console_log() {
+    let source_code = "console.log(50.5)";
+    let mut parser = Parser::new(&source_code);
+    let result = parser.parse();
+
+    let expected = Ok(Program {
+        node: Node::new(0, source_code.len()),
+        shebang: None,
+        body: vec![Statement::ExpressionStatement(
+            Expression::CallExpression(
+                CallExpression {
+                    node: Node::new(0, 17),
+                    callee: Expression::MemberExpression(
+                        MemberExpression {
+                            node: Node::new(0, 7),
+                            object: Expression::Identifier(
+                                Identifier {
+                                    node: Node::new(0, 7),
+                                    name: "console".into(),
+                                }
+                                .into(),
+                            ),
+                            property: Identifier {
+                                node: Node::new(8, 11),
+                                name: "log".into(),
+                            }
+                            .into(),
+                        }
+                        .into(),
+                    ),
+                    arguments: vec![NumberLiteral {
+                        node: Node::new(12, 16),
+                        value: 50.5,
+                    }
+                    .into()],
+                }
+                .into(),
+            )
+            .into(),
+        )],
+    });
+
+    assert_eq!(result, expected);
 }

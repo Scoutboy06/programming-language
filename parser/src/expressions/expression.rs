@@ -1,4 +1,7 @@
-use super::{AssignmentExpression, BinaryExpression, Literal, UnaryExpression};
+use super::{
+    AssignmentExpression, BinaryExpression, CallExpression, Literal, MemberExpression,
+    UnaryExpression,
+};
 use crate::statements::Identifier;
 
 #[derive(Debug, PartialEq)]
@@ -10,8 +13,8 @@ pub enum Expression {
     AssignmentExpression(Box<AssignmentExpression>),
     LogicalExpression(Box<()>),
     ConditionalExpression(Box<()>),
-    CallExpression(Box<()>),
-    MemberExpression(Box<()>),
+    CallExpression(Box<CallExpression>),
+    MemberExpression(Box<MemberExpression>),
     FunctionExpression(Box<()>),
     ArrowFunctionExpression(Box<()>),
     ObjectExpression(Box<()>),
