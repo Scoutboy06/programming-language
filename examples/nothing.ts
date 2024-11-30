@@ -1,1 +1,0 @@
-let nothing: null = null;

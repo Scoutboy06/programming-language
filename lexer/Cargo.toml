@@ -1,0 +1,11 @@
+[package]
+name = "lexer"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+lazy_static = "1.4.0"
+string_cache = "0.8.4"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
