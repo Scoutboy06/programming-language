@@ -376,3 +376,16 @@ impl<'a> Lexer<'a> {
         &self.source[start_pos..self.position]
     }
 }
+
+impl<'a> Iterator for Lexer<'a> {
+    type Item = Token;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let tok = self.next_token();
+        if tok.kind == TokenKind::Eof {
+            None
+        } else {
+            Some(tok)
+        }
+    }
+}

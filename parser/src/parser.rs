@@ -1,12 +1,10 @@
-// use super::{ArithmeticOperator, NullLiteral, StringLiteral};
 use crate::expressions::{
-    BinaryExpression, BinaryOperation, BooleanLiteral, CallExpression, Expression, Literal,
-    NullLiteral, NumberLiteral, StringLiteral,
+    BinaryExpression, BinaryOperation, BooleanLiteral, CallExpression, Expression, NullLiteral,
+    NumberLiteral, StringLiteral,
 };
-use crate::nodes::program::Program;
-use crate::nodes::Node;
+use crate::nodes::{program::Program, Node};
 use crate::statements::{
-    FunctionDeclaration, Identifier, Shebang, Statement, VariableDeclaration, VariableDeclarator,
+    FunctionDeclaration, Identifier, Statement, VariableDeclaration, VariableDeclarator,
     VariableKind,
 };
 use lexer::{Keyword, Lexer, Token, TokenKind};

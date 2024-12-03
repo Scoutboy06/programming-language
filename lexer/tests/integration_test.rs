@@ -1,23 +1,11 @@
 use lexer::{Keyword, Lexer, TokenKind, TokenValue};
 use pretty_assertions::assert_eq;
-use string_cache::DefaultAtom as Atom;
 
 fn expect_tokens(source_code: &str, expected_tokens: &[(TokenKind, TokenValue)]) {
-    let mut lexer = Lexer::new(source_code);
+    let lexer = Lexer::new(source_code);
+    let tokens = lexer.map(|tok| (tok.kind, tok.value)).collect::<Vec<_>>();
 
-    for i in 0.. {
-        let token = lexer.next_token();
-        // dbg!(&token);
-
-        if token.kind == TokenKind::Eof {
-            assert_eq!(token.value, TokenValue::None);
-            assert_eq!(i, expected_tokens.len());
-            break;
-        }
-
-        assert_eq!(token.kind, expected_tokens[i].0);
-        assert_eq!(token.value, expected_tokens[i].1);
-    }
+    assert_eq!(tokens, expected_tokens);
 }
 
 #[test]
@@ -50,7 +38,7 @@ fn let_statement() {
         &source_code,
         &vec![
             (TokenKind::Keyword, TokenValue::Keyword(Keyword::Let)),
-            (TokenKind::Identifier, TokenValue::String(Atom::from("x"))),
+            (TokenKind::Identifier, TokenValue::String("x".into())),
             (TokenKind::Equals, TokenValue::None),
             (TokenKind::Number, TokenValue::Number(123.0)),
             (TokenKind::Plus, TokenValue::None),
@@ -67,13 +55,13 @@ fn function() {
         &source_code,
         &vec![
             (TokenKind::Keyword, TokenValue::Keyword(Keyword::Function)),
-            (TokenKind::Identifier, TokenValue::String(Atom::from("sum"))),
+            (TokenKind::Identifier, TokenValue::String("sum".into())),
             (TokenKind::OpenParen, TokenValue::None),
-            (TokenKind::Identifier, TokenValue::String(Atom::from("n1"))),
+            (TokenKind::Identifier, TokenValue::String("n1".into())),
             (TokenKind::Colon, TokenValue::None),
             (TokenKind::Keyword, TokenValue::Keyword(Keyword::NumberType)),
             (TokenKind::Comma, TokenValue::None),
-            (TokenKind::Identifier, TokenValue::String(Atom::from("n2"))),
+            (TokenKind::Identifier, TokenValue::String("n2".into())),
             (TokenKind::Colon, TokenValue::None),
             (TokenKind::Keyword, TokenValue::Keyword(Keyword::NumberType)),
             (TokenKind::CloseParen, TokenValue::None),
@@ -92,11 +80,11 @@ fn string_literal() {
         &source_code,
         &vec![
             (TokenKind::Keyword, TokenValue::Keyword(Keyword::Let)),
-            (TokenKind::Identifier, TokenValue::String(Atom::from("x"))),
+            (TokenKind::Identifier, TokenValue::String("x".into())),
             (TokenKind::Equals, TokenValue::None),
             (
                 TokenKind::String,
-                TokenValue::String(Atom::from("'This is a string literal'")),
+                TokenValue::String("This is a string literal".into()),
             ),
             (TokenKind::SemiColon, TokenValue::None),
         ],
@@ -111,13 +99,14 @@ fn template_string_literal() {
         &source_code,
         &vec![
             (TokenKind::Keyword, TokenValue::Keyword(Keyword::Let)),
-            (TokenKind::Identifier, TokenValue::String(Atom::from("x"))),
+            (TokenKind::Identifier, TokenValue::String("x".into())),
             (TokenKind::Equals, TokenValue::None),
             (
                 TokenKind::String,
-                TokenValue::String(Atom::from(
-                    "`A ${string_type} string with ${is_nested ? `${nested_level} nestings` : ''}`",
-                )),
+                TokenValue::String(
+                    "A ${string_type} string with ${is_nested ? `${nested_level} nestings` : ''}"
+                        .into(),
+                ),
             ),
             (TokenKind::SemiColon, TokenValue::None),
         ],
@@ -132,14 +121,14 @@ fn if_statement_with_boolean() {
         &vec![
             (TokenKind::Keyword, TokenValue::Keyword(Keyword::If)),
             (TokenKind::OpenParen, TokenValue::None),
-            (TokenKind::Keyword, TokenValue::Keyword(Keyword::False)),
+            (TokenKind::Boolean, TokenValue::Boolean(false)),
             (TokenKind::CloseParen, TokenValue::None),
             (TokenKind::OpenBrace, TokenValue::None),
             (TokenKind::CloseBrace, TokenValue::None),
             (TokenKind::Keyword, TokenValue::Keyword(Keyword::Else)),
             (TokenKind::Keyword, TokenValue::Keyword(Keyword::If)),
             (TokenKind::OpenParen, TokenValue::None),
-            (TokenKind::Keyword, TokenValue::Keyword(Keyword::True)),
+            (TokenKind::Boolean, TokenValue::Boolean(true)),
             (TokenKind::CloseParen, TokenValue::None),
             (TokenKind::OpenBrace, TokenValue::None),
             (TokenKind::CloseBrace, TokenValue::None),
@@ -160,18 +149,15 @@ fn if_statement_with_variables() {
             (TokenKind::OpenParen, TokenValue::None),
             (TokenKind::Keyword, TokenValue::Keyword(Keyword::This)),
             (TokenKind::Dot, TokenValue::None),
-            (TokenKind::Identifier, TokenValue::String(Atom::from("pos"))),
+            (TokenKind::Identifier, TokenValue::String("pos".into())),
             (TokenKind::Dot, TokenValue::None),
-            (TokenKind::Identifier, TokenValue::String(Atom::from("x"))),
+            (TokenKind::Identifier, TokenValue::String("x".into())),
             (TokenKind::GreaterThan, TokenValue::None),
-            (
-                TokenKind::Identifier,
-                TokenValue::String(Atom::from("window")),
-            ),
+            (TokenKind::Identifier, TokenValue::String("window".into())),
             (TokenKind::Dot, TokenValue::None),
             (
                 TokenKind::Identifier,
-                TokenValue::String(Atom::from("innerWidth")),
+                TokenValue::String("innerWidth".into()),
             ),
             (TokenKind::CloseParen, TokenValue::None),
             (TokenKind::OpenBrace, TokenValue::None),
