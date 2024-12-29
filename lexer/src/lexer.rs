@@ -55,13 +55,10 @@ impl<'a> Lexer<'a> {
                     (TokenKind::Identifier, TokenValue::String(Atom::from(word)))
                 }
             }
-            '"' | '\'' | '`' => {
-                let val = self.parse_string_literal();
-                (
-                    TokenKind::String,
-                    TokenValue::String(Atom::from(&val[1..val.len() - 1])),
-                )
-            }
+            '"' | '\'' | '`' => (
+                TokenKind::String,
+                TokenValue::String(Atom::from(self.parse_string_literal(true))), // We strip out quotes
+            ),
             '+' => {
                 self.advance();
                 match self.curr_char {
@@ -306,7 +303,7 @@ impl<'a> Lexer<'a> {
             .unwrap()
     }
 
-    fn parse_string_literal(&mut self) -> &str {
+    fn parse_string_literal(&mut self, strip_quotes: bool) -> &str {
         if self.curr_char.unwrap() == '`' {
             return self.parse_template_string();
         }
@@ -329,7 +326,11 @@ impl<'a> Lexer<'a> {
             self.advance();
         }
 
-        &self.source[start_pos..self.position]
+        if strip_quotes {
+            &self.source[start_pos + 1..self.position - 1]
+        } else {
+            &self.source[start_pos..self.position]
+        }
     }
 
     fn parse_template_string(&mut self) -> &str {

@@ -1,7 +1,7 @@
 use super::{BinaryOperation, Literal};
 use crate::{nodes::Node, statements::Identifier};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum BinaryExpression {
     Literal(Literal),
     Identifier(Identifier),

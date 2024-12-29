@@ -1,7 +1,7 @@
 use super::Expression;
 use crate::nodes::Node;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct UnaryExpression {
     pub node: Node,
     pub kind: UnaryKind,

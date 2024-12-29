@@ -1,10 +1,10 @@
 use super::{
-    AssignmentExpression, BinaryExpression, CallExpression, Literal, MemberExpression,
-    UnaryExpression,
+    ArrayExpression, AssignmentExpression, BinaryExpression, CallExpression, Literal,
+    MemberExpression, ObjectExpression, UnaryExpression,
 };
 use crate::{nodes::Node, statements::Identifier};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     Literal(Box<Literal>),
     Identifier(Box<Identifier>),
@@ -17,8 +17,8 @@ pub enum Expression {
     MemberExpression(Box<MemberExpression>),
     FunctionExpression(Box<()>),
     ArrowFunctionExpression(Box<()>),
-    ObjectExpression(Box<()>),
-    ArrayExpression(Box<()>),
+    ObjectExpression(Box<ObjectExpression>),
+    ArrayExpression(Box<ArrayExpression>),
     NewExpression(Box<()>),
     SequenceExpression(Box<()>),
     UpdateExpression(Box<()>),
@@ -34,7 +34,7 @@ pub enum Expression {
 }
 
 impl Expression {
-    fn node(&self) -> &Node {
+    pub fn node(&self) -> &Node {
         match self {
             Self::Literal(lit) => lit.node(),
             Self::Identifier(i) => &i.node,

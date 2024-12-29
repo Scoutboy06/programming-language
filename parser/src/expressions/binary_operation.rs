@@ -2,7 +2,7 @@ use super::BinaryExpression;
 use crate::nodes::Node;
 use lexer::ArithmeticOperator;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BinaryOperation {
     pub node: Node,
     pub left: Box<BinaryExpression>,

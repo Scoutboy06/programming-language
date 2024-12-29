@@ -169,6 +169,22 @@ impl TokenKind {
         }
     }
 
+    pub fn get_operator_precedence(&self) -> Option<usize> {
+        match self {
+            TokenKind::Plus
+            | TokenKind::Minus
+            | TokenKind::BitwiseAnd
+            | TokenKind::BitwiseLeftShift
+            | TokenKind::BitwiseNot
+            | TokenKind::BitwiseOr
+            | TokenKind::BitwiseRightShift
+            | TokenKind::BitwiseXor => Some(0),
+            TokenKind::Asterisk | TokenKind::Slash => Some(1),
+            TokenKind::Exponentiation => Some(2),
+            _ => None,
+        }
+    }
+
     pub fn as_term_operator(&self) -> Option<ArithmeticOperator> {
         // TODO: Verify order of operations
         match self {
