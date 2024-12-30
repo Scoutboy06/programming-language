@@ -38,7 +38,7 @@ impl Expression {
         match self {
             Self::Literal(lit) => lit.node(),
             Self::Identifier(i) => &i.node,
-            Self::BinaryExpression(b) => b.node(),
+            Self::BinaryExpression(b) => &b.node,
             Self::UnaryExpression(u) => &u.node,
             Self::AssignmentExpression(a) => &a.node,
             Self::LogicalExpression(_) => todo!("LogicalExpression"),

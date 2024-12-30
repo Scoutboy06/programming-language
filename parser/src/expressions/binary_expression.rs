@@ -1,19 +1,17 @@
-use super::{BinaryOperation, Literal};
-use crate::{nodes::Node, statements::Identifier};
+use super::Expression;
+use crate::nodes::Node;
+use lexer::ArithmeticOperator;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum BinaryExpression {
-    Literal(Literal),
-    Identifier(Identifier),
-    BinaryOperation(BinaryOperation),
+pub struct BinaryExpression {
+    pub node: Node,
+    pub left: Expression,
+    pub right: Expression,
+    pub operator: ArithmeticOperator,
 }
 
-impl BinaryExpression {
-    pub fn node(&self) -> &Node {
-        match self {
-            BinaryExpression::Literal(l) => l.node(),
-            BinaryExpression::Identifier(i) => &i.node,
-            BinaryExpression::BinaryOperation(b) => &b.node,
-        }
+impl From<BinaryExpression> for Expression {
+    fn from(value: BinaryExpression) -> Self {
+        Expression::BinaryExpression(Box::new(value))
     }
 }

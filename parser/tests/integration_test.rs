@@ -1,8 +1,8 @@
 use lexer::{ArithmeticOperator, Lexer, Token, TokenKind};
 use parser::{
     expressions::{
-        BinaryExpression, BinaryOperation, CallExpression, ComputedProperty, Expression, Literal,
-        MemberExpression, MemberProperty, NumberLiteral, StringLiteral,
+        BinaryExpression, CallExpression, ComputedProperty, Expression, Literal, MemberExpression,
+        MemberProperty, NumberLiteral, StringLiteral,
     },
     nodes::{program::Program, Node},
     statements::{Identifier, Statement, VariableDeclaration, VariableDeclarator, VariableKind},
@@ -120,7 +120,7 @@ fn binary_operation() {
                         name: "y".into(),
                     },
                     init: Some(Expression::BinaryExpression(
-                        BinaryExpression::BinaryOperation(BinaryOperation {
+                        BinaryExpression {
                             node: Node::new(8, 17),
                             operator: ArithmeticOperator::Plus,
                             left: NumberLiteral {
@@ -128,21 +128,24 @@ fn binary_operation() {
                                 value: 6.0,
                             }
                             .into(),
-                            right: Box::new(BinaryExpression::BinaryOperation(BinaryOperation {
-                                node: Node::new(12, 17),
-                                operator: ArithmeticOperator::Mult,
-                                left: NumberLiteral {
-                                    node: Node::new(12, 13),
-                                    value: 5.0,
+                            right: Expression::BinaryExpression(
+                                BinaryExpression {
+                                    node: Node::new(12, 17),
+                                    operator: ArithmeticOperator::Mult,
+                                    left: NumberLiteral {
+                                        node: Node::new(12, 13),
+                                        value: 5.0,
+                                    }
+                                    .into(),
+                                    right: Identifier {
+                                        node: Node::new(16, 17),
+                                        name: "x".into(),
+                                    }
+                                    .into(),
                                 }
                                 .into(),
-                                right: Identifier {
-                                    node: Node::new(16, 17),
-                                    name: "x".into(),
-                                }
-                                .into(),
-                            })),
-                        })
+                            ),
+                        }
                         .into(),
                     )),
                 }],

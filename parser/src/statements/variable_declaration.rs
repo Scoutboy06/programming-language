@@ -31,17 +31,17 @@ impl Identifier {
     }
 }
 
-impl From<Identifier> for BinaryExpression {
-    fn from(value: Identifier) -> Self {
-        BinaryExpression::Identifier(value)
-    }
-}
+// impl From<Identifier> for BinaryExpression {
+//     fn from(value: Identifier) -> Self {
+//         BinaryExpression::Identifier(value)
+//     }
+// }
 
-impl From<Identifier> for Box<BinaryExpression> {
-    fn from(value: Identifier) -> Self {
-        Box::new(value.into())
-    }
-}
+// impl From<Identifier> for Box<BinaryExpression> {
+//     fn from(value: Identifier) -> Self {
+//         Box::new(value.into())
+//     }
+// }
 
 impl From<Identifier> for Expression {
     fn from(value: Identifier) -> Self {

@@ -1,7 +1,7 @@
 use crate::expressions::{
-    ArrayExpression, BinaryExpression, BinaryOperation, BooleanLiteral, CallExpression,
-    ComputedProperty, Expression, Literal, MemberExpression, MemberProperty, NullLiteral,
-    NumberLiteral, ObjectExpression, StringLiteral, UnaryExpression, KV,
+    ArrayExpression, BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty,
+    Expression, Literal, MemberExpression, MemberProperty, NullLiteral, NumberLiteral,
+    ObjectExpression, StringLiteral, UnaryExpression, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
@@ -15,8 +15,8 @@ pub struct Parser<'a> {
     source: &'a str,
     lexer: Lexer<'a>,
     current_token: Token,
-    peek_token: Token,
-    prev_token_end: usize,
+    // peek_token: Token,
+    // prev_token_end: usize,
 }
 
 #[derive(Debug, PartialEq)]
@@ -42,8 +42,6 @@ impl<'a> Parser<'a> {
             source,
             lexer: Lexer::new(source),
             current_token: Token::default(),
-            peek_token: Token::default(),
-            prev_token_end: 0,
         }
     }
 
@@ -52,7 +50,6 @@ impl<'a> Parser<'a> {
         let source_len = self.source.len();
 
         // Initialize tokens
-        self.advance();
         self.advance();
 
         loop {
@@ -81,10 +78,7 @@ impl<'a> Parser<'a> {
     }
 
     fn advance(&mut self) {
-        self.prev_token_end = self.current_token.end;
-
-        self.current_token = self.peek_token.clone();
-        self.peek_token = self.lexer.next_token();
+        self.current_token = self.lexer.next_token();
     }
 
     fn expect_token_kind(&self, kind: TokenKind, err: ErrorKind) -> Result<(), ErrorKind> {
@@ -142,9 +136,12 @@ impl<'a> Parser<'a> {
                     let mem_exp = self.parse_member_expression(lhs)?;
                     lhs = Expression::MemberExpression(Box::new(mem_exp));
                 }
-                _ if self.current_token.kind.is_operator() => todo!(),
+                _ if self.current_token.kind.is_operator() => {
+                    let bin_exp = self.parse_binary_expression(lhs, 0)?;
+                    lhs = bin_exp;
+                }
                 _ => break,
-            };
+            }
         }
 
         Ok(lhs)
@@ -206,6 +203,7 @@ impl<'a> Parser<'a> {
         self.advance();
 
         let mut declarations = Vec::new();
+        let mut end_pos = start_pos;
 
         loop {
             let start = self.current_token.start;
@@ -224,10 +222,11 @@ impl<'a> Parser<'a> {
                         id: identifier,
                         init: None,
                     });
+                    end_pos = self.current_token.end;
                     self.advance();
                     continue;
                 }
-                TokenKind::Colon => todo!(),
+                TokenKind::Colon => todo!("Type annotation"),
                 TokenKind::Equals => self.advance(),
                 _ => break,
             }
@@ -239,6 +238,7 @@ impl<'a> Parser<'a> {
                 init: Some(expr),
             };
 
+            end_pos = decl.node.end;
             declarations.push(decl);
 
             if self.current_token.kind != TokenKind::Comma {
@@ -247,7 +247,7 @@ impl<'a> Parser<'a> {
         }
 
         Ok(VariableDeclaration {
-            node: Node::new(start_pos, self.prev_token_end),
+            node: Node::new(start_pos, end_pos),
             kind,
             declarations,
         })
@@ -372,8 +372,39 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses binary operations (e.g., `+`, `-`, `*`, `/`, `&&`, `||`).
-    fn parse_binary_expression(&mut self) -> Result<BinaryExpression, ErrorKind> {
-        todo!()
+    fn parse_binary_expression(
+        &mut self,
+        mut left: Expression,
+        precedence: u8,
+    ) -> Result<Expression, ErrorKind> {
+        let start_pos = left.node().start;
+
+        while let Some(op_precedence) = self.current_token.kind.get_operator_precedence() {
+            if op_precedence <= precedence {
+                break;
+            }
+
+            let operator = self.current_token.kind.as_operator().unwrap(); // Safe unwrap because of .get_operator_precedence()
+            self.advance(); // Consume operator token
+
+            let mut right = self.parse_primary_expression()?;
+
+            if let Some(next_precedence) = self.current_token.kind.get_operator_precedence() {
+                if next_precedence > op_precedence {
+                    right = self.parse_binary_expression(right, op_precedence)?;
+                }
+            }
+
+            left = BinaryExpression {
+                node: Node::new(start_pos, right.node().end),
+                left,
+                right,
+                operator,
+            }
+            .into();
+        }
+
+        Ok(left)
     }
 
     /// Parses unary operations (e.g., `!`, `-`).

@@ -41,17 +41,17 @@ macro_rules! init_literal {
             }
         }
 
-        impl From<$literal_type> for BinaryExpression {
-            fn from(value: $literal_type) -> Self {
-                BinaryExpression::Literal($variant(value))
-            }
-        }
+        // impl From<$literal_type> for BinaryExpression {
+        //     fn from(value: $literal_type) -> Self {
+        //         BinaryExpression::Literal($variant(value))
+        //     }
+        // }
 
-        impl From<$literal_type> for Box<BinaryExpression> {
-            fn from(value: $literal_type) -> Self {
-                Box::new(value.into())
-            }
-        }
+        // impl From<$literal_type> for Box<BinaryExpression> {
+        //     fn from(value: $literal_type) -> Self {
+        //         Box::new(value.into())
+        //     }
+        // }
     };
 }
 

@@ -169,18 +169,17 @@ impl TokenKind {
         }
     }
 
-    pub fn get_operator_precedence(&self) -> Option<usize> {
+    pub fn get_operator_precedence(&self) -> Option<u8> {
         match self {
-            TokenKind::Plus
-            | TokenKind::Minus
+            TokenKind::Exponentiation => Some(3),
+            TokenKind::Asterisk | TokenKind::Slash => Some(2),
+            TokenKind::Plus | TokenKind::Minus => Some(1),
+            TokenKind::BitwiseLeftShift
+            | TokenKind::BitwiseRightShift
             | TokenKind::BitwiseAnd
-            | TokenKind::BitwiseLeftShift
             | TokenKind::BitwiseNot
             | TokenKind::BitwiseOr
-            | TokenKind::BitwiseRightShift
             | TokenKind::BitwiseXor => Some(0),
-            TokenKind::Asterisk | TokenKind::Slash => Some(1),
-            TokenKind::Exponentiation => Some(2),
             _ => None,
         }
     }
