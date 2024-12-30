@@ -1,8 +1,8 @@
 use lexer::{ArithmeticOperator, Lexer, Token, TokenKind};
 use parser::{
     expressions::{
-        BinaryExpression, BinaryOperation, CallExpression, Expression, Literal, MemberExpression,
-        NumberLiteral, StringLiteral,
+        BinaryExpression, BinaryOperation, CallExpression, ComputedProperty, Expression, Literal,
+        MemberExpression, MemberProperty, NumberLiteral, StringLiteral,
     },
     nodes::{program::Program, Node},
     statements::{Identifier, Statement, VariableDeclaration, VariableDeclarator, VariableKind},
@@ -197,7 +197,7 @@ fn function_call() {
 }
 
 #[test]
-fn console_log() {
+fn member_expression_function_call() {
     let source_code = "console.log(50.5)";
     let mut parser = Parser::new(&source_code);
     let result = parser.parse();
@@ -211,7 +211,7 @@ fn console_log() {
                     node: Node::new(0, 17),
                     callee: Expression::MemberExpression(
                         MemberExpression {
-                            node: Node::new(0, 7),
+                            node: Node::new(0, 11),
                             object: Expression::Identifier(
                                 Identifier {
                                     node: Node::new(0, 7),
@@ -219,11 +219,10 @@ fn console_log() {
                                 }
                                 .into(),
                             ),
-                            property: Identifier {
+                            property: MemberProperty::Identifier(Identifier {
                                 node: Node::new(8, 11),
                                 name: "log".into(),
-                            }
-                            .into(),
+                            }),
                         }
                         .into(),
                     ),
@@ -240,4 +239,42 @@ fn console_log() {
     });
 
     assert_eq!(result, expected);
+}
+
+#[test]
+fn computed_member_expression() {
+    let source_code = "console[\"log\"]";
+    let mut parser = Parser::new(&source_code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, source_code.len()),
+        shebang: None,
+        body: vec![Statement::ExpressionStatement(
+            Expression::MemberExpression(
+                MemberExpression {
+                    node: Node::new(0, source_code.len()),
+                    object: Identifier {
+                        node: Node::new(0, 7),
+                        name: "console".into(),
+                    }
+                    .into(),
+                    property: ComputedProperty {
+                        node: Node::new(7, source_code.len()),
+                        expression: StringLiteral {
+                            node: Node::new(8, source_code.len() - 1),
+                            value: "log".into(),
+                        }
+                        .into(),
+                    }
+                    .into(),
+                }
+                .into(),
+            )
+            .into(),
+        )
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
 }

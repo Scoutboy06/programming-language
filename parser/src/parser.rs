@@ -1,7 +1,7 @@
 use crate::expressions::{
-    ArrayExpression, BinaryExpression, BinaryOperation, BooleanLiteral, CallExpression, Expression,
-    Literal, MemberExpression, NullLiteral, NumberLiteral, ObjectExpression, StringLiteral,
-    UnaryExpression, KV,
+    ArrayExpression, BinaryExpression, BinaryOperation, BooleanLiteral, CallExpression,
+    ComputedProperty, Expression, Literal, MemberExpression, MemberProperty, NullLiteral,
+    NumberLiteral, ObjectExpression, StringLiteral, UnaryExpression, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
@@ -32,6 +32,8 @@ pub enum ErrorKind {
     ExpectedClosingParen,
     ExpectedClosingBracket,
     ExpectedClosingBrace,
+    ExpectedIdentifier,
+    ExpectedComma,
 }
 
 impl<'a> Parser<'a> {
@@ -85,20 +87,24 @@ impl<'a> Parser<'a> {
         self.peek_token = self.lexer.next_token();
     }
 
-    fn expect_token_kind(&self, kind: TokenKind) -> Result<(), ErrorKind> {
+    fn expect_token_kind(&self, kind: TokenKind, err: ErrorKind) -> Result<(), ErrorKind> {
         if self.current_token.kind == kind {
             Ok(())
         } else {
-            Err(ErrorKind::InvalidToken)
+            Err(err)
         }
     }
 
-    fn expect_and_consume_token(&mut self, kind: TokenKind) -> Result<(), ErrorKind> {
+    fn expect_and_consume_token(
+        &mut self,
+        kind: TokenKind,
+        err: ErrorKind,
+    ) -> Result<(), ErrorKind> {
         if self.current_token.kind == kind {
             self.advance();
             Ok(())
         } else {
-            Err(ErrorKind::InvalidToken)
+            Err(err)
         }
     }
 
@@ -204,7 +210,7 @@ impl<'a> Parser<'a> {
         loop {
             let start = self.current_token.start;
 
-            self.expect_token_kind(TokenKind::Identifier)?;
+            self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedIdentifier)?;
             let identifier = Identifier {
                 node: Node::new(start, self.current_token.end),
                 name: self.current_token.value.expect_string().clone(),
@@ -339,7 +345,7 @@ impl<'a> Parser<'a> {
 
             let key = self.parse_primary_expression()?;
 
-            self.expect_and_consume_token(TokenKind::Colon)?;
+            self.expect_and_consume_token(TokenKind::Colon, ErrorKind::ExpectedComma)?;
 
             let value = self.parse_expression()?;
 
@@ -377,7 +383,7 @@ impl<'a> Parser<'a> {
 
     /// Parses a function or method call
     fn parse_call_expression(&mut self, callee: Expression) -> Result<CallExpression, ErrorKind> {
-        self.expect_and_consume_token(TokenKind::OpenParen)?;
+        self.expect_and_consume_token(TokenKind::OpenParen, ErrorKind::InternalError)?;
 
         let mut arguments: Vec<Expression> = Vec::new();
 
@@ -413,13 +419,47 @@ impl<'a> Parser<'a> {
         &mut self,
         object: Expression,
     ) -> Result<MemberExpression, ErrorKind> {
+        let property: MemberProperty;
+        let end_pos: usize;
+
         match self.current_token.kind {
-            TokenKind::Dot => {}
-            TokenKind::OpenBracket => todo!("Computed property"),
+            TokenKind::Dot => {
+                self.advance(); // Consume "." token
+                self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedIdentifier)?;
+
+                property = MemberProperty::Identifier(Identifier {
+                    node: Node::new(self.current_token.start, self.current_token.end),
+                    name: self.current_token.value.expect_string().clone(),
+                });
+
+                end_pos = self.current_token.end;
+                self.advance(); // Consume Identifier token
+            }
+            TokenKind::OpenBracket => {
+                let bracket_start = self.current_token.start;
+                self.advance(); // Consume "[" token
+                let expr = self.parse_expression()?;
+
+                end_pos = self.current_token.end;
+
+                property = MemberProperty::Computed(ComputedProperty {
+                    node: Node::new(bracket_start, self.current_token.end),
+                    expression: expr,
+                });
+
+                self.expect_and_consume_token(
+                    TokenKind::CloseBracket,
+                    ErrorKind::ExpectedClosingBracket,
+                )?;
+            }
             _ => unreachable!(),
         }
 
-        todo!()
+        Ok(MemberExpression {
+            node: Node::new(object.node().start, end_pos),
+            object,
+            property,
+        })
     }
 
     /// Parses literal values (e.g., strings, numbers, booleans).
