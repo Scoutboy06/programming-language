@@ -1,22 +1,20 @@
 use crate::expressions::{
-    ArrayExpression, BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty,
-    Expression, Literal, MemberExpression, MemberProperty, NullLiteral, NumberLiteral,
-    ObjectExpression, StringLiteral, UnaryExpression, KV,
+    type_annotation, ArrayExpression, BinaryExpression, BooleanLiteral, CallExpression,
+    ComputedProperty, Expression, Literal, MemberExpression, MemberProperty, NullLiteral,
+    NumberLiteral, ObjectExpression, StringLiteral, Type, TypeAnnotation, TypeValue,
+    UnaryExpression, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
-    BlockStatement, FunctionDeclaration, Identifier, Statement, VariableDeclaration,
-    VariableDeclarator, VariableKind,
+    BlockStatement, FunctionDeclaration, Identifier, Parameter, ReturnStatement, Statement,
+    VariableDeclaration, VariableDeclarator, VariableKind,
 };
 use lexer::{Keyword, Lexer, Token, TokenKind};
-use string_cache::DefaultAtom as Atom;
 
 pub struct Parser<'a> {
     source: &'a str,
     lexer: Lexer<'a>,
     current_token: Token,
-    // peek_token: Token,
-    // prev_token_end: usize,
 }
 
 #[derive(Debug, PartialEq)]
@@ -34,6 +32,9 @@ pub enum ErrorKind {
     ExpectedClosingBrace,
     ExpectedIdentifier,
     ExpectedComma,
+    ExpectedOpenParen,
+    ExpectedFunctionName,
+    ExpectedColon,
 }
 
 impl<'a> Parser<'a> {
@@ -111,8 +112,12 @@ impl<'a> Parser<'a> {
                     Ok(Statement::VariableDeclaration(var_dec.into()))
                 }
                 Keyword::Function => {
-                    let fn_dec = self.parse_function_declaration()?;
+                    let fn_dec = self.parse_function_declaration(false, false)?;
                     Ok(Statement::FunctionDeclaration(fn_dec.into()))
+                }
+                Keyword::Return => {
+                    let rt_stmt = self.parse_return_statement()?;
+                    Ok(Statement::ReturnStatement(rt_stmt.into()))
                 }
                 _ => todo!(),
             },
@@ -135,6 +140,10 @@ impl<'a> Parser<'a> {
                 TokenKind::Dot | TokenKind::OpenBracket => {
                     let mem_exp = self.parse_member_expression(lhs)?;
                     lhs = Expression::MemberExpression(Box::new(mem_exp));
+                }
+                TokenKind::SemiColon => {
+                    self.advance(); // Consume ";" token
+                    break;
                 }
                 _ if self.current_token.kind.is_operator() => {
                     let bin_exp = self.parse_binary_expression(lhs, 0)?;
@@ -187,7 +196,24 @@ impl<'a> Parser<'a> {
 
     /// Parses a block of code, usually enclosed by `{}`.
     fn parse_block_statement(&mut self) -> Result<BlockStatement, ErrorKind> {
-        todo!()
+        let start_pos = self.current_token.start;
+        self.expect_and_consume_token(TokenKind::OpenBrace, ErrorKind::InternalError)?;
+
+        let mut statements: Vec<Statement> = Vec::new();
+
+        while self.current_token.kind != TokenKind::CloseBrace {
+            let stmt = self.parse_statement()?;
+            statements.push(stmt);
+        }
+
+        let block = BlockStatement {
+            node: Node::new(start_pos, self.current_token.end),
+            statements,
+        };
+
+        self.advance(); // Consume "}" token
+
+        Ok(block)
     }
 
     /// Parses a variable declaration, including `let`, `const`, or `var` keywords.
@@ -254,8 +280,146 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a function declaration, including its name, parameters, and body.
-    fn parse_function_declaration(&mut self) -> Result<FunctionDeclaration, ErrorKind> {
-        todo!()
+    fn parse_function_declaration(
+        &mut self,
+        is_async: bool,
+        is_expression: bool,
+    ) -> Result<FunctionDeclaration, ErrorKind> {
+        let start_pos = self.current_token.start;
+        let mut is_generator = false;
+        let mut id: Option<Identifier> = None;
+        let mut return_type: Option<TypeAnnotation> = None;
+
+        self.advance(); // Consume "function" token
+
+        if self.current_token.kind == TokenKind::Identifier {
+            id = Some(Identifier {
+                node: Node::new(self.current_token.start, self.current_token.end),
+                name: self.current_token.value.expect_string().clone(),
+            });
+            self.advance(); // Consume Identifier token
+        } else if !is_expression {
+            return Err(ErrorKind::ExpectedFunctionName);
+        }
+
+        if self.current_token.kind == TokenKind::Asterisk {
+            is_generator = true;
+            self.advance(); // Consume "*" token
+        }
+
+        self.expect_token_kind(TokenKind::OpenParen, ErrorKind::ExpectedOpenParen)?;
+
+        let params = self.parse_parameter_list()?;
+
+        // Explicit return type, like "function a(): number {}"
+        if self.current_token.kind == TokenKind::Colon {
+            let colon_start = self.current_token.start;
+            self.advance(); // Consume ":" token
+            let t = self.parse_type()?;
+            return_type = Some(TypeAnnotation {
+                node: Node::new(colon_start, t.node.end),
+                type_value: t,
+            });
+        }
+
+        let body = self.parse_block_statement()?;
+
+        Ok(FunctionDeclaration {
+            node: Node::new(start_pos, body.node.end),
+            id,
+            params,
+            return_type,
+            body,
+            is_expression,
+            is_generator,
+            is_async,
+        })
+    }
+
+    fn parse_parameter_list(&mut self) -> Result<Vec<Parameter>, ErrorKind> {
+        self.expect_and_consume_token(TokenKind::OpenParen, ErrorKind::InternalError)?;
+
+        let mut params: Vec<Parameter> = Vec::new();
+
+        while self.current_token.kind != TokenKind::CloseParen {
+            self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedIdentifier)?;
+            let id = self.current_token.value.expect_string();
+            let identifier = Identifier {
+                node: Node::new(self.current_token.start, self.current_token.end),
+                name: id.clone(),
+            };
+            self.advance(); // Consume Identifier token
+
+            let optional = match self.current_token.kind {
+                TokenKind::QuestionMark => {
+                    self.advance();
+                    true
+                }
+                _ => false,
+            };
+
+            let colon_pos = self.current_token.start;
+            self.expect_and_consume_token(TokenKind::Colon, ErrorKind::ExpectedColon)?;
+
+            let param_type = self.parse_type()?;
+            let type_annotation = TypeAnnotation {
+                node: Node::new(colon_pos, param_type.node.end),
+                type_value: param_type,
+            };
+
+            let param = Parameter {
+                node: Node::new(identifier.node.start, type_annotation.node.end),
+                identifier,
+                optional,
+                type_annotation,
+            };
+
+            params.push(param);
+
+            match self.current_token.kind {
+                TokenKind::Comma => {
+                    self.advance(); // Consume "," token
+                }
+                TokenKind::CloseParen => break,
+                _ => return Err(ErrorKind::InvalidToken),
+            }
+        }
+
+        self.advance(); // Consume ")" token
+
+        Ok(params)
+    }
+
+    fn parse_type(&mut self) -> Result<Type, ErrorKind> {
+        let start_pos = self.current_token.start;
+
+        let value: TypeValue = match self.current_token.kind {
+            TokenKind::Keyword => {
+                let kw = self
+                    .current_token
+                    .value
+                    .expect_keyword()
+                    .as_type_keyword()
+                    .ok_or(ErrorKind::InvalidToken)?;
+                TypeValue::KeywordType(kw)
+            }
+            TokenKind::Identifier => {
+                TypeValue::TypeReference(self.current_token.value.expect_string().clone())
+            }
+            _ => return Err(ErrorKind::InvalidToken),
+        };
+
+        let end_pos = self.current_token.end;
+        self.advance(); // Consume type token
+
+        if self.current_token.kind == TokenKind::LessThan {
+            todo!("Generic types");
+        }
+
+        Ok(Type {
+            node: Node::new(start_pos, end_pos),
+            value,
+        })
     }
 
     /// Parses a class declaration, including its methods and properties.
@@ -294,8 +458,16 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a `return` statement.
-    fn parse_return_statement(&mut self) -> Result<(), ErrorKind> {
-        todo!()
+    fn parse_return_statement(&mut self) -> Result<ReturnStatement, ErrorKind> {
+        let start_pos = self.current_token.start;
+        self.advance(); // Consume "return" token
+
+        let expr = self.parse_expression()?;
+
+        Ok(ReturnStatement {
+            node: Node::new(start_pos, expr.node().end),
+            value: expr,
+        })
     }
 
     /// Parses an assignment operation, such as `=` or compound assignments (e.g., `+=`, `-=`).

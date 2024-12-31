@@ -1,8 +1,8 @@
-use super::{BlockStatement, FunctionDeclaration, Shebang, VariableDeclaration};
+use super::{BlockStatement, FunctionDeclaration, ReturnStatement, Shebang, VariableDeclaration};
 use crate::expressions::Expression;
 use crate::nodes::Node;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     EmptyStatement(Box<EmptyStatement>),
     ExpressionStatement(Box<Expression>),
@@ -16,7 +16,7 @@ pub enum Statement {
     ForOfStatement(Box<()>),
     FunctionDeclaration(Box<FunctionDeclaration>),
     VariableDeclaration(Box<VariableDeclaration>),
-    ReturnStatement(Box<()>),
+    ReturnStatement(Box<ReturnStatement>),
     BreakStatement(Box<()>),
     ContinueStatement(Box<()>),
     ThrowStatement(Box<()>),
@@ -30,7 +30,7 @@ pub enum Statement {
     Shebang(Box<Shebang>),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct EmptyStatement {
     node: Node,
 }

@@ -1,14 +1,152 @@
-use lexer::{ArithmeticOperator, Lexer, Token, TokenKind};
+use lexer::{ArithmeticOperator, Lexer, Token, TokenKind, TypeKeyword};
 use parser::{
     expressions::{
         BinaryExpression, CallExpression, ComputedProperty, Expression, Literal, MemberExpression,
-        MemberProperty, NumberLiteral, StringLiteral,
+        MemberProperty, NumberLiteral, StringLiteral, Type, TypeAnnotation, TypeValue,
     },
     nodes::{program::Program, Node},
-    statements::{Identifier, Statement, VariableDeclaration, VariableDeclarator, VariableKind},
+    statements::{
+        BlockStatement, FunctionDeclaration, Identifier, Parameter, ReturnStatement, Statement,
+        VariableDeclaration, VariableDeclarator, VariableKind,
+    },
     Parser,
 };
 use pretty_assertions::assert_eq;
+
+trait NodeConstructor {
+    fn find_n(&self, target: &str, n: usize) -> Option<usize>;
+    fn node(&self, target: &str, n: usize) -> Node;
+    fn between(&self, left: (&str, usize), right: (&str, usize)) -> Node;
+    fn between_incl(&self, left: (&str, usize), right: (&str, usize)) -> Node;
+}
+
+impl NodeConstructor for str {
+    /// Searches for the n-th occurrence of `target`, and returns the index
+    fn find_n(&self, target: &str, n: usize) -> Option<usize> {
+        let mut index: Option<usize> = None;
+        let bytes = self.as_bytes();
+        let target_bytes = target.as_bytes();
+        let mut count = 0;
+
+        'outer: for i in 0..bytes.len() {
+            for j in 0..target_bytes.len() {
+                let b = bytes[i + j];
+                if b != target_bytes[j] {
+                    continue 'outer;
+                }
+            }
+
+            count += 1;
+            if count == n + 1 {
+                index = Some(i);
+                break 'outer;
+            }
+        }
+
+        index
+    }
+
+    // Searches for the n-th occurrence of `target`, and returns a Node that spans inside it
+    fn node(&self, target: &str, n: usize) -> Node {
+        let index = self.find_n(target, n);
+
+        assert!(
+            index.is_some(),
+            "Target not found in NodeConstructor::node()\n  target: {}\n  n: {}",
+            target,
+            n
+        );
+
+        Node::new(index.unwrap(), index.unwrap() + target.len())
+    }
+
+    /// Searches for the n-th occurrence of `left` and `right`, and returns a Node that spans between them.
+    fn between(&self, left: (&str, usize), right: (&str, usize)) -> Node {
+        let left_bytes = left.0.as_bytes();
+        let right_bytes = right.0.as_bytes();
+
+        assert!(self.len() > left_bytes.len() + right_bytes.len());
+
+        let left_index = self.find_n(left.0, left.1).expect(&format!(
+            "Could not find left value\n  left: {}\n  n: {}",
+            left.0, left.1
+        ));
+        let right_index = self.find_n(right.0, right.1).expect(&format!(
+            "Could not find right value\n  right: {}\n  n: {}",
+            right.0, right.1
+        ));
+
+        assert!(
+            left_index < right_index,
+            "Left index and right index are wrong"
+        );
+
+        Node::new(left_index + left.0.len(), right_index)
+    }
+
+    /// Searches for the n-th occurrence of `left` and `right`, and returns a Node that spans between *and including* them
+    fn between_incl(&self, left: (&str, usize), right: (&str, usize)) -> Node {
+        let between = self.between(left, right);
+
+        Node::new(between.start - left.0.len(), between.end + right.0.len())
+    }
+}
+
+#[test]
+fn helper_find_n() {
+    let source_code = "let a = 50.5";
+
+    assert_eq!(source_code.find_n("a", 0), Some(4));
+    assert_eq!(source_code.find_n("=", 0), Some(6));
+    assert_eq!(source_code.find_n("5", 0), Some(8));
+    assert_eq!(source_code.find_n("5", 1), Some(11));
+}
+
+#[test]
+fn helper_node() {
+    let source_code = "{ hello() }";
+
+    assert_eq!(source_code.node("hello", 0), Node::new(2, 7));
+    assert_eq!(source_code.node("()", 0), Node::new(7, 9));
+    assert_eq!(source_code.node("l", 0), Node::new(4, 5));
+    assert_eq!(source_code.node("l", 1), Node::new(5, 6));
+    assert_eq!(
+        source_code.node(source_code, 0),
+        Node::new(0, source_code.len())
+    );
+}
+
+#[test]
+fn helper_between() {
+    let source_code = "function a() { hello() }";
+
+    assert_eq!(source_code.between(("f", 0), ("n", 1)), Node::new(1, 7));
+    assert_eq!(source_code.between(("(", 0), (")", 0)), Node::new(11, 11));
+    assert_eq!(source_code.between(("(", 1), (")", 1)), Node::new(21, 21));
+    assert_eq!(source_code.between(("{", 0), ("}", 0)), Node::new(14, 23));
+}
+
+#[test]
+fn helper_between_incl() {
+    let source_code = "function a() { hello() }";
+
+    assert_eq!(
+        source_code.between_incl(("f", 0), ("n", 1)),
+        Node::new(0, 8)
+    );
+    assert_eq!(
+        source_code.between_incl(("(", 0), (")", 0)),
+        Node::new(10, 12)
+    );
+    assert_eq!(
+        source_code.between_incl(("(", 1), (")", 1)),
+        Node::new(20, 22)
+    );
+    assert_eq!(
+        source_code.between_incl(("{", 0), ("}", 0)),
+        Node::new(13, 24)
+    );
+}
 
 #[test]
 fn lexer_works() {
@@ -52,11 +190,14 @@ fn assignment_number_literal() {
             VariableDeclaration {
                 node: Node::new(0, source_code.len()),
                 declarations: vec![VariableDeclarator {
-                    node: Node::new(4, source_code.len()),
-                    id: Identifier::new("a".into(), 4, 5),
+                    node: source_code.between_incl(("a", 0), ("50.5", 0)),
+                    id: Identifier {
+                        node: source_code.node("a", 0),
+                        name: "a".into(),
+                    },
                     init: Some(Expression::Literal(Box::new(Literal::Number(
                         NumberLiteral {
-                            node: Node::new(8, source_code.len()),
+                            node: source_code.node("50.5", 0),
                             value: 50.5,
                         },
                     )))),
@@ -277,6 +418,93 @@ fn computed_member_expression() {
             .into(),
         )
         .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn function_declaration() {
+    let source_code = "function add(n1: number, n2: number): number {
+    return n1 + n2;
+}";
+    let mut parser = Parser::new(&source_code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, source_code.len()),
+        shebang: None,
+        body: vec![Statement::FunctionDeclaration(Box::new(
+            FunctionDeclaration {
+                node: Node::new(0, source_code.len()),
+                id: Some(Identifier {
+                    node: source_code.node("add", 0),
+                    name: "add".into(),
+                }),
+                is_expression: false,
+                is_generator: false,
+                is_async: false,
+                params: vec![
+                    Parameter {
+                        node: source_code.node("n1: number", 0),
+                        identifier: Identifier {
+                            node: source_code.node("n1", 0),
+                            name: "n1".into(),
+                        },
+                        type_annotation: TypeAnnotation {
+                            node: source_code.node(": number", 0),
+                            type_value: Type {
+                                node: source_code.node("number", 0),
+                                value: TypeValue::KeywordType(TypeKeyword::Number),
+                            },
+                        },
+                        optional: false,
+                    },
+                    Parameter {
+                        node: source_code.node("n2: number", 0),
+                        identifier: Identifier {
+                            node: source_code.node("n2", 0),
+                            name: "n2".into(),
+                        },
+                        type_annotation: TypeAnnotation {
+                            node: source_code.node(": number", 1),
+                            type_value: Type {
+                                node: source_code.node("number", 1),
+                                value: TypeValue::KeywordType(TypeKeyword::Number),
+                            },
+                        },
+                        optional: false,
+                    },
+                ],
+                return_type: Some(TypeAnnotation {
+                    node: source_code.node(": number", 2),
+                    type_value: Type {
+                        node: source_code.node("number", 2),
+                        value: TypeValue::KeywordType(TypeKeyword::Number),
+                    },
+                }),
+                body: BlockStatement {
+                    node: source_code.between_incl(("{", 0), ("}", 0)),
+                    statements: vec![Statement::ReturnStatement(Box::new(ReturnStatement {
+                        node: source_code.node("return n1 + n2", 0),
+                        value: Expression::BinaryExpression(Box::new(BinaryExpression {
+                            node: source_code.node("n1 + n2", 0),
+                            operator: ArithmeticOperator::Plus,
+                            left: Identifier {
+                                node: source_code.node("n1", 1),
+                                name: "n1".into(),
+                            }
+                            .into(),
+                            right: Identifier {
+                                node: source_code.node("n2", 1),
+                                name: "n2".into(),
+                            }
+                            .into(),
+                        })),
+                    }))],
+                },
+            },
+        ))],
     };
 
     assert_eq!(result, Ok(expected));

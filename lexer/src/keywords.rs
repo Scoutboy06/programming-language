@@ -8,6 +8,7 @@ pub enum Keyword {
     Let,
     Const,
     Function,
+    Return,
     Async,
     Await,
     Static,
@@ -57,6 +58,7 @@ lazy_static! {
         m.insert("let", Keyword::Let);
         m.insert("const", Keyword::Const);
         m.insert("function", Keyword::Function);
+        m.insert("return", Keyword::Return);
         m.insert("async", Keyword::Async);
         m.insert("await", Keyword::Await);
         m.insert("static", Keyword::Static);
@@ -100,8 +102,28 @@ lazy_static! {
     };
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeKeyword {
+    String,
+    Number,
+    Boolean,
+    Record,
+    Array,
+}
+
 impl Keyword {
     pub fn from_str(s: &str) -> Option<Keyword> {
         KEYWORDS.get(s).cloned()
+    }
+
+    pub fn as_type_keyword(&self) -> Option<TypeKeyword> {
+        match self {
+            Self::StringType => Some(TypeKeyword::String),
+            Self::NumberType => Some(TypeKeyword::Number),
+            Self::BooleanType => Some(TypeKeyword::Boolean),
+            Self::RecordType => Some(TypeKeyword::Record),
+            Self::ArrayType => Some(TypeKeyword::Array),
+            _ => None,
+        }
     }
 }

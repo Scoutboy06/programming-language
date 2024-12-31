@@ -1,4 +1,4 @@
-use super::{BinaryExpression, Expression};
+use super::Expression;
 use crate::nodes::Node;
 use string_cache::DefaultAtom as Atom;
 
@@ -40,18 +40,6 @@ macro_rules! init_literal {
                 Expression::Literal(Box::new($variant(value)))
             }
         }
-
-        // impl From<$literal_type> for BinaryExpression {
-        //     fn from(value: $literal_type) -> Self {
-        //         BinaryExpression::Literal($variant(value))
-        //     }
-        // }
-
-        // impl From<$literal_type> for Box<BinaryExpression> {
-        //     fn from(value: $literal_type) -> Self {
-        //         Box::new(value.into())
-        //     }
-        // }
     };
 }
 

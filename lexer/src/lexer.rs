@@ -126,7 +126,7 @@ impl<'a> Lexer<'a> {
                         self.advance();
                         (TokenKind::ModEquals, TokenValue::None)
                     }
-                    _ => (TokenKind::Modulus, TokenValue::None),
+                    _ => (TokenKind::Percent, TokenValue::None),
                 }
             }
             '&' => {
@@ -151,7 +151,7 @@ impl<'a> Lexer<'a> {
             }
             '?' => {
                 self.advance();
-                (TokenKind::Ternary, TokenValue::None)
+                (TokenKind::QuestionMark, TokenValue::None)
             }
             '(' => {
                 self.advance();

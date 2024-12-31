@@ -92,10 +92,10 @@ pub enum TokenKind {
     Slash,          // /
     Asterisk,       // *
     Exponentiation, // **
-    Modulus,        // %
+    Percent,        // %
     Increment,      // ++
     Decrement,      // --
-    Ternary,        // ?
+    QuestionMark,   // ?
 
     // Compound operators
     PlusEquals,  // +=

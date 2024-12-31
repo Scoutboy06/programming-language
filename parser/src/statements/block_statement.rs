@@ -1,9 +1,8 @@
+use super::Statement;
 use crate::nodes::Node;
 
-use super::Statement;
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BlockStatement {
-    node: Node,
-    body: Vec<Statement>,
+    pub node: Node,
+    pub statements: Vec<Statement>,
 }
