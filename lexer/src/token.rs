@@ -1,3 +1,5 @@
+use crate::AssignmentOperator;
+
 use super::keywords::Keyword;
 use super::operators::ArithmeticOperator;
 use string_cache::DefaultAtom as Atom;
@@ -97,7 +99,7 @@ pub enum TokenKind {
     Decrement,      // --
     QuestionMark,   // ?
 
-    // Compound operators
+    // Assignment operators
     PlusEquals,  // +=
     MinusEquals, // -=
     TimesEquals, // *=
@@ -184,26 +186,26 @@ impl TokenKind {
         }
     }
 
-    pub fn as_term_operator(&self) -> Option<ArithmeticOperator> {
-        // TODO: Verify order of operations
+    pub fn is_assignment_operator(&self) -> bool {
         match self {
-            TokenKind::Plus => Some(ArithmeticOperator::Plus),
-            TokenKind::Minus => Some(ArithmeticOperator::Minus),
-            TokenKind::BitwiseAnd => Some(ArithmeticOperator::BitwiseAnd),
-            TokenKind::BitwiseLeftShift => Some(ArithmeticOperator::BitwiseLeftShift),
-            TokenKind::BitwiseNot => Some(ArithmeticOperator::BitwiseNot),
-            TokenKind::BitwiseOr => Some(ArithmeticOperator::BitwiseOr),
-            TokenKind::BitwiseRightShift => Some(ArithmeticOperator::BitwiseRightShift),
-            TokenKind::ZeroFillRightShift => Some(ArithmeticOperator::ZeroFillRightShift),
-            TokenKind::BitwiseXor => Some(ArithmeticOperator::BitwiseXor),
-            _ => None,
+            TokenKind::PlusEquals
+            | TokenKind::MinusEquals
+            | TokenKind::TimesEquals
+            | TokenKind::DivEquals
+            | TokenKind::PowerEquals
+            | TokenKind::ModEquals => true,
+            _ => false,
         }
     }
 
-    pub fn as_factor_operator(&self) -> Option<ArithmeticOperator> {
+    pub fn as_assignment_operator(&self) -> Option<AssignmentOperator> {
         match self {
-            TokenKind::Asterisk => Some(ArithmeticOperator::Mult),
-            TokenKind::Slash => Some(ArithmeticOperator::Div),
+            TokenKind::PlusEquals => Some(AssignmentOperator::PlusEquals),
+            TokenKind::MinusEquals => Some(AssignmentOperator::MinusEquals),
+            TokenKind::TimesEquals => Some(AssignmentOperator::TimesEquals),
+            TokenKind::DivEquals => Some(AssignmentOperator::DivEquals),
+            TokenKind::PowerEquals => Some(AssignmentOperator::PowerEquals),
+            TokenKind::ModEquals => Some(AssignmentOperator::ModEquals),
             _ => None,
         }
     }

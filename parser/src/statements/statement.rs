@@ -1,11 +1,13 @@
-use super::{BlockStatement, FunctionDeclaration, ReturnStatement, Shebang, VariableDeclaration};
-use crate::expressions::Expression;
+use super::{
+    BlockStatement, ExpressionStatement, FunctionDeclaration, ReturnStatement, Shebang,
+    VariableDeclaration,
+};
 use crate::nodes::Node;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     EmptyStatement(Box<EmptyStatement>),
-    ExpressionStatement(Box<Expression>),
+    ExpressionStatement(Box<ExpressionStatement>),
     BlockStatement(Box<BlockStatement>),
     IfStatement(Box<()>),
     SwitchStatement(Box<()>),

@@ -1,13 +1,13 @@
 use crate::expressions::{
-    type_annotation, ArrayExpression, BinaryExpression, BooleanLiteral, CallExpression,
+    ArrayExpression, AssignmentExpression, BinaryExpression, BooleanLiteral, CallExpression,
     ComputedProperty, Expression, Literal, MemberExpression, MemberProperty, NullLiteral,
     NumberLiteral, ObjectExpression, StringLiteral, Type, TypeAnnotation, TypeValue,
     UnaryExpression, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
-    BlockStatement, FunctionDeclaration, Identifier, Parameter, ReturnStatement, Statement,
-    VariableDeclaration, VariableDeclarator, VariableKind,
+    BlockStatement, ExpressionStatement, FunctionDeclaration, Identifier, Parameter,
+    ReturnStatement, Statement, VariableDeclaration, VariableDeclarator, VariableKind,
 };
 use lexer::{Keyword, Lexer, Token, TokenKind};
 
@@ -123,7 +123,21 @@ impl<'a> Parser<'a> {
             },
             _ => {
                 let expr = self.parse_expression()?;
-                Ok(Statement::ExpressionStatement(expr.into()))
+                let end_pos = match self.current_token.kind {
+                    TokenKind::SemiColon => {
+                        let pos = self.current_token.end;
+                        self.advance();
+                        pos
+                    }
+                    _ => expr.node().end,
+                };
+
+                Ok(Statement::ExpressionStatement(Box::new(
+                    ExpressionStatement {
+                        node: Node::new(expr.node().start, end_pos),
+                        expression: expr,
+                    },
+                )))
             }
         }
     }
@@ -141,9 +155,9 @@ impl<'a> Parser<'a> {
                     let mem_exp = self.parse_member_expression(lhs)?;
                     lhs = Expression::MemberExpression(Box::new(mem_exp));
                 }
-                TokenKind::SemiColon => {
-                    self.advance(); // Consume ";" token
-                    break;
+                _ if self.current_token.kind.is_assignment_operator() => {
+                    let expr = self.parse_assignment_expression(lhs)?;
+                    lhs = Expression::AssignmentExpression(Box::new(expr));
                 }
                 _ if self.current_token.kind.is_operator() => {
                     let bin_exp = self.parse_binary_expression(lhs, 0)?;
@@ -464,6 +478,10 @@ impl<'a> Parser<'a> {
 
         let expr = self.parse_expression()?;
 
+        if self.current_token.kind == TokenKind::SemiColon {
+            self.advance();
+        }
+
         Ok(ReturnStatement {
             node: Node::new(start_pos, expr.node().end),
             value: expr,
@@ -471,8 +489,25 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses an assignment operation, such as `=` or compound assignments (e.g., `+=`, `-=`).
-    fn parse_assignment_statement(&mut self) -> Result<(), ErrorKind> {
-        todo!()
+    fn parse_assignment_expression(
+        &mut self,
+        lhs: Expression,
+    ) -> Result<AssignmentExpression, ErrorKind> {
+        let operator = self
+            .current_token
+            .kind
+            .as_assignment_operator()
+            .ok_or(ErrorKind::InternalError)?;
+        self.advance(); // Consume operator token
+
+        let expr = self.parse_expression()?;
+
+        Ok(AssignmentExpression {
+            node: Node::new(lhs.node().start, expr.node().end),
+            left: lhs,
+            right: expr,
+            operator,
+        })
     }
 
     /// Parses an array literal, such as [42]

@@ -1,13 +1,14 @@
-use lexer::{ArithmeticOperator, Lexer, Token, TokenKind, TypeKeyword};
+use lexer::{ArithmeticOperator, AssignmentOperator, Lexer, Token, TokenKind, TypeKeyword};
 use parser::{
     expressions::{
-        BinaryExpression, CallExpression, ComputedProperty, Expression, Literal, MemberExpression,
-        MemberProperty, NumberLiteral, StringLiteral, Type, TypeAnnotation, TypeValue,
+        AssignmentExpression, BinaryExpression, CallExpression, ComputedProperty, Expression,
+        Literal, MemberExpression, MemberProperty, NumberLiteral, StringLiteral, Type,
+        TypeAnnotation, TypeValue,
     },
     nodes::{program::Program, Node},
     statements::{
-        BlockStatement, FunctionDeclaration, Identifier, Parameter, ReturnStatement, Statement,
-        VariableDeclaration, VariableDeclarator, VariableKind,
+        BlockStatement, ExpressionStatement, FunctionDeclaration, Identifier, Parameter,
+        ReturnStatement, Statement, VariableDeclaration, VariableDeclarator, VariableKind,
     },
     Parser,
 };
@@ -307,9 +308,10 @@ fn function_call() {
     let expected = Ok(Program {
         node: Node::new(0, source_code.len()),
         shebang: None,
-        body: vec![Statement::ExpressionStatement(
-            Expression::CallExpression(
-                CallExpression {
+        body: vec![Statement::ExpressionStatement(Box::new(
+            ExpressionStatement {
+                node: Node::new(0, source_code.len()),
+                expression: Expression::CallExpression(Box::new(CallExpression {
                     node: Node::new(0, source_code.len()),
                     callee: Expression::Identifier(
                         Identifier {
@@ -330,11 +332,9 @@ fn function_call() {
                         }
                         .into(),
                     ],
-                }
-                .into(),
-            )
-            .into(),
-        )],
+                })),
+            },
+        ))],
     });
 
     assert_eq!(result, expected);
@@ -349,37 +349,39 @@ fn member_expression_function_call() {
     let expected = Ok(Program {
         node: Node::new(0, source_code.len()),
         shebang: None,
-        body: vec![Statement::ExpressionStatement(
-            Expression::CallExpression(
-                CallExpression {
-                    node: Node::new(0, 17),
-                    callee: Expression::MemberExpression(
-                        MemberExpression {
-                            node: Node::new(0, 11),
-                            object: Expression::Identifier(
-                                Identifier {
-                                    node: Node::new(0, 7),
-                                    name: "console".into(),
-                                }
-                                .into(),
-                            ),
-                            property: MemberProperty::Identifier(Identifier {
-                                node: Node::new(8, 11),
-                                name: "log".into(),
-                            }),
+        body: vec![Statement::ExpressionStatement(Box::new(
+            ExpressionStatement {
+                node: Node::new(0, source_code.len()),
+                expression: Expression::CallExpression(
+                    CallExpression {
+                        node: Node::new(0, source_code.len()),
+                        callee: Expression::MemberExpression(
+                            MemberExpression {
+                                node: source_code.node("console.log", 0),
+                                object: Expression::Identifier(
+                                    Identifier {
+                                        node: source_code.node("console", 0),
+                                        name: "console".into(),
+                                    }
+                                    .into(),
+                                ),
+                                property: MemberProperty::Identifier(Identifier {
+                                    node: source_code.node("log", 0),
+                                    name: "log".into(),
+                                }),
+                            }
+                            .into(),
+                        ),
+                        arguments: vec![NumberLiteral {
+                            node: source_code.node("50.5", 0),
+                            value: 50.5,
                         }
-                        .into(),
-                    ),
-                    arguments: vec![NumberLiteral {
-                        node: Node::new(12, 16),
-                        value: 50.5,
+                        .into()],
                     }
-                    .into()],
-                }
-                .into(),
-            )
-            .into(),
-        )],
+                    .into(),
+                ),
+            },
+        ))],
     });
 
     assert_eq!(result, expected);
@@ -394,30 +396,32 @@ fn computed_member_expression() {
     let expected = Program {
         node: Node::new(0, source_code.len()),
         shebang: None,
-        body: vec![Statement::ExpressionStatement(
-            Expression::MemberExpression(
-                MemberExpression {
-                    node: Node::new(0, source_code.len()),
-                    object: Identifier {
-                        node: Node::new(0, 7),
-                        name: "console".into(),
-                    }
-                    .into(),
-                    property: ComputedProperty {
-                        node: Node::new(7, source_code.len()),
-                        expression: StringLiteral {
-                            node: Node::new(8, source_code.len() - 1),
-                            value: "log".into(),
+        body: vec![
+            Statement::ExpressionStatement(Box::new(ExpressionStatement {
+                node: Node::new(0, source_code.len()),
+                expression: Expression::MemberExpression(
+                    MemberExpression {
+                        node: Node::new(0, source_code.len()),
+                        object: Identifier {
+                            node: Node::new(0, 7),
+                            name: "console".into(),
+                        }
+                        .into(),
+                        property: ComputedProperty {
+                            node: Node::new(7, source_code.len()),
+                            expression: StringLiteral {
+                                node: Node::new(8, source_code.len() - 1),
+                                value: "log".into(),
+                            }
+                            .into(),
                         }
                         .into(),
                     }
                     .into(),
-                }
-                .into(),
-            )
+                ),
+            }))
             .into(),
-        )
-        .into()],
+        ],
     };
 
     assert_eq!(result, Ok(expected));
@@ -505,6 +509,62 @@ fn function_declaration() {
                 },
             },
         ))],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn assignment_statement() {
+    let code = "foo -= 50.5; bar += \"World\";";
+    let mut parser = Parser::new(code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![
+            Statement::ExpressionStatement(Box::new(ExpressionStatement {
+                node: code.node("foo -= 50.5;", 0),
+                expression: Expression::AssignmentExpression(
+                    AssignmentExpression {
+                        node: code.node("foo -= 50.5", 0),
+                        left: Identifier {
+                            node: code.node("foo", 0),
+                            name: "foo".into(),
+                        }
+                        .into(),
+                        right: NumberLiteral {
+                            node: code.node("50.5", 0),
+                            value: 50.5,
+                        }
+                        .into(),
+                        operator: AssignmentOperator::MinusEquals,
+                    }
+                    .into(),
+                ),
+            })),
+            Statement::ExpressionStatement(Box::new(ExpressionStatement {
+                node: code.node("bar += \"World\";", 0),
+                expression: Expression::AssignmentExpression(
+                    AssignmentExpression {
+                        node: code.node("bar += \"World\"", 0),
+                        left: Identifier {
+                            node: code.node("bar", 0),
+                            name: "bar".into(),
+                        }
+                        .into(),
+                        right: StringLiteral {
+                            node: code.node("\"World\"", 0),
+                            value: "World".into(),
+                        }
+                        .into(),
+                        operator: AssignmentOperator::PlusEquals,
+                    }
+                    .into(),
+                ),
+            })),
+        ],
     };
 
     assert_eq!(result, Ok(expected));
