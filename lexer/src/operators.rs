@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum ArithmeticOperator {
+pub enum Operator {
     Plus,               // +
     Minus,              // -
     Mult,               // *
@@ -27,25 +27,19 @@ pub enum ArithmeticOperator {
     LessOrEqualsThan,    // <=
 
     // Logical operators
-    And, // &&
-    Or,  // ||
-    Not, // !
-}
+    LogicalAnd, // &&
+    LogicalOr,  // ||
+    LogicalNot, // !
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum AssignmentOperator {
-    Equals,                    // =
-    PlusEquals,                // +=
-    MinusEquals,               // -=
-    TimesEquals,               // *=
-    DivEquals,                 // /=
-    PowerEquals,               // **=
-    ModEquals,                 // %=
-    BitwiseAndEquals,          // &=
-    BitwiseOrEquals,           // |=
-    BitwiseXorEquals,          // ^=
-    BitwiseNotEquals,          // ~=
-    BitwiseLeftShift,          // <<=
-    BitwiseSignedRightShift,   // >>=
-    BitwiseZeroFillRightShift, // >>>=
+    // Assignment operators
+    Assignment,       // =
+    PlusEquals,       // +=
+    MinusEquals,      // -=
+    TimesEquals,      // *=
+    DivEquals,        // /=
+    PowerEquals,      // **=
+    ModEquals,        // %=
+    BitwiseAndEquals, // &=
+    BitwiseOrEquals,  // |=
+    BitwiseXorEquals, // ^=
 }

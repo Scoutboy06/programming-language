@@ -6,10 +6,10 @@ use crate::expressions::{
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
-    BlockStatement, ExpressionStatement, FunctionDeclaration, Identifier, Parameter,
+    BlockStatement, ExpressionStatement, FunctionDeclaration, Identifier, IfStatement, Parameter,
     ReturnStatement, Statement, VariableDeclaration, VariableDeclarator, VariableKind,
 };
-use lexer::{Keyword, Lexer, Token, TokenKind};
+use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
 
 pub struct Parser<'a> {
     source: &'a str,
@@ -119,6 +119,10 @@ impl<'a> Parser<'a> {
                     let rt_stmt = self.parse_return_statement()?;
                     Ok(Statement::ReturnStatement(rt_stmt.into()))
                 }
+                Keyword::If => {
+                    let if_stmt = self.parse_if_statement()?;
+                    Ok(Statement::IfStatement(if_stmt.into()))
+                }
                 _ => todo!(),
             },
             _ => {
@@ -160,8 +164,8 @@ impl<'a> Parser<'a> {
                     lhs = Expression::AssignmentExpression(Box::new(expr));
                 }
                 _ if self.current_token.kind.is_operator() => {
-                    let bin_exp = self.parse_binary_expression(lhs, 0)?;
-                    lhs = bin_exp;
+                    let bin_exp = self.parse_binary_expression(Some(lhs), 0)?;
+                    lhs = Expression::BinaryExpression(Box::new(bin_exp));
                 }
                 _ => break,
             }
@@ -452,8 +456,22 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses an `if` statement, including `else if` and `else` clauses.
-    fn parse_if_statement(&mut self) -> Result<(), ErrorKind> {
-        todo!()
+    fn parse_if_statement(&mut self) -> Result<IfStatement, ErrorKind> {
+        let start_pos = self.current_token.start;
+        self.advance(); // Consume "if" keyword token
+        self.expect_and_consume_token(TokenKind::OpenParen, ErrorKind::ExpectedOpenParen)?;
+
+        let condition = self.parse_expression()?;
+
+        self.expect_and_consume_token(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
+
+        let body = self.parse_block_statement()?;
+
+        Ok(IfStatement {
+            node: Node::new(start_pos, body.node.end),
+            condition,
+            body,
+        })
     }
 
     /// Parses a `for` loop, including `for-in` and `for-of` loops.
@@ -493,11 +511,12 @@ impl<'a> Parser<'a> {
         &mut self,
         lhs: Expression,
     ) -> Result<AssignmentExpression, ErrorKind> {
-        let operator = self
-            .current_token
-            .kind
-            .as_assignment_operator()
-            .ok_or(ErrorKind::InternalError)?;
+        let operator: Operator = if self.current_token.kind.is_assignment_operator() {
+            Ok(self.current_token.kind.as_operator().unwrap())
+        } else {
+            Err(ErrorKind::InternalError)
+        }?;
+
         self.advance(); // Consume operator token
 
         let expr = self.parse_expression()?;
@@ -581,9 +600,13 @@ impl<'a> Parser<'a> {
     /// Parses binary operations (e.g., `+`, `-`, `*`, `/`, `&&`, `||`).
     fn parse_binary_expression(
         &mut self,
-        mut left: Expression,
+        left: Option<Expression>,
         precedence: u8,
-    ) -> Result<Expression, ErrorKind> {
+    ) -> Result<BinaryExpression, ErrorKind> {
+        let mut left = match left {
+            Some(expr) => expr,
+            None => self.parse_primary_expression()?,
+        };
         let start_pos = left.node().start;
 
         while let Some(op_precedence) = self.current_token.kind.get_operator_precedence() {
@@ -598,7 +621,9 @@ impl<'a> Parser<'a> {
 
             if let Some(next_precedence) = self.current_token.kind.get_operator_precedence() {
                 if next_precedence > op_precedence {
-                    right = self.parse_binary_expression(right, op_precedence)?;
+                    right = self
+                        .parse_binary_expression(Some(right), op_precedence)?
+                        .into();
                 }
             }
 
@@ -611,7 +636,11 @@ impl<'a> Parser<'a> {
             .into();
         }
 
-        Ok(left)
+        if let Expression::BinaryExpression(bin_exp) = left {
+            Ok(*bin_exp)
+        } else {
+            Err(ErrorKind::InvalidToken) // Only happens if we never enter the while loop
+        }
     }
 
     /// Parses unary operations (e.g., `!`, `-`).

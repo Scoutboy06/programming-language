@@ -1,14 +1,15 @@
-use lexer::{ArithmeticOperator, AssignmentOperator, Lexer, Token, TokenKind, TypeKeyword};
+use lexer::{Lexer, Operator, Token, TokenKind, TypeKeyword};
 use parser::{
     expressions::{
-        AssignmentExpression, BinaryExpression, CallExpression, ComputedProperty, Expression,
-        Literal, MemberExpression, MemberProperty, NumberLiteral, StringLiteral, Type,
+        AssignmentExpression, BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty,
+        Expression, Literal, MemberExpression, MemberProperty, NumberLiteral, StringLiteral, Type,
         TypeAnnotation, TypeValue,
     },
     nodes::{program::Program, Node},
     statements::{
-        BlockStatement, ExpressionStatement, FunctionDeclaration, Identifier, Parameter,
-        ReturnStatement, Statement, VariableDeclaration, VariableDeclarator, VariableKind,
+        BlockStatement, ExpressionStatement, FunctionDeclaration, Identifier, IfStatement,
+        Parameter, ReturnStatement, Statement, VariableDeclaration, VariableDeclarator,
+        VariableKind,
     },
     Parser,
 };
@@ -264,7 +265,7 @@ fn binary_operation() {
                     init: Some(Expression::BinaryExpression(
                         BinaryExpression {
                             node: Node::new(8, 17),
-                            operator: ArithmeticOperator::Plus,
+                            operator: Operator::Plus,
                             left: NumberLiteral {
                                 node: Node::new(8, 9),
                                 value: 6.0,
@@ -273,7 +274,7 @@ fn binary_operation() {
                             right: Expression::BinaryExpression(
                                 BinaryExpression {
                                     node: Node::new(12, 17),
-                                    operator: ArithmeticOperator::Mult,
+                                    operator: Operator::Mult,
                                     left: NumberLiteral {
                                         node: Node::new(12, 13),
                                         value: 5.0,
@@ -493,7 +494,7 @@ fn function_declaration() {
                         node: source_code.node("return n1 + n2", 0),
                         value: Expression::BinaryExpression(Box::new(BinaryExpression {
                             node: source_code.node("n1 + n2", 0),
-                            operator: ArithmeticOperator::Plus,
+                            operator: Operator::Plus,
                             left: Identifier {
                                 node: source_code.node("n1", 1),
                                 name: "n1".into(),
@@ -539,7 +540,7 @@ fn assignment_statement() {
                             value: 50.5,
                         }
                         .into(),
-                        operator: AssignmentOperator::MinusEquals,
+                        operator: Operator::MinusEquals,
                     }
                     .into(),
                 ),
@@ -559,12 +560,58 @@ fn assignment_statement() {
                             value: "World".into(),
                         }
                         .into(),
-                        operator: AssignmentOperator::PlusEquals,
+                        operator: Operator::PlusEquals,
                     }
                     .into(),
                 ),
             })),
         ],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn if_statement() {
+    let code = "if (val && true || false) {}";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![Statement::IfStatement(Box::new(IfStatement {
+            node: Node::new(0, code.len()),
+            condition: BinaryExpression {
+                node: code.between(("(", 0), (")", 0)),
+                left: BinaryExpression {
+                    node: code.node("val && true", 0),
+                    left: Identifier {
+                        node: code.node("val", 0),
+                        name: "val".into(),
+                    }
+                    .into(),
+                    right: BooleanLiteral {
+                        node: code.node("true", 0),
+                        value: true,
+                    }
+                    .into(),
+                    operator: Operator::LogicalAnd,
+                }
+                .into(),
+                right: BooleanLiteral {
+                    node: code.node("false", 0),
+                    value: false,
+                }
+                .into(),
+                operator: Operator::LogicalOr,
+            }
+            .into(),
+            body: BlockStatement {
+                node: code.node("{}", 0),
+                statements: Vec::new(),
+            },
+        }))],
     };
 
     assert_eq!(result, Ok(expected));

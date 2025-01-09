@@ -1,0 +1,30 @@
+- [x] Primary expression
+- [x] Block statement
+- [x] Variable declaration
+- [x] Binary expression
+- [x] Array literal expression
+- [x] Object literal expression
+- [x] Call expression
+- [x] Function declaration
+- [x] Return statement
+- [x] Assignment expression
+- [x] Member expression
+- [x] If statement
+  - [ ] Else if statement
+  - [ ] Else statement
+- [ ] For statement
+- [ ] While statement
+- [ ] Switch statement
+- [ ] Class declaration
+  - [ ] Abstract members
+- [ ] Unary expression
+- [ ] Generic parameters
+- [ ] Enum declaration
+- [ ] Interface declaration
+- [ ] Type alias
+- [ ] Optional chain
+- [ ] Nullish coalescing
+- [ ] (Type assertion?)
+- [ ] Import declaration
+- [ ] Export declaration
+- [ ] Module

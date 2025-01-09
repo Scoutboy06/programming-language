@@ -1,7 +1,6 @@
-use crate::AssignmentOperator;
+use crate::operators::Operator;
 
 use super::keywords::Keyword;
-use super::operators::ArithmeticOperator;
 use string_cache::DefaultAtom as Atom;
 
 #[derive(Debug, PartialEq, Clone, Default)]
@@ -137,6 +136,94 @@ pub enum TokenKind {
 impl TokenKind {
     pub fn is_operator(&self) -> bool {
         match self {
+            // Highest precedence
+            TokenKind::Exponentiation => true,
+
+            // Multiplicative operations
+            TokenKind::Asterisk | TokenKind::Slash | TokenKind::Percent => true,
+
+            // Additive operators
+            TokenKind::Plus | TokenKind::Minus => true,
+
+            // Bitwise shift operators
+            TokenKind::BitwiseLeftShift
+            | TokenKind::BitwiseRightShift
+            | TokenKind::ZeroFillRightShift => true,
+
+            // Bitwise operators
+            TokenKind::BitwiseAnd => true,
+            TokenKind::BitwiseOr | TokenKind::BitwiseXor => true,
+            TokenKind::BitwiseNot => true,
+
+            // Logical operators
+            TokenKind::LogicalAnd | TokenKind::LogicalOr => true,
+
+            // Comparison operators
+            TokenKind::DoubleEquals
+            | TokenKind::TripleEquals
+            | TokenKind::NotEqual
+            | TokenKind::StrictNotEqual
+            | TokenKind::LessThan
+            | TokenKind::GreaterThan
+            | TokenKind::LessThanOrEqual
+            | TokenKind::GreaterThanOrEqual => true,
+            _ => false,
+        }
+    }
+
+    pub fn as_operator(&self) -> Option<Operator> {
+        match self {
+            // Highest precedence
+            TokenKind::Exponentiation => Some(Operator::Power),
+
+            // Multiplicative operations
+            TokenKind::Asterisk => Some(Operator::Mult),
+            TokenKind::Slash => Some(Operator::Div),
+            TokenKind::Percent => Some(Operator::Mod),
+
+            // Additive operators
+            TokenKind::Plus => Some(Operator::Plus),
+            TokenKind::Minus => Some(Operator::Minus),
+
+            // Bitwise shift operators
+            TokenKind::BitwiseLeftShift => Some(Operator::BitwiseLeftShift),
+            TokenKind::BitwiseRightShift => Some(Operator::BitwiseRightShift),
+            TokenKind::ZeroFillRightShift => Some(Operator::ZeroFillRightShift),
+
+            // Bitwise operators
+            TokenKind::BitwiseAnd => Some(Operator::BitwiseAnd),
+            TokenKind::BitwiseOr => Some(Operator::BitwiseOr),
+            TokenKind::BitwiseXor => Some(Operator::BitwiseXor),
+            TokenKind::BitwiseNot => Some(Operator::BitwiseNot),
+
+            // Logical operators
+            TokenKind::LogicalAnd => Some(Operator::LogicalAnd),
+            TokenKind::LogicalOr => Some(Operator::LogicalOr),
+
+            // Comparison operators
+            TokenKind::DoubleEquals => Some(Operator::Equals),
+            TokenKind::TripleEquals => Some(Operator::StrictEquals),
+            TokenKind::NotEqual => Some(Operator::NotEquals),
+            TokenKind::StrictNotEqual => Some(Operator::StrictNotEquals),
+            TokenKind::LessThan => Some(Operator::LessThan),
+            TokenKind::GreaterThan => Some(Operator::GreaterThan),
+            TokenKind::LessThanOrEqual => Some(Operator::LessOrEqualsThan),
+            TokenKind::GreaterThanOrEqual => Some(Operator::GreaterOrEqualsThan),
+
+            // Arithmetic operators
+            TokenKind::PlusEquals => Some(Operator::PlusEquals),
+            TokenKind::MinusEquals => Some(Operator::MinusEquals),
+            TokenKind::TimesEquals => Some(Operator::TimesEquals),
+            TokenKind::DivEquals => Some(Operator::DivEquals),
+            TokenKind::PowerEquals => Some(Operator::PowerEquals),
+            TokenKind::ModEquals => Some(Operator::ModEquals),
+
+            _ => None,
+        }
+    }
+
+    pub fn is_arithmetic_operator(&self) -> bool {
+        match self {
             TokenKind::Plus
             | TokenKind::Minus
             | TokenKind::Asterisk
@@ -153,35 +240,40 @@ impl TokenKind {
         }
     }
 
-    pub fn as_operator(&self) -> Option<ArithmeticOperator> {
-        match self {
-            TokenKind::Plus => Some(ArithmeticOperator::Plus),
-            TokenKind::Minus => Some(ArithmeticOperator::Minus),
-            TokenKind::Asterisk => Some(ArithmeticOperator::Mult),
-            TokenKind::Slash => Some(ArithmeticOperator::Div),
-            TokenKind::Exponentiation => Some(ArithmeticOperator::Power),
-            TokenKind::BitwiseAnd => Some(ArithmeticOperator::BitwiseAnd),
-            TokenKind::BitwiseLeftShift => Some(ArithmeticOperator::BitwiseLeftShift),
-            TokenKind::BitwiseNot => Some(ArithmeticOperator::BitwiseNot),
-            TokenKind::BitwiseOr => Some(ArithmeticOperator::BitwiseOr),
-            TokenKind::BitwiseRightShift => Some(ArithmeticOperator::BitwiseRightShift),
-            TokenKind::ZeroFillRightShift => Some(ArithmeticOperator::ZeroFillRightShift),
-            TokenKind::BitwiseXor => Some(ArithmeticOperator::BitwiseXor),
-            _ => None,
-        }
-    }
-
     pub fn get_operator_precedence(&self) -> Option<u8> {
         match self {
-            TokenKind::Exponentiation => Some(3),
-            TokenKind::Asterisk | TokenKind::Slash => Some(2),
-            TokenKind::Plus | TokenKind::Minus => Some(1),
+            // Highest precedence
+            TokenKind::Exponentiation => Some(4),
+
+            // Multiplicative operations
+            TokenKind::Asterisk | TokenKind::Slash | TokenKind::Percent => Some(3),
+
+            // Additive operators
+            TokenKind::Plus | TokenKind::Minus => Some(2),
+
+            // Bitwise shift operators
             TokenKind::BitwiseLeftShift
             | TokenKind::BitwiseRightShift
-            | TokenKind::BitwiseAnd
-            | TokenKind::BitwiseNot
-            | TokenKind::BitwiseOr
-            | TokenKind::BitwiseXor => Some(0),
+            | TokenKind::ZeroFillRightShift => Some(2),
+
+            // Bitwise operators
+            TokenKind::BitwiseAnd => Some(1),
+            TokenKind::BitwiseOr | TokenKind::BitwiseXor => Some(1),
+            TokenKind::BitwiseNot => Some(1), // Typically not used in expressions with precedence
+
+            // Logical operators
+            TokenKind::LogicalAnd | TokenKind::LogicalOr => Some(1),
+
+            // Comparison operators
+            TokenKind::DoubleEquals
+            | TokenKind::TripleEquals
+            | TokenKind::NotEqual
+            | TokenKind::StrictNotEqual
+            | TokenKind::LessThan
+            | TokenKind::GreaterThan
+            | TokenKind::LessThanOrEqual
+            | TokenKind::GreaterThanOrEqual => Some(1),
+
             _ => None,
         }
     }
@@ -195,18 +287,6 @@ impl TokenKind {
             | TokenKind::PowerEquals
             | TokenKind::ModEquals => true,
             _ => false,
-        }
-    }
-
-    pub fn as_assignment_operator(&self) -> Option<AssignmentOperator> {
-        match self {
-            TokenKind::PlusEquals => Some(AssignmentOperator::PlusEquals),
-            TokenKind::MinusEquals => Some(AssignmentOperator::MinusEquals),
-            TokenKind::TimesEquals => Some(AssignmentOperator::TimesEquals),
-            TokenKind::DivEquals => Some(AssignmentOperator::DivEquals),
-            TokenKind::PowerEquals => Some(AssignmentOperator::PowerEquals),
-            TokenKind::ModEquals => Some(AssignmentOperator::ModEquals),
-            _ => None,
         }
     }
 }
