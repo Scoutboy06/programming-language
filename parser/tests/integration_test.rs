@@ -611,6 +611,67 @@ fn if_statement() {
                 node: code.node("{}", 0),
                 statements: Vec::new(),
             },
+            consequent: None,
+        }))],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn if_else_statement() {
+    let code = "if (val && true) {
+        return true;
+    } else {
+        return 50.5;
+    }";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![Statement::IfStatement(Box::new(IfStatement {
+            node: Node::new(0, code.len()),
+            condition: BinaryExpression {
+                node: code.node("val && true", 0),
+                left: Identifier {
+                    node: code.node("val", 0),
+                    name: "val".into(),
+                }
+                .into(),
+                right: BooleanLiteral {
+                    node: code.node("true", 0),
+                    value: true,
+                }
+                .into(),
+                operator: Operator::LogicalAnd,
+            }
+            .into(),
+            body: BlockStatement {
+                node: code.between_incl(("{", 0), ("}", 0)),
+                statements: vec![ReturnStatement {
+                    node: code.node("return true", 0),
+                    value: BooleanLiteral {
+                        node: code.node("true", 1),
+                        value: true,
+                    }
+                    .into(),
+                }
+                .into()],
+            },
+            consequent: Some(Statement::BlockStatement(Box::new(BlockStatement {
+                node: code.between_incl(("{", 1), ("}", 1)),
+                statements: vec![ReturnStatement {
+                    node: code.node("return 50.5", 0),
+                    value: NumberLiteral {
+                        node: code.node("50.5", 0),
+                        value: 50.5,
+                    }
+                    .into(),
+                }
+                .into()],
+            }))),
         }))],
     };
 

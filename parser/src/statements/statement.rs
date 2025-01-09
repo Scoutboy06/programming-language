@@ -36,3 +36,19 @@ pub enum Statement {
 pub struct EmptyStatement {
     node: Node,
 }
+
+impl Statement {
+    pub fn node(&self) -> Node {
+        match self {
+            Self::EmptyStatement(s) => s.node,
+            Self::ExpressionStatement(s) => s.node,
+            Self::BlockStatement(s) => s.node,
+            Self::IfStatement(s) => s.node,
+            Self::FunctionDeclaration(s) => s.node,
+            Self::VariableDeclaration(s) => s.node,
+            Self::ReturnStatement(s) => s.node,
+            Self::Shebang(s) => s.node,
+            _ => todo!("Statement::node()"),
+        }
+    }
+}

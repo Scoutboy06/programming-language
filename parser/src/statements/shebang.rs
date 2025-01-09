@@ -2,6 +2,6 @@ use crate::nodes::Node;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Shebang {
-    node: Node,
-    value: String,
+    pub node: Node,
+    pub value: String,
 }

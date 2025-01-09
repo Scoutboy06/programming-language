@@ -10,8 +10,9 @@
 - [x] Assignment expression
 - [x] Member expression
 - [x] If statement
+  - [x] Else statement
   - [ ] Else if statement
-  - [ ] Else statement
+  - [ ] Without curly braces
 - [ ] For statement
 - [ ] While statement
 - [ ] Switch statement
