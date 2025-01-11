@@ -7,3 +7,9 @@ pub struct CallExpression {
     pub callee: Expression,
     pub arguments: Vec<Expression>,
 }
+
+impl From<CallExpression> for Expression {
+    fn from(value: CallExpression) -> Self {
+        Expression::CallExpression(Box::new(value))
+    }
+}

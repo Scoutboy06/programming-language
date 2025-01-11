@@ -13,8 +13,8 @@
   - [x] Else statement
   - [x] Else if statement
   - [x] Without curly braces
+- [x] While statement
 - [ ] For statement
-- [ ] While statement
 - [ ] Switch statement
 - [ ] Class declaration
   - [ ] Abstract members

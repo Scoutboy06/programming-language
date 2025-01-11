@@ -1,6 +1,6 @@
 use super::{
     BlockStatement, ExpressionStatement, FunctionDeclaration, IfStatement, ReturnStatement,
-    Shebang, VariableDeclaration,
+    Shebang, VariableDeclaration, WhileStatement,
 };
 use crate::nodes::Node;
 
@@ -11,7 +11,7 @@ pub enum Statement {
     BlockStatement(Box<BlockStatement>),
     IfStatement(Box<IfStatement>),
     SwitchStatement(Box<()>),
-    WhileStatement(Box<()>),
+    WhileStatement(Box<WhileStatement>),
     DoWhileStatement(Box<()>),
     ForStatement(Box<()>),
     ForInStatement(Box<()>),
@@ -38,16 +38,16 @@ pub struct EmptyStatement {
 }
 
 impl Statement {
-    pub fn node(&self) -> Node {
+    pub fn node(&self) -> &Node {
         match self {
-            Self::EmptyStatement(s) => s.node,
-            Self::ExpressionStatement(s) => s.node,
-            Self::BlockStatement(s) => s.node,
-            Self::IfStatement(s) => s.node,
-            Self::FunctionDeclaration(s) => s.node,
-            Self::VariableDeclaration(s) => s.node,
-            Self::ReturnStatement(s) => s.node,
-            Self::Shebang(s) => s.node,
+            Self::EmptyStatement(s) => &s.node,
+            Self::ExpressionStatement(s) => &s.node,
+            Self::BlockStatement(s) => &s.node,
+            Self::IfStatement(s) => &s.node,
+            Self::FunctionDeclaration(s) => &s.node,
+            Self::VariableDeclaration(s) => &s.node,
+            Self::ReturnStatement(s) => &s.node,
+            Self::Shebang(s) => &s.node,
             _ => todo!("Statement::node()"),
         }
     }

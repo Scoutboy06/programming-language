@@ -9,7 +9,7 @@ use parser::{
     statements::{
         BlockStatement, ExpressionStatement, FunctionDeclaration, Identifier, IfStatement,
         Parameter, ReturnStatement, Statement, VariableDeclaration, VariableDeclarator,
-        VariableKind,
+        VariableKind, WhileStatement,
     },
     Parser,
 };
@@ -793,6 +793,61 @@ fn if_else_without_curly_braces() {
                 }
                 .into(),
             ),
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn while_loop() {
+    let code = "while (foo <= bar) { baz(1); }";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![WhileStatement {
+            node: code.between_incl(("while", 0), ("}", 0)),
+            condition: BinaryExpression {
+                node: code.node("foo <= bar", 0),
+                left: Identifier {
+                    node: code.node("foo", 0),
+                    name: "foo".into(),
+                }
+                .into(),
+                right: Identifier {
+                    node: code.node("bar", 0),
+                    name: "bar".into(),
+                }
+                .into(),
+                operator: Operator::LessOrEqualsThan,
+            }
+            .into(),
+            body: BlockStatement {
+                node: code.between_incl(("{", 0), ("}", 0)),
+                statements: vec![ExpressionStatement {
+                    node: code.node("baz(1);", 0),
+                    expression: CallExpression {
+                        node: code.node("baz(1)", 0),
+                        callee: Identifier {
+                            node: code.node("baz", 0),
+                            name: "baz".into(),
+                        }
+                        .into(),
+                        arguments: vec![NumberLiteral {
+                            node: code.node("1", 0),
+                            value: 1.0,
+                        }
+                        .into()],
+                    }
+                    .into(),
+                }
+                .into()],
+            }
+            .into(),
         }
         .into()],
     };

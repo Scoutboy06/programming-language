@@ -8,6 +8,7 @@ use crate::nodes::{program::Program, Node};
 use crate::statements::{
     BlockStatement, ExpressionStatement, FunctionDeclaration, Identifier, IfStatement, Parameter,
     ReturnStatement, Statement, VariableDeclaration, VariableDeclarator, VariableKind,
+    WhileStatement,
 };
 use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
 
@@ -123,6 +124,7 @@ impl<'a> Parser<'a> {
                     let if_stmt = self.parse_if_statement()?;
                     Ok(Statement::IfStatement(if_stmt.into()))
                 }
+                Keyword::While => Ok(self.parse_while_statement()?.into()),
                 _ => todo!(),
             },
             TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
@@ -498,8 +500,23 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses `while` loop
-    fn parse_while_statement(&mut self) -> Result<(), ErrorKind> {
-        todo!()
+    fn parse_while_statement(&mut self) -> Result<WhileStatement, ErrorKind> {
+        let start_pos = self.current_token.start;
+        self.advance(); // Consume "while" keyword token
+
+        self.expect_and_consume_token(TokenKind::OpenParen, ErrorKind::ExpectedOpenParen)?;
+
+        let condition = self.parse_expression()?;
+
+        self.expect_and_consume_token(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
+
+        let body = self.parse_statement()?;
+
+        Ok(WhileStatement {
+            node: Node::new(start_pos, body.node().end),
+            condition,
+            body,
+        })
     }
 
     /// Parses a `switch` statement, including its cases and default clause.
