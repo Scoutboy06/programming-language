@@ -12,7 +12,7 @@
 - [x] If statement
   - [x] Else statement
   - [x] Else if statement
-  - [ ] Without curly braces
+  - [x] Without curly braces
 - [ ] For statement
 - [ ] While statement
 - [ ] Switch statement

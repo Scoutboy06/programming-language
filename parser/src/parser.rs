@@ -466,7 +466,7 @@ impl<'a> Parser<'a> {
 
         self.expect_and_consume_token(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
 
-        let body = self.parse_block_statement()?;
+        let body = self.parse_statement()?;
 
         let consequent: Option<Statement> = match self.current_token.kind {
             TokenKind::Keyword => match self.current_token.value.expect_keyword() {
@@ -478,26 +478,10 @@ impl<'a> Parser<'a> {
             },
             _ => None,
         };
-        // let consequent: Option<Statement> = if self.current_token.kind == TokenKind::Keyword
-        //     && self.current_token.value.expect_keyword() == Keyword::Else
-        // {
-        //     self.advance(); // Consume "else" keyword token
-
-        //     match self.current_token.kind {
-        //         TokenKind::OpenBrace => Some(self.parse_block_statement()?.into()),
-        //         TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-        //             Keyword::If => Some(self.parse_if_statement()?.into()),
-        //             _ => None,
-        //         },
-        //         _ => None,
-        //     }
-        // } else {
-        //     None
-        // };
 
         let end_pos = match &consequent {
             Some(stmt) => stmt.node().end,
-            None => body.node.end,
+            None => body.node().end,
         };
 
         Ok(IfStatement {
@@ -529,13 +513,15 @@ impl<'a> Parser<'a> {
         self.advance(); // Consume "return" token
 
         let expr = self.parse_expression()?;
+        let mut end_pos = expr.node().end;
 
         if self.current_token.kind == TokenKind::SemiColon {
+            end_pos = self.current_token.end;
             self.advance();
         }
 
         Ok(ReturnStatement {
-            node: Node::new(start_pos, expr.node().end),
+            node: Node::new(start_pos, end_pos),
             value: expr,
         })
     }
