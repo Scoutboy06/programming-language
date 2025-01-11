@@ -125,6 +125,7 @@ impl<'a> Parser<'a> {
                 }
                 _ => todo!(),
             },
+            TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
             _ => {
                 let expr = self.parse_expression()?;
                 let end_pos = match self.current_token.kind {
@@ -467,22 +468,32 @@ impl<'a> Parser<'a> {
 
         let body = self.parse_block_statement()?;
 
-        let consequent: Option<Statement> = if self.current_token.kind == TokenKind::Keyword
-            && self.current_token.value.expect_keyword() == Keyword::Else
-        {
-            self.advance(); // Consume "else" keyword token
-
-            match self.current_token.kind {
-                TokenKind::OpenBrace => Some(self.parse_block_statement()?.into()),
-                TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-                    Keyword::If => Some(self.parse_if_statement()?.into()),
-                    _ => None,
-                },
+        let consequent: Option<Statement> = match self.current_token.kind {
+            TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+                Keyword::Else => {
+                    self.advance(); // Consume "else" keyword token
+                    Some(self.parse_statement()?)
+                }
                 _ => None,
-            }
-        } else {
-            None
+            },
+            _ => None,
         };
+        // let consequent: Option<Statement> = if self.current_token.kind == TokenKind::Keyword
+        //     && self.current_token.value.expect_keyword() == Keyword::Else
+        // {
+        //     self.advance(); // Consume "else" keyword token
+
+        //     match self.current_token.kind {
+        //         TokenKind::OpenBrace => Some(self.parse_block_statement()?.into()),
+        //         TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+        //             Keyword::If => Some(self.parse_if_statement()?.into()),
+        //             _ => None,
+        //         },
+        //         _ => None,
+        //     }
+        // } else {
+        //     None
+        // };
 
         let end_pos = match &consequent {
             Some(stmt) => stmt.node().end,

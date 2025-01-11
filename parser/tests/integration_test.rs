@@ -677,3 +677,74 @@ fn if_else_statement() {
 
     assert_eq!(result, Ok(expected));
 }
+
+#[test]
+fn if_if_else_else_statement() {
+    let code = "if(foo && true) {}
+    else if(false || bar) {}
+    else {}";
+    let mut parser = Parser::new(code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![IfStatement {
+            node: Node::new(0, code.len()),
+            condition: BinaryExpression {
+                node: code.node("foo && true", 0),
+                left: Identifier {
+                    node: code.node("foo", 0),
+                    name: "foo".into(),
+                }
+                .into(),
+                right: BooleanLiteral {
+                    node: code.node("true", 0),
+                    value: true,
+                }
+                .into(),
+                operator: Operator::LogicalAnd,
+            }
+            .into(),
+            body: BlockStatement {
+                node: code.node("{}", 0),
+                statements: vec![],
+            },
+            consequent: Some(
+                IfStatement {
+                    node: code.between_incl(("if", 1), ("else {}", 0)),
+                    condition: BinaryExpression {
+                        node: code.node("false || bar", 0),
+                        left: BooleanLiteral {
+                            node: code.node("false", 0),
+                            value: false,
+                        }
+                        .into(),
+                        right: Identifier {
+                            node: code.node("bar", 0),
+                            name: "bar".into(),
+                        }
+                        .into(),
+                        operator: Operator::LogicalOr,
+                    }
+                    .into(),
+                    body: BlockStatement {
+                        node: code.node("{}", 1),
+                        statements: vec![],
+                    },
+                    consequent: Some(
+                        BlockStatement {
+                            node: code.node("{}", 2),
+                            statements: vec![],
+                        }
+                        .into(),
+                    ),
+                }
+                .into(),
+            ),
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}

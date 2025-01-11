@@ -11,7 +11,7 @@
 - [x] Member expression
 - [x] If statement
   - [x] Else statement
-  - [ ] Else if statement
+  - [x] Else if statement
   - [ ] Without curly braces
 - [ ] For statement
 - [ ] While statement
