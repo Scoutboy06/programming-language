@@ -9,3 +9,9 @@ pub struct AssignmentExpression {
     pub left: Expression,
     pub right: Expression,
 }
+
+impl From<AssignmentExpression> for Expression {
+    fn from(value: AssignmentExpression) -> Self {
+        Expression::AssignmentExpression(Box::new(value))
+    }
+}

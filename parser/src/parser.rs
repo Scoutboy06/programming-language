@@ -1,14 +1,14 @@
 use crate::expressions::{
-    ArrayExpression, AssignmentExpression, BinaryExpression, BooleanLiteral, CallExpression,
-    ComputedProperty, Expression, Literal, MemberExpression, MemberProperty, NullLiteral,
-    NumberLiteral, ObjectExpression, StringLiteral, Type, TypeAnnotation, TypeValue,
-    UnaryExpression, KV,
+    ArrayExpression, AsUpdateOperator, AssignmentExpression, BinaryExpression, BooleanLiteral,
+    CallExpression, ComputedProperty, Expression, Literal, MemberExpression, MemberProperty,
+    NullLiteral, NumberLiteral, ObjectExpression, ParenthesisExpression, StringLiteral, Type,
+    TypeAnnotation, TypeValue, UnaryExpression, UpdateExpression, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
-    BlockStatement, ExpressionStatement, FunctionDeclaration, Identifier, IfStatement, Parameter,
-    ReturnStatement, Statement, VariableDeclaration, VariableDeclarator, VariableKind,
-    WhileStatement,
+    BlockStatement, ExpressionStatement, ForStatement, FunctionDeclaration, Identifier,
+    IfStatement, Parameter, ReturnStatement, Statement, VariableDeclaration, VariableDeclarator,
+    VariableKind, WhileStatement,
 };
 use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
 
@@ -36,6 +36,7 @@ pub enum ErrorKind {
     ExpectedOpenParen,
     ExpectedFunctionName,
     ExpectedColon,
+    ExpectedSemiColon,
 }
 
 impl<'a> Parser<'a> {
@@ -125,11 +126,13 @@ impl<'a> Parser<'a> {
                     Ok(Statement::IfStatement(if_stmt.into()))
                 }
                 Keyword::While => Ok(self.parse_while_statement()?.into()),
+                Keyword::For => Ok(self.parse_for_statement()?.into()),
                 _ => todo!(),
             },
             TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
             _ => {
                 let expr = self.parse_expression()?;
+                // let end_pos = expr.node().end;
                 let end_pos = match self.current_token.kind {
                     TokenKind::SemiColon => {
                         let pos = self.current_token.end;
@@ -138,13 +141,19 @@ impl<'a> Parser<'a> {
                     }
                     _ => expr.node().end,
                 };
+                // let end_pos = if consume_semi && self.current_token.kind == TokenKind::SemiColon {
+                //             let pos = self.current_token.end;
+                //             self.advance();
+                //             pos
+                // } else {
+                //     expr.node().end
+                // };
 
-                Ok(Statement::ExpressionStatement(Box::new(
-                    ExpressionStatement {
-                        node: Node::new(expr.node().start, end_pos),
-                        expression: expr,
-                    },
-                )))
+                Ok(ExpressionStatement {
+                    node: Node::new(expr.node().start, end_pos),
+                    expression: expr,
+                }
+                .into())
             }
         }
     }
@@ -162,6 +171,23 @@ impl<'a> Parser<'a> {
                     let mem_exp = self.parse_member_expression(lhs)?;
                     lhs = Expression::MemberExpression(Box::new(mem_exp));
                 }
+                TokenKind::Increment | TokenKind::Decrement => {
+                    let op = self
+                        .current_token
+                        .kind
+                        .as_operator()
+                        .unwrap() // Safe unwrap because of match statement
+                        .as_update_operator()
+                        .unwrap(); // Safe unwrap because of match statement
+                    let expr = UpdateExpression {
+                        node: Node::new(lhs.node().start, self.current_token.end),
+                        argument: lhs,
+                        operator: op,
+                        prefix: false,
+                    };
+                    self.advance(); // Consume Update operator token
+                    lhs = expr.into();
+                }
                 _ if self.current_token.kind.is_assignment_operator() => {
                     let expr = self.parse_assignment_expression(lhs)?;
                     lhs = Expression::AssignmentExpression(Box::new(expr));
@@ -177,31 +203,45 @@ impl<'a> Parser<'a> {
         Ok(lhs)
     }
 
-    /// Parses literal values, such as numbers, strings, booleans, null, arrays, or objects.
+    /** Parses literal values, such as
+     * numbers,
+     * strings,
+     * booleans,
+     * null,
+     * arrays,
+     * objects,
+     * member expressions, and
+     * parenthesised expressions
+     */
     fn parse_primary_expression(&mut self) -> Result<Expression, ErrorKind> {
         match self.current_token.kind {
             TokenKind::String | TokenKind::Boolean | TokenKind::Number | TokenKind::Null => {
-                Ok(Expression::Literal(Box::new(self.parse_literal()?)))
+                Ok(self.parse_literal()?.into())
             }
             TokenKind::Identifier => {
-                let expr = Expression::Identifier(
-                    Identifier {
-                        node: Node::new(self.current_token.start, self.current_token.end),
-                        name: self.current_token.value.expect_string().clone(),
-                    }
-                    .into(),
-                );
+                let identifier = Identifier {
+                    node: Node::new(self.current_token.start, self.current_token.end),
+                    name: self.current_token.value.expect_string().clone(),
+                };
                 self.advance(); // Consume Identifier token
-                Ok(expr)
+
+                if self.current_token.kind == TokenKind::Dot {
+                    Ok(self.parse_member_expression(identifier.into())?.into())
+                } else {
+                    Ok(identifier.into())
+                }
             }
             TokenKind::OpenParen => {
+                let start_pos = self.current_token.start;
                 self.advance(); // Consume "(" token
-                let expr = self.parse_expression()?;
-                if self.current_token.kind != TokenKind::CloseParen {
-                    return Err(ErrorKind::ExpectedClosingParen);
-                }
+                let expression = self.parse_expression()?;
+                self.expect_token_kind(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
+                let paren_expr = ParenthesisExpression {
+                    node: Node::new(start_pos, self.current_token.end),
+                    expression,
+                };
                 self.advance(); // Consume ")" token
-                Ok(expr)
+                Ok(paren_expr.into())
             }
             TokenKind::OpenBracket => {
                 let arr = self.parse_array_literal()?;
@@ -280,7 +320,7 @@ impl<'a> Parser<'a> {
 
             let expr = self.parse_expression()?;
             let decl = VariableDeclarator {
-                node: Node::new(start, self.current_token.end),
+                node: Node::new(start, expr.node().end),
                 id: identifier,
                 init: Some(expr),
             };
@@ -495,8 +535,33 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a `for` loop, including `for-in` and `for-of` loops.
-    fn parse_for_statement(&mut self) -> Result<(), ErrorKind> {
-        todo!()
+    fn parse_for_statement(&mut self) -> Result<ForStatement, ErrorKind> {
+        let start_pos = self.current_token.start;
+        self.advance(); // Consume "for" keyword token
+
+        self.expect_and_consume_token(TokenKind::OpenParen, ErrorKind::ExpectedOpenParen)?;
+
+        let initializer = self.parse_statement()?;
+
+        self.expect_and_consume_token(TokenKind::SemiColon, ErrorKind::ExpectedSemiColon)?;
+
+        let condition = self.parse_expression()?;
+
+        self.expect_and_consume_token(TokenKind::SemiColon, ErrorKind::ExpectedSemiColon)?;
+
+        let update = self.parse_statement()?;
+
+        self.expect_and_consume_token(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
+
+        let body = self.parse_statement()?;
+
+        Ok(ForStatement {
+            node: Node::new(start_pos, body.node().end),
+            initializer,
+            condition,
+            update,
+            body,
+        })
     }
 
     /// Parses `while` loop

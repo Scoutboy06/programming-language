@@ -8,6 +8,12 @@ pub struct MemberExpression {
     pub property: MemberProperty,
 }
 
+impl From<MemberExpression> for Expression {
+    fn from(value: MemberExpression) -> Self {
+        Expression::MemberExpression(Box::new(value))
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum MemberProperty {
     Identifier(Identifier),
@@ -23,5 +29,11 @@ pub struct ComputedProperty {
 impl From<ComputedProperty> for MemberProperty {
     fn from(value: ComputedProperty) -> Self {
         MemberProperty::Computed(value)
+    }
+}
+
+impl From<Identifier> for MemberProperty {
+    fn from(value: Identifier) -> Self {
+        MemberProperty::Identifier(value)
     }
 }

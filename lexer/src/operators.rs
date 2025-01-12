@@ -13,8 +13,10 @@ pub enum Operator {
     BitwiseLeftShift,   // <<
     BitwiseRightShift,  // >>
     ZeroFillRightShift, // >>>
-    Increment,          // ++
-    Decrement,          // --
+
+    // Update operators
+    Increment, // ++
+    Decrement, // --
 
     // Comparison operators
     Equals,              // ==

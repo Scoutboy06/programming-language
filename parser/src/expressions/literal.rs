@@ -27,6 +27,12 @@ impl Literal {
     }
 }
 
+impl From<Literal> for Expression {
+    fn from(value: Literal) -> Self {
+        Expression::Literal(Box::new(value))
+    }
+}
+
 macro_rules! init_literal {
     ($literal_type:ident, $variant:path) => {
         impl $literal_type {

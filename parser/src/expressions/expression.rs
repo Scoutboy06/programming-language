@@ -1,11 +1,12 @@
 use super::{
-    ArrayExpression, AssignmentExpression, BinaryExpression, CallExpression, FunctionExpression,
-    Literal, MemberExpression, ObjectExpression, UnaryExpression,
+    ArrayExpression, AssignmentExpression, BinaryExpression, CallExpression, Literal,
+    MemberExpression, ObjectExpression, ParenthesisExpression, UnaryExpression, UpdateExpression,
 };
 use crate::{nodes::Node, statements::Identifier};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
+    ParenthesisExpression(Box<ParenthesisExpression>),
     Literal(Box<Literal>),
     Identifier(Box<Identifier>),
     BinaryExpression(Box<BinaryExpression>),
@@ -15,13 +16,13 @@ pub enum Expression {
     ConditionalExpression(Box<()>),
     CallExpression(Box<CallExpression>),
     MemberExpression(Box<MemberExpression>),
-    FunctionExpression(Box<FunctionExpression>),
+    FunctionExpression(Box<()>),
     ArrowFunctionExpression(Box<()>),
     ObjectExpression(Box<ObjectExpression>),
     ArrayExpression(Box<ArrayExpression>),
     NewExpression(Box<()>),
     SequenceExpression(Box<()>),
-    UpdateExpression(Box<()>),
+    UpdateExpression(Box<UpdateExpression>),
     ThisExpression(Box<()>),
     SuperExpression(Box<()>),
     ClassExpression(Box<()>),
@@ -36,6 +37,7 @@ pub enum Expression {
 impl Expression {
     pub fn node(&self) -> &Node {
         match self {
+            Self::ParenthesisExpression(e) => &e.node,
             Self::Literal(lit) => lit.node(),
             Self::Identifier(i) => &i.node,
             Self::BinaryExpression(b) => &b.node,
@@ -51,7 +53,7 @@ impl Expression {
             Self::ArrayExpression(a) => &a.node,
             Self::NewExpression(_) => todo!("NewExpression"),
             Self::SequenceExpression(_) => todo!("SequenceExpression"),
-            Self::UpdateExpression(_) => todo!("UpdateExpression"),
+            Self::UpdateExpression(e) => &e.node,
             Self::ThisExpression(_) => todo!("ThisExpression"),
             Self::SuperExpression(_) => todo!("SuperExpression"),
             Self::ClassExpression(_) => todo!("ClassExpression"),

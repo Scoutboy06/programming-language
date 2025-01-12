@@ -1,6 +1,6 @@
 use crate::{expressions::TypeAnnotation, nodes::Node};
 
-use super::{BlockStatement, Identifier};
+use super::{BlockStatement, Identifier, Statement};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct FunctionDeclaration {
@@ -12,6 +12,12 @@ pub struct FunctionDeclaration {
     pub is_expression: bool,
     pub is_generator: bool,
     pub is_async: bool,
+}
+
+impl From<FunctionDeclaration> for Statement {
+    fn from(value: FunctionDeclaration) -> Self {
+        Statement::FunctionDeclaration(Box::new(value))
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]

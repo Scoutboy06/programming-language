@@ -6,6 +6,8 @@
 - [x] Object literal expression
 - [x] Call expression
 - [x] Function declaration
+  - [ ] Function expression
+  - [ ] Arrow function
 - [x] Return statement
 - [x] Assignment expression
 - [x] Member expression
@@ -15,6 +17,9 @@
   - [x] Without curly braces
 - [x] While statement
 - [ ] For statement
+  - [x] Update expression
+  - [ ] For-in statement
+  - [ ] For-of statement
 - [ ] Switch statement
 - [ ] Class declaration
   - [ ] Abstract members

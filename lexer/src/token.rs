@@ -218,6 +218,10 @@ impl TokenKind {
             TokenKind::PowerEquals => Some(Operator::PowerEquals),
             TokenKind::ModEquals => Some(Operator::ModEquals),
 
+            // Update operators
+            TokenKind::Increment => Some(Operator::Increment),
+            TokenKind::Decrement => Some(Operator::Decrement),
+
             _ => None,
         }
     }

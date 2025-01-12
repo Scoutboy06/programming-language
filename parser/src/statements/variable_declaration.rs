@@ -2,11 +2,19 @@ use crate::expressions::Expression;
 use crate::nodes::Node;
 use string_cache::DefaultAtom as Atom;
 
+use super::Statement;
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct VariableDeclaration {
     pub node: Node,
     pub declarations: Vec<VariableDeclarator>,
     pub kind: VariableKind,
+}
+
+impl From<VariableDeclaration> for Statement {
+    fn from(value: VariableDeclaration) -> Self {
+        Statement::VariableDeclaration(Box::new(value))
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -20,15 +28,6 @@ pub struct VariableDeclarator {
 pub struct Identifier {
     pub node: Node,
     pub name: Atom,
-}
-
-impl Identifier {
-    pub fn new(name: Atom, start: usize, end: usize) -> Self {
-        Self {
-            node: Node::new(start, end),
-            name,
-        }
-    }
 }
 
 impl From<Identifier> for Expression {
