@@ -203,16 +203,7 @@ impl<'a> Parser<'a> {
         Ok(lhs)
     }
 
-    /** Parses literal values, such as
-     * numbers,
-     * strings,
-     * booleans,
-     * null,
-     * arrays,
-     * objects,
-     * member expressions, and
-     * parenthesised expressions
-     */
+    /// Parses literal values, such as numbers, strings, booleans, null, arrays, objects, member expressions, and parenthesised expressions
     fn parse_primary_expression(&mut self) -> Result<Expression, ErrorKind> {
         match self.current_token.kind {
             TokenKind::String | TokenKind::Boolean | TokenKind::Number | TokenKind::Null => {
