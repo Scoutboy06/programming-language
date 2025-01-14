@@ -1,8 +1,9 @@
 use crate::expressions::{
-    ArrayExpression, AsUpdateOperator, AssignmentExpression, BinaryExpression, BooleanLiteral,
-    CallExpression, ComputedProperty, Expression, FunctionExpression, Literal, MemberExpression,
-    MemberProperty, NullLiteral, NumberLiteral, ObjectExpression, ParenthesisExpression,
-    StringLiteral, Type, TypeAnnotation, TypeValue, UnaryExpression, UpdateExpression, KV,
+    ArrayExpression, ArrowFunctionExpression, AsUpdateOperator, AssignmentExpression,
+    BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty, Expression,
+    FunctionExpression, Literal, MemberExpression, MemberProperty, NullLiteral, NumberLiteral,
+    ObjectExpression, ParenthesisExpression, StringLiteral, Type, TypeAnnotation, TypeValue,
+    UnaryExpression, UpdateExpression, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
@@ -434,6 +435,13 @@ impl<'a> Parser<'a> {
             is_generator,
             is_async,
         })
+    }
+
+    fn parse_arrow_function(
+        &mut self,
+        parameter_list: Vec<Parameter>,
+    ) -> Result<ArrowFunctionExpression, ErrorKind> {
+        todo!()
     }
 
     fn parse_parameter_list(&mut self) -> Result<Vec<Parameter>, ErrorKind> {

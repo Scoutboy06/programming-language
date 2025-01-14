@@ -1,4 +1,5 @@
 pub mod array_expression;
+pub mod arrow_function_expression;
 pub mod assignment_expression;
 pub mod binary_expression;
 pub mod call_expression;
@@ -13,6 +14,7 @@ pub mod unary_expression;
 pub mod update_expression;
 
 pub use array_expression::*;
+pub use arrow_function_expression::*;
 pub use assignment_expression::*;
 pub use binary_expression::*;
 pub use call_expression::*;

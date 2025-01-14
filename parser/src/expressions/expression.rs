@@ -1,7 +1,7 @@
 use super::{
-    ArrayExpression, AssignmentExpression, BinaryExpression, CallExpression, FunctionExpression,
-    Literal, MemberExpression, ObjectExpression, ParenthesisExpression, UnaryExpression,
-    UpdateExpression,
+    ArrayExpression, ArrowFunctionExpression, AssignmentExpression, BinaryExpression,
+    CallExpression, FunctionExpression, Literal, MemberExpression, ObjectExpression,
+    ParenthesisExpression, UnaryExpression, UpdateExpression,
 };
 use crate::{nodes::Node, statements::Identifier};
 
@@ -18,7 +18,7 @@ pub enum Expression {
     CallExpression(Box<CallExpression>),
     MemberExpression(Box<MemberExpression>),
     FunctionExpression(Box<FunctionExpression>),
-    ArrowFunctionExpression(Box<()>),
+    ArrowFunctionExpression(Box<ArrowFunctionExpression>),
     ObjectExpression(Box<ObjectExpression>),
     ArrayExpression(Box<ArrayExpression>),
     NewExpression(Box<()>),

@@ -1,9 +1,10 @@
 use lexer::{Lexer, Operator, Token, TokenKind, TypeKeyword};
 use parser::{
     expressions::{
-        AssignmentExpression, BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty,
-        FunctionExpression, MemberExpression, NumberLiteral, ParenthesisExpression, StringLiteral,
-        Type, TypeAnnotation, TypeValue, UpdateExpression, UpdateOperator,
+        ArrowFunctionExpression, AssignmentExpression, BinaryExpression, BooleanLiteral,
+        CallExpression, ComputedProperty, FunctionExpression, MemberExpression, NumberLiteral,
+        ParenthesisExpression, StringLiteral, Type, TypeAnnotation, TypeValue, UpdateExpression,
+        UpdateOperator,
     },
     nodes::{program::Program, Node},
     statements::{
@@ -583,6 +584,75 @@ fn function_expression() {
                 ),
             }
             .into()],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn arrow_function() {
+    let code = "const sum = (n1: number, n2: number): number => n1 + n2;";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![VariableDeclaration {
+            node: Node::new(0, code.len()),
+            kind: VariableKind::Const,
+            declarations: vec![VariableDeclarator {
+                node: code.between_incl(("sum", 0), ("b;", 0)),
+                id: Identifier {
+                    node: code.node("sum", 0),
+                    name: "sum".into(),
+                },
+                init: Some(
+                    ArrowFunctionExpression {
+                        node: code.between_incl(("(n1", 0), ("n2;", 0)),
+                        parameters: vec![Parameter {
+                            node: code.node("n1: number", 0),
+                            identifier: Identifier {
+                                node: code.node("n1", 0),
+                                name: "n1".into(),
+                            },
+                            type_annotation: TypeAnnotation {
+                                node: code.node(": number", 0),
+                                type_value: Type {
+                                    node: code.node("number", 0),
+                                    value: TypeValue::KeywordType(TypeKeyword::Number),
+                                },
+                            },
+                            optional: false,
+                        }],
+                        return_type: Some(TypeAnnotation {
+                            node: code.node(": number", 2),
+                            type_value: Type {
+                                node: code.node("number", 2),
+                                value: TypeValue::KeywordType(TypeKeyword::Number),
+                            },
+                        }),
+                        body: BinaryExpression {
+                            node: code.node("n1 + n2", 0),
+                            left: Identifier {
+                                node: code.node("n1", 1),
+                                name: "n1".into(),
+                            }
+                            .into(),
+                            right: Identifier {
+                                node: code.node("n2", 1),
+                                name: "n2".into(),
+                            }
+                            .into(),
+                            operator: Operator::Plus,
+                        }
+                        .into(),
+                    }
+                    .into(),
+                ),
+            }],
         }
         .into()],
     };
