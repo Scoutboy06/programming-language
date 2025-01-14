@@ -1,8 +1,8 @@
 use crate::expressions::{
     ArrayExpression, AsUpdateOperator, AssignmentExpression, BinaryExpression, BooleanLiteral,
-    CallExpression, ComputedProperty, Expression, Literal, MemberExpression, MemberProperty,
-    NullLiteral, NumberLiteral, ObjectExpression, ParenthesisExpression, StringLiteral, Type,
-    TypeAnnotation, TypeValue, UnaryExpression, UpdateExpression, KV,
+    CallExpression, ComputedProperty, Expression, FunctionExpression, Literal, MemberExpression,
+    MemberProperty, NullLiteral, NumberLiteral, ObjectExpression, ParenthesisExpression,
+    StringLiteral, Type, TypeAnnotation, TypeValue, UnaryExpression, UpdateExpression, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
@@ -114,7 +114,7 @@ impl<'a> Parser<'a> {
                     Ok(Statement::VariableDeclaration(var_dec.into()))
                 }
                 Keyword::Function => {
-                    let fn_dec = self.parse_function_declaration(false, false)?;
+                    let fn_dec = self.parse_function_declaration(false)?;
                     Ok(Statement::FunctionDeclaration(fn_dec.into()))
                 }
                 Keyword::Return => {
@@ -141,13 +141,6 @@ impl<'a> Parser<'a> {
                     }
                     _ => expr.node().end,
                 };
-                // let end_pos = if consume_semi && self.current_token.kind == TokenKind::SemiColon {
-                //             let pos = self.current_token.end;
-                //             self.advance();
-                //             pos
-                // } else {
-                //     expr.node().end
-                // };
 
                 Ok(ExpressionStatement {
                     node: Node::new(expr.node().start, end_pos),
@@ -165,7 +158,8 @@ impl<'a> Parser<'a> {
         loop {
             match self.current_token.kind {
                 TokenKind::OpenParen => {
-                    lhs = Expression::CallExpression(Box::new(self.parse_call_expression(lhs)?));
+                    let call_exp = self.parse_call_expression(lhs)?;
+                    lhs = Expression::CallExpression(Box::new(call_exp));
                 }
                 TokenKind::Dot | TokenKind::OpenBracket => {
                     let mem_exp = self.parse_member_expression(lhs)?;
@@ -242,6 +236,13 @@ impl<'a> Parser<'a> {
                 let obj = self.parse_object_literal()?;
                 Ok(Expression::ObjectExpression(Box::new(obj)))
             }
+            TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+                Keyword::Function => {
+                    let fn_expr = self.parse_function_expression(false)?;
+                    Ok(Expression::FunctionExpression(Box::new(fn_expr)))
+                }
+                _ => Err(ErrorKind::InvalidToken),
+            },
             _ => Err(ErrorKind::InvalidToken),
         }
     }
@@ -335,24 +336,19 @@ impl<'a> Parser<'a> {
     fn parse_function_declaration(
         &mut self,
         is_async: bool,
-        is_expression: bool,
     ) -> Result<FunctionDeclaration, ErrorKind> {
         let start_pos = self.current_token.start;
         let mut is_generator = false;
-        let mut id: Option<Identifier> = None;
         let mut return_type: Option<TypeAnnotation> = None;
 
         self.advance(); // Consume "function" token
 
-        if self.current_token.kind == TokenKind::Identifier {
-            id = Some(Identifier {
-                node: Node::new(self.current_token.start, self.current_token.end),
-                name: self.current_token.value.expect_string().clone(),
-            });
-            self.advance(); // Consume Identifier token
-        } else if !is_expression {
-            return Err(ErrorKind::ExpectedFunctionName);
-        }
+        self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedFunctionName)?;
+        let id = Identifier {
+            node: Node::new(self.current_token.start, self.current_token.end),
+            name: self.current_token.value.expect_string().clone(),
+        };
+        self.advance(); // Consume Identifier token
 
         if self.current_token.kind == TokenKind::Asterisk {
             is_generator = true;
@@ -382,7 +378,59 @@ impl<'a> Parser<'a> {
             params,
             return_type,
             body,
-            is_expression,
+            is_generator,
+            is_async,
+        })
+    }
+
+    /// Parses a function declaration, including its name, parameters, and body.
+    fn parse_function_expression(
+        &mut self,
+        is_async: bool,
+    ) -> Result<FunctionExpression, ErrorKind> {
+        let start_pos = self.current_token.start;
+        let mut is_generator = false;
+        let mut return_type: Option<TypeAnnotation> = None;
+        let mut id: Option<Identifier> = None;
+
+        self.advance(); // Consume "function" keyword token
+
+        if self.current_token.kind == TokenKind::Asterisk {
+            is_generator = true;
+            self.advance(); // Consume "*" token
+        }
+
+        if self.current_token.kind == TokenKind::Identifier {
+            id = Some(Identifier {
+                node: Node::new(self.current_token.start, self.current_token.end),
+                name: self.current_token.value.expect_string().clone(),
+            });
+            self.advance(); // Consume Identifier token
+        }
+
+        self.expect_token_kind(TokenKind::OpenParen, ErrorKind::ExpectedOpenParen)?;
+
+        let params = self.parse_parameter_list()?;
+
+        // Explicit return type, like "function a(): number {}"
+        if self.current_token.kind == TokenKind::Colon {
+            let colon_start = self.current_token.start;
+            self.advance(); // Consume ":" token
+            let t = self.parse_type()?;
+            return_type = Some(TypeAnnotation {
+                node: Node::new(colon_start, t.node.end),
+                type_value: t,
+            });
+        }
+
+        let body = self.parse_block_statement()?;
+
+        Ok(FunctionExpression {
+            node: Node::new(start_pos, body.node.end),
+            id,
+            params,
+            return_type,
+            body,
             is_generator,
             is_async,
         })

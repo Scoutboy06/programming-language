@@ -6,7 +6,7 @@
 - [x] Object literal expression
 - [x] Call expression
 - [x] Function declaration
-  - [ ] Function expression
+  - [x] Function expression
   - [ ] Arrow function
 - [x] Return statement
 - [x] Assignment expression

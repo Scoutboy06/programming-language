@@ -2,15 +2,14 @@ use lexer::{Lexer, Operator, Token, TokenKind, TypeKeyword};
 use parser::{
     expressions::{
         AssignmentExpression, BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty,
-        Expression, Literal, MemberExpression, MemberProperty, NumberLiteral,
-        ParenthesisExpression, StringLiteral, Type, TypeAnnotation, TypeValue, UpdateExpression,
-        UpdateOperator,
+        FunctionExpression, MemberExpression, NumberLiteral, ParenthesisExpression, StringLiteral,
+        Type, TypeAnnotation, TypeValue, UpdateExpression, UpdateOperator,
     },
     nodes::{program::Program, Node},
     statements::{
         BlockStatement, ExpressionStatement, ForStatement, FunctionDeclaration, Identifier,
-        IfStatement, Parameter, ReturnStatement, Statement, VariableDeclaration,
-        VariableDeclarator, VariableKind, WhileStatement,
+        IfStatement, Parameter, ReturnStatement, VariableDeclaration, VariableDeclarator,
+        VariableKind, WhileStatement,
     },
     Parser,
 };
@@ -417,11 +416,10 @@ fn function_declaration() {
         shebang: None,
         body: vec![FunctionDeclaration {
             node: Node::new(0, code.len()),
-            id: Some(Identifier {
+            id: Identifier {
                 node: code.node("add", 0),
                 name: "add".into(),
-            }),
-            is_expression: false,
+            },
             is_generator: false,
             is_async: false,
             params: vec![
@@ -485,6 +483,106 @@ fn function_declaration() {
                 }
                 .into()],
             },
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn function_expression() {
+    let code = "const sum = function(n1: number, n2: number): number {
+        return n1 + n2;
+    }";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![VariableDeclaration {
+            node: Node::new(0, code.len()),
+            kind: VariableKind::Const,
+            declarations: vec![VariableDeclarator {
+                node: code.between_incl(("sum", 0), ("}", 0)),
+                id: Identifier {
+                    node: code.node("sum", 0),
+                    name: "sum".into(),
+                },
+                init: Some(
+                    FunctionExpression {
+                        node: code.between_incl(("function", 0), ("}", 0)),
+                        is_async: false,
+                        is_generator: false,
+                        id: None,
+                        params: vec![
+                            Parameter {
+                                node: code.node("n1: number", 0),
+                                identifier: Identifier {
+                                    node: code.node("n1", 0),
+                                    name: "n1".into(),
+                                },
+                                type_annotation: TypeAnnotation {
+                                    node: code.node(": number", 0),
+                                    type_value: Type {
+                                        node: code.node("number", 0),
+                                        value: TypeValue::KeywordType(TypeKeyword::Number),
+                                    },
+                                },
+                                optional: false,
+                            },
+                            Parameter {
+                                node: code.node("n2: number", 0),
+                                identifier: Identifier {
+                                    node: code.node("n2", 0),
+                                    name: "n2".into(),
+                                },
+                                type_annotation: TypeAnnotation {
+                                    node: code.node(": number", 1),
+                                    type_value: Type {
+                                        node: code.node("number", 1),
+                                        value: TypeValue::KeywordType(TypeKeyword::Number),
+                                    },
+                                },
+                                optional: false,
+                            },
+                        ],
+                        return_type: Some(TypeAnnotation {
+                            node: code.node(": number", 2),
+                            type_value: Type {
+                                node: code.node("number", 2),
+                                value: TypeValue::KeywordType(TypeKeyword::Number),
+                            },
+                        }),
+                        body: BlockStatement {
+                            node: code.between_incl(("{", 0), ("}", 0)),
+                            statements: vec![ReturnStatement {
+                                node: code.node("return n1 + n2;", 0),
+                                value: BinaryExpression {
+                                    node: code.node("n1 + n2", 0),
+                                    left: Identifier {
+                                        node: code.node("n1", 1),
+                                        name: "n1".into(),
+                                    }
+                                    .into(),
+                                    right: Identifier {
+                                        node: code.node("n2", 1),
+                                        name: "n2".into(),
+                                    }
+                                    .into(),
+                                    operator: Operator::Plus,
+                                }
+                                .into(),
+                            }
+                            .into()],
+                        }
+                        .into(),
+                    }
+                    .into(),
+                ),
+            }
+            .into()],
         }
         .into()],
     };
