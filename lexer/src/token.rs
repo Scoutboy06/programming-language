@@ -11,6 +11,12 @@ pub struct Token {
     pub end: usize,
 }
 
+impl Token {
+    pub fn is(&self, kind: TokenKind) -> bool {
+        self.kind == kind
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum TokenValue {
     #[default]

@@ -38,6 +38,7 @@ pub enum ErrorKind {
     ExpectedFunctionName,
     ExpectedColon,
     ExpectedSemiColon,
+    ExpectedArrow,
 }
 
 impl<'a> Parser<'a> {
@@ -220,6 +221,13 @@ impl<'a> Parser<'a> {
             TokenKind::OpenParen => {
                 let start_pos = self.current_token.start;
                 self.advance(); // Consume "(" token
+
+                if self.current_token.is(TokenKind::CloseParen) {
+                    self.advance(); // Consume ")" token
+                    let arr_fn_exp = self.parse_arrow_function(Vec::new())?;
+                    return Ok(Expression::ArrowFunctionExpression(Box::new(arr_fn_exp)));
+                }
+
                 let expression = self.parse_expression()?;
                 self.expect_token_kind(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
                 let paren_expr = ParenthesisExpression {
@@ -439,9 +447,16 @@ impl<'a> Parser<'a> {
 
     fn parse_arrow_function(
         &mut self,
-        parameter_list: Vec<Parameter>,
+        parameters: Vec<Parameter>,
     ) -> Result<ArrowFunctionExpression, ErrorKind> {
-        todo!()
+        self.expect_and_consume_token(TokenKind::ArrowFn, ErrorKind::ExpectedArrow)?;
+
+        Ok(ArrowFunctionExpression {
+            node: todo!(),
+            parameters,
+            return_type: todo!(),
+            body: todo!(),
+        })
     }
 
     fn parse_parameter_list(&mut self) -> Result<Vec<Parameter>, ErrorKind> {

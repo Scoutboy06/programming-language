@@ -604,7 +604,7 @@ fn arrow_function() {
             node: Node::new(0, code.len()),
             kind: VariableKind::Const,
             declarations: vec![VariableDeclarator {
-                node: code.between_incl(("sum", 0), ("b;", 0)),
+                node: code.between_incl(("sum", 0), ("n2;", 0)),
                 id: Identifier {
                     node: code.node("sum", 0),
                     name: "sum".into(),
