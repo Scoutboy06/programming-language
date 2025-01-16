@@ -1,6 +1,5 @@
 use crate::{Keyword, Token, TokenKind, TokenValue};
-use std::str::Chars;
-use string_cache::DefaultAtom as Atom;
+use std::{collections::VecDeque, str::Chars};
 
 pub struct Lexer<'a> {
     source: &'a str,
@@ -8,6 +7,7 @@ pub struct Lexer<'a> {
     position: usize,
     curr_char: Option<char>,
     peek_char: Option<char>,
+    token_queue: VecDeque<Token>,
 }
 
 impl<'a> Lexer<'a> {
@@ -16,61 +16,81 @@ impl<'a> Lexer<'a> {
         let curr_char = chars.next();
         let peek_char = chars.next();
 
-        let lexer = Self {
+        Self {
             source,
             chars,
             position: 0,
             curr_char,
             peek_char,
-        };
-
-        lexer
+            token_queue: Default::default(),
+        }
     }
 
     pub fn next_token(&mut self) -> Token {
+        if let Some(token) = self.token_queue.pop_front() {
+            token
+        } else {
+            self.lex_next_token()
+        }
+    }
+
+    pub fn peek_token(&mut self) -> &Token {
+        if self.token_queue.is_empty() {
+            let token = self.lex_next_token();
+            self.token_queue.push_back(token);
+        }
+        self.token_queue.front().unwrap()
+    }
+
+    pub fn peek_token_at(&mut self, offset: usize) -> &Token {
+        while self.token_queue.len() <= offset {
+            let token = self.lex_next_token();
+            self.token_queue.push_back(token);
+        }
+        self.token_queue.get(offset).unwrap()
+    }
+
+    fn lex_next_token(&mut self) -> Token {
+        use TokenKind as TK;
+        use TokenValue as TV;
         self.skip_whitespace();
 
         if self.curr_char.is_none() {
-            return Token {
-                kind: TokenKind::Eof,
-                value: TokenValue::None,
-                start: self.position,
-                end: self.position,
-            };
+            return Token::eof();
         }
 
         let start = self.position;
 
         let (token_kind, token_value) = match self.curr_char.unwrap() {
-            '0'..='9' => (TokenKind::Number, TokenValue::Number(self.parse_number())),
+            '0'..='9' => (TK::Number, TV::Number(self.parse_number())),
             'a'..='z' | 'A'..='Z' | '_' | '$' => {
                 let word = self.parse_identifier();
                 if let Some(keyword) = Keyword::from_str(word) {
                     match keyword {
-                        Keyword::True => (TokenKind::Boolean, TokenValue::Boolean(true)),
-                        Keyword::False => (TokenKind::Boolean, TokenValue::Boolean(false)),
-                        _ => (TokenKind::Keyword, TokenValue::Keyword(keyword)),
+                        Keyword::True => (TK::Boolean, TV::Boolean(true)),
+                        Keyword::False => (TK::Boolean, TV::Boolean(false)),
+                        _ => (TK::Keyword, TV::Keyword(keyword)),
                     }
                 } else {
-                    (TokenKind::Identifier, TokenValue::String(Atom::from(word)))
+                    (TK::Identifier, TV::Identifier(word.into()))
                 }
             }
             '"' | '\'' | '`' => (
-                TokenKind::String,
-                TokenValue::String(Atom::from(self.parse_string_literal(true))), // We strip out quotes
+                TK::String,
+                TV::String(self.parse_string_literal(false).into()),
             ),
             '+' => {
                 self.advance();
                 match self.curr_char {
                     Some('+') => {
                         self.advance();
-                        (TokenKind::Increment, TokenValue::None)
+                        (TK::Increment, TV::None)
                     }
                     Some('=') => {
                         self.advance();
-                        (TokenKind::PlusEquals, TokenValue::None)
+                        (TK::PlusEquals, TV::None)
                     }
-                    _ => (TokenKind::Plus, TokenValue::None),
+                    _ => (TK::Plus, TV::None),
                 }
             }
             '-' => {
@@ -78,13 +98,13 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('-') => {
                         self.advance();
-                        (TokenKind::Decrement, TokenValue::None)
+                        (TK::Decrement, TV::None)
                     }
                     Some('=') => {
                         self.advance();
-                        (TokenKind::MinusEquals, TokenValue::None)
+                        (TK::MinusEquals, TV::None)
                     }
-                    _ => (TokenKind::Minus, TokenValue::None),
+                    _ => (TK::Minus, TV::None),
                 }
             }
             '*' => {
@@ -92,19 +112,19 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('=') => {
                         self.advance();
-                        (TokenKind::TimesEquals, TokenValue::None)
+                        (TK::TimesEquals, TV::None)
                     }
                     Some('*') => {
                         self.advance();
                         match self.curr_char {
                             Some('*') => {
                                 self.advance();
-                                (TokenKind::PowerEquals, TokenValue::None)
+                                (TK::PowerEquals, TV::None)
                             }
-                            _ => (TokenKind::Exponentiation, TokenValue::None),
+                            _ => (TK::Exponentiation, TV::None),
                         }
                     }
-                    _ => (TokenKind::Asterisk, TokenValue::None),
+                    _ => (TK::Asterisk, TV::None),
                 }
             }
             '/' => {
@@ -112,11 +132,11 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('=') => {
                         self.advance();
-                        (TokenKind::DivEquals, TokenValue::None)
+                        (TK::DivEquals, TV::None)
                     }
                     Some('/') => todo!("Single-line comments"),
                     Some('*') => todo!("Multi-line comments"),
-                    _ => (TokenKind::Slash, TokenValue::None),
+                    _ => (TK::Slash, TV::None),
                 }
             }
             '%' => {
@@ -124,9 +144,9 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('=') => {
                         self.advance();
-                        (TokenKind::ModEquals, TokenValue::None)
+                        (TK::ModEquals, TV::None)
                     }
-                    _ => (TokenKind::Percent, TokenValue::None),
+                    _ => (TK::Percent, TV::None),
                 }
             }
             '&' => {
@@ -134,9 +154,9 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('&') => {
                         self.advance();
-                        (TokenKind::LogicalAnd, TokenValue::None)
+                        (TK::LogicalAnd, TV::None)
                     }
-                    _ => (TokenKind::BitwiseAnd, TokenValue::None),
+                    _ => (TK::BitwiseAnd, TV::None),
                 }
             }
             '|' => {
@@ -144,54 +164,54 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('|') => {
                         self.advance();
-                        (TokenKind::LogicalOr, TokenValue::None)
+                        (TK::LogicalOr, TV::None)
                     }
-                    _ => (TokenKind::BitwiseOr, TokenValue::None),
+                    _ => (TK::BitwiseOr, TV::None),
                 }
             }
             '?' => {
                 self.advance();
-                (TokenKind::QuestionMark, TokenValue::None)
+                (TK::QuestionMark, TV::None)
             }
             '(' => {
                 self.advance();
-                (TokenKind::OpenParen, TokenValue::None)
+                (TK::OpenParen, TV::None)
             }
             ')' => {
                 self.advance();
-                (TokenKind::CloseParen, TokenValue::None)
+                (TK::CloseParen, TV::None)
             }
             '{' => {
                 self.advance();
-                (TokenKind::OpenBrace, TokenValue::None)
+                (TK::OpenBrace, TV::None)
             }
             '}' => {
                 self.advance();
-                (TokenKind::CloseBrace, TokenValue::None)
+                (TK::CloseBrace, TV::None)
             }
             '[' => {
                 self.advance();
-                (TokenKind::OpenBracket, TokenValue::None)
+                (TK::OpenBracket, TV::None)
             }
             ']' => {
                 self.advance();
-                (TokenKind::CloseBracket, TokenValue::None)
+                (TK::CloseBracket, TV::None)
             }
             '.' => {
                 self.advance();
-                (TokenKind::Dot, TokenValue::None)
+                (TK::Dot, TV::None)
             }
             ',' => {
                 self.advance();
-                (TokenKind::Comma, TokenValue::None)
+                (TK::Comma, TV::None)
             }
             ':' => {
                 self.advance();
-                (TokenKind::Colon, TokenValue::None)
+                (TK::Colon, TV::None)
             }
             ';' => {
                 self.advance();
-                (TokenKind::SemiColon, TokenValue::None)
+                (TK::SemiColon, TV::None)
             }
             '=' => {
                 self.advance();
@@ -201,16 +221,16 @@ impl<'a> Lexer<'a> {
                         match self.curr_char {
                             Some('=') => {
                                 self.advance();
-                                (TokenKind::TripleEquals, TokenValue::None)
+                                (TK::TripleEquals, TV::None)
                             }
-                            _ => (TokenKind::DoubleEquals, TokenValue::None),
+                            _ => (TK::DoubleEquals, TV::None),
                         }
                     }
                     Some('>') => {
                         self.advance();
-                        (TokenKind::ArrowFn, TokenValue::None)
+                        (TK::ArrowFn, TV::None)
                     }
-                    _ => (TokenKind::Equals, TokenValue::None),
+                    _ => (TK::Equals, TV::None),
                 }
             }
             '>' => {
@@ -218,9 +238,9 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('=') => {
                         self.advance();
-                        (TokenKind::GreaterThanOrEqual, TokenValue::None)
+                        (TK::GreaterThanOrEqual, TV::None)
                     }
-                    _ => (TokenKind::GreaterThan, TokenValue::None),
+                    _ => (TK::GreaterThan, TV::None),
                 }
             }
             '<' => {
@@ -228,12 +248,12 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('=') => {
                         self.advance();
-                        (TokenKind::LessThanOrEqual, TokenValue::None)
+                        (TK::LessThanOrEqual, TV::None)
                     }
-                    _ => (TokenKind::LessThan, TokenValue::None),
+                    _ => (TK::LessThan, TV::None),
                 }
             }
-            _ => (TokenKind::Invalid, TokenValue::None),
+            _ => (TK::Invalid, TV::None),
         };
 
         Token {

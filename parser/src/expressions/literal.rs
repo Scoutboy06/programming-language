@@ -1,6 +1,5 @@
 use super::Expression;
 use crate::nodes::Node;
-use string_cache::DefaultAtom as Atom;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
@@ -52,7 +51,7 @@ macro_rules! init_literal {
 #[derive(Debug, Clone, PartialEq)]
 pub struct StringLiteral {
     pub node: Node,
-    pub value: Atom,
+    pub value: String,
 }
 init_literal!(StringLiteral, Literal::String);
 

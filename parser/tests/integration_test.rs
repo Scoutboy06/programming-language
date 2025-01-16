@@ -314,7 +314,7 @@ fn function_call() {
                     .into(),
                     StringLiteral {
                         node: code.node("\"abc123\"", 0),
-                        value: "abc123".into(),
+                        value: "\"abc123\"".into(),
                     }
                     .into(),
                 ],
@@ -390,7 +390,7 @@ fn computed_member_expression() {
                     node: code.node("[\"log\"]", 0),
                     expression: StringLiteral {
                         node: code.node("\"log\"", 0),
-                        value: "log".into(),
+                        value: "\"log\"".into(),
                     }
                     .into(),
                 }
@@ -700,7 +700,7 @@ fn assignment_statement() {
                     .into(),
                     right: StringLiteral {
                         node: code.node("\"World\"", 0),
-                        value: "World".into(),
+                        value: "\"World\"".into(),
                     }
                     .into(),
                     operator: Operator::PlusEquals,

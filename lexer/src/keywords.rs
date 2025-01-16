@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Keyword {
     // Javascript keywords
     Var,

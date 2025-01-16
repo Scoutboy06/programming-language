@@ -15,51 +15,77 @@ impl Token {
     pub fn is(&self, kind: TokenKind) -> bool {
         self.kind == kind
     }
+
+    pub fn eof() -> Self {
+        Self {
+            kind: TokenKind::Eof,
+            value: TokenValue::None,
+            start: 0,
+            end: 0,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum TokenValue {
     #[default]
     None,
+    Consumed,
     Number(f64),
-    String(Atom),
+    String(String),
     Boolean(bool),
     Keyword(Keyword),
+    Identifier(Atom),
 }
 
 impl TokenValue {
     pub fn expect_none(&self) {
         match self {
             TokenValue::None => {}
-            _ => unreachable!(),
+            _ => unreachable!("Expected a None value"),
         }
     }
 
     pub fn expect_number(&self) -> f64 {
         match self {
-            TokenValue::Number(num) => num.clone(),
-            _ => unreachable!(),
+            TokenValue::Number(num) => *num,
+            _ => unreachable!("Expected a Number token"),
         }
     }
 
     pub fn expect_boolean(&self) -> bool {
         match self {
             TokenValue::Boolean(b) => *b,
-            _ => unreachable!(),
+            _ => unreachable!("Expected a Boolean token"),
         }
     }
 
-    pub fn expect_string(&self) -> &Atom {
+    pub fn expect_string(&self) -> &str {
         match self {
-            TokenValue::String(atom) => atom,
-            _ => unreachable!(),
+            TokenValue::String(s) => &s,
+            _ => unreachable!("Expected a String token"),
+        }
+    }
+
+    /// Consumes the token's string value
+    pub fn consume_string(&mut self) -> String {
+        match std::mem::replace(self, Self::Consumed) {
+            Self::String(s) => s,
+            _ => unreachable!("Expected a String token"),
         }
     }
 
     pub fn expect_keyword(&self) -> Keyword {
         match self {
-            TokenValue::Keyword(kw) => kw.clone(),
-            _ => unreachable!(),
+            TokenValue::Keyword(kw) => *kw,
+            _ => unreachable!("Expected a Keyword token"),
+        }
+    }
+
+    pub fn expect_identifier(&self) -> &Atom {
+        match self {
+            TokenValue::Identifier(atom) => atom,
+            _ => unreachable!("Expected an Identifier token"),
         }
     }
 }
@@ -69,6 +95,7 @@ pub enum TokenKind {
     // Special tokens
     #[default]
     Invalid,
+    Consumed,
     Eof,
     Shebang,
 

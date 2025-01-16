@@ -11,7 +11,7 @@ use crate::statements::{
     IfStatement, Parameter, ReturnStatement, Statement, VariableDeclaration, VariableDeclarator,
     VariableKind, WhileStatement,
 };
-use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
+use lexer::{Keyword, Lexer, Operator, Token, TokenKind, TokenValue};
 
 pub struct Parser<'a> {
     source: &'a str,
@@ -208,7 +208,7 @@ impl<'a> Parser<'a> {
             TokenKind::Identifier => {
                 let identifier = Identifier {
                     node: Node::new(self.current_token.start, self.current_token.end),
-                    name: self.current_token.value.expect_string().clone(),
+                    name: self.current_token.value.expect_identifier().clone(),
                 };
                 self.advance(); // Consume Identifier token
 
@@ -299,7 +299,7 @@ impl<'a> Parser<'a> {
             self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedIdentifier)?;
             let identifier = Identifier {
                 node: Node::new(start, self.current_token.end),
-                name: self.current_token.value.expect_string().clone(),
+                name: self.current_token.value.expect_identifier().clone(),
             };
             self.advance();
 
@@ -355,7 +355,7 @@ impl<'a> Parser<'a> {
         self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedFunctionName)?;
         let id = Identifier {
             node: Node::new(self.current_token.start, self.current_token.end),
-            name: self.current_token.value.expect_string().clone(),
+            name: self.current_token.value.expect_identifier().clone(),
         };
         self.advance(); // Consume Identifier token
 
@@ -412,7 +412,7 @@ impl<'a> Parser<'a> {
         if self.current_token.kind == TokenKind::Identifier {
             id = Some(Identifier {
                 node: Node::new(self.current_token.start, self.current_token.end),
-                name: self.current_token.value.expect_string().clone(),
+                name: self.current_token.value.expect_identifier().clone(),
             });
             self.advance(); // Consume Identifier token
         }
@@ -466,7 +466,7 @@ impl<'a> Parser<'a> {
 
         while self.current_token.kind != TokenKind::CloseParen {
             self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedIdentifier)?;
-            let id = self.current_token.value.expect_string();
+            let id = self.current_token.value.expect_identifier();
             let identifier = Identifier {
                 node: Node::new(self.current_token.start, self.current_token.end),
                 name: id.clone(),
@@ -527,7 +527,7 @@ impl<'a> Parser<'a> {
                 TypeValue::KeywordType(kw)
             }
             TokenKind::Identifier => {
-                TypeValue::TypeReference(self.current_token.value.expect_string().clone())
+                TypeValue::TypeReference(self.current_token.value.expect_identifier().clone())
             }
             _ => return Err(ErrorKind::InvalidToken),
         };
@@ -860,7 +860,7 @@ impl<'a> Parser<'a> {
 
                 property = MemberProperty::Identifier(Identifier {
                     node: Node::new(self.current_token.start, self.current_token.end),
-                    name: self.current_token.value.expect_string().clone(),
+                    name: self.current_token.value.expect_identifier().clone(),
                 });
 
                 end_pos = self.current_token.end;
@@ -899,7 +899,7 @@ impl<'a> Parser<'a> {
             TokenKind::String => {
                 let s = StringLiteral {
                     node: Node::new(self.current_token.start, self.current_token.end),
-                    value: self.current_token.value.expect_string().clone(),
+                    value: self.current_token.value.consume_string(), // WARN: must not be used again
                 };
 
                 self.advance(); // Consume String token
