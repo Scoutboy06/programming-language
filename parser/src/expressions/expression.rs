@@ -49,7 +49,7 @@ impl Expression {
             Self::CallExpression(c) => &c.node,
             Self::MemberExpression(m) => &m.node,
             Self::FunctionExpression(f) => &f.node,
-            Self::ArrowFunctionExpression(_) => todo!("ArrowFunctionExpression"),
+            Self::ArrowFunctionExpression(a) => &a.node,
             Self::ObjectExpression(o) => &o.node,
             Self::ArrayExpression(a) => &a.node,
             Self::NewExpression(_) => todo!("NewExpression"),

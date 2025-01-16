@@ -22,6 +22,6 @@ impl From<FunctionDeclaration> for Statement {
 pub struct Parameter {
     pub node: Node,
     pub identifier: Identifier,
-    pub type_annotation: TypeAnnotation,
+    pub type_annotation: Option<TypeAnnotation>,
     pub optional: bool,
 }

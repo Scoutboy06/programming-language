@@ -62,7 +62,7 @@ impl<'a> Parser<'a> {
                 break;
             }
 
-            let statement = self.parse_statement();
+            let statement = self.parse_statement(true);
 
             match statement {
                 Ok(s) => body.push(s),
@@ -108,11 +108,11 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a single statement (e.g., variable declarations, control flow statements, function definitions).
-    fn parse_statement(&mut self) -> Result<Statement, ErrorKind> {
+    fn parse_statement(&mut self, include_basic_semi: bool) -> Result<Statement, ErrorKind> {
         match self.current_token.kind {
             TokenKind::Keyword => match self.current_token.value.expect_keyword() {
                 Keyword::Var | Keyword::Let | Keyword::Const => {
-                    let var_dec = self.parse_variable_declaration()?;
+                    let var_dec = self.parse_variable_declaration(include_basic_semi)?;
                     Ok(Statement::VariableDeclaration(var_dec.into()))
                 }
                 Keyword::Function => {
@@ -134,15 +134,14 @@ impl<'a> Parser<'a> {
             TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
             _ => {
                 let expr = self.parse_expression()?;
-                // let end_pos = expr.node().end;
-                let end_pos = match self.current_token.kind {
-                    TokenKind::SemiColon => {
+                let end_pos =
+                    if self.current_token.kind == TokenKind::SemiColon && include_basic_semi {
                         let pos = self.current_token.end;
                         self.advance();
                         pos
-                    }
-                    _ => expr.node().end,
-                };
+                    } else {
+                        expr.node().end
+                    };
 
                 Ok(ExpressionStatement {
                     node: Node::new(expr.node().start, end_pos),
@@ -219,22 +218,28 @@ impl<'a> Parser<'a> {
                 }
             }
             TokenKind::OpenParen => {
+                // Peek forward to determine if is an arrow function
+                // Only consumes tokens if it is an arrow function
+                if self.peek_is_arrow_function() {
+                    let arr_fn_expr = self.parse_arrow_function()?;
+                    return Ok(Expression::ArrowFunctionExpression(Box::new(arr_fn_expr)));
+                }
+
                 let start_pos = self.current_token.start;
                 self.advance(); // Consume "(" token
 
-                if self.current_token.is(TokenKind::CloseParen) {
-                    self.advance(); // Consume ")" token
-                    let arr_fn_exp = self.parse_arrow_function(Vec::new())?;
-                    return Ok(Expression::ArrowFunctionExpression(Box::new(arr_fn_exp)));
-                }
-
                 let expression = self.parse_expression()?;
-                self.expect_token_kind(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
+
                 let paren_expr = ParenthesisExpression {
                     node: Node::new(start_pos, self.current_token.end),
                     expression,
                 };
-                self.advance(); // Consume ")" token
+
+                self.expect_and_consume_token(
+                    TokenKind::CloseParen,
+                    ErrorKind::ExpectedClosingParen,
+                )?;
+
                 Ok(paren_expr.into())
             }
             TokenKind::OpenBracket => {
@@ -256,6 +261,20 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Peeks forward in the token stream
+    fn peek_is_arrow_function(&mut self) -> bool {
+        match self.lexer.peek_token_at(0).kind {
+            TokenKind::Identifier => {}
+            TokenKind::CloseParen => return true,
+            _ => return false,
+        }
+        match self.lexer.peek_token_at(1).kind {
+            TokenKind::Colon | TokenKind::Comma => true,
+            TokenKind::CloseParen => self.lexer.peek_token_at(2).kind == TokenKind::ArrowFn,
+            _ => false,
+        }
+    }
+
     /// Parses a block of code, usually enclosed by `{}`.
     fn parse_block_statement(&mut self) -> Result<BlockStatement, ErrorKind> {
         let start_pos = self.current_token.start;
@@ -264,7 +283,7 @@ impl<'a> Parser<'a> {
         let mut statements: Vec<Statement> = Vec::new();
 
         while self.current_token.kind != TokenKind::CloseBrace {
-            let stmt = self.parse_statement()?;
+            let stmt = self.parse_statement(true)?;
             statements.push(stmt);
         }
 
@@ -279,7 +298,10 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a variable declaration, including `let`, `const`, or `var` keywords.
-    fn parse_variable_declaration(&mut self) -> Result<VariableDeclaration, ErrorKind> {
+    fn parse_variable_declaration(
+        &mut self,
+        include_semi: bool,
+    ) -> Result<VariableDeclaration, ErrorKind> {
         let start_pos = self.current_token.start;
 
         let kind = match self.current_token.value.expect_keyword() {
@@ -334,6 +356,11 @@ impl<'a> Parser<'a> {
             }
         }
 
+        if include_semi && self.current_token.kind == TokenKind::SemiColon {
+            end_pos = self.current_token.end;
+            self.advance() // Consume ";" token
+        }
+
         Ok(VariableDeclaration {
             node: Node::new(start_pos, end_pos),
             kind,
@@ -347,8 +374,6 @@ impl<'a> Parser<'a> {
         is_async: bool,
     ) -> Result<FunctionDeclaration, ErrorKind> {
         let start_pos = self.current_token.start;
-        let mut is_generator = false;
-        let mut return_type: Option<TypeAnnotation> = None;
 
         self.advance(); // Consume "function" token
 
@@ -359,8 +384,8 @@ impl<'a> Parser<'a> {
         };
         self.advance(); // Consume Identifier token
 
-        if self.current_token.kind == TokenKind::Asterisk {
-            is_generator = true;
+        let is_generator = self.current_token.kind == TokenKind::Asterisk;
+        if is_generator {
             self.advance(); // Consume "*" token
         }
 
@@ -368,16 +393,11 @@ impl<'a> Parser<'a> {
 
         let params = self.parse_parameter_list()?;
 
-        // Explicit return type, like "function a(): number {}"
-        if self.current_token.kind == TokenKind::Colon {
-            let colon_start = self.current_token.start;
-            self.advance(); // Consume ":" token
-            let t = self.parse_type()?;
-            return_type = Some(TypeAnnotation {
-                node: Node::new(colon_start, t.node.end),
-                type_value: t,
-            });
-        }
+        let return_type = if self.current_token.kind == TokenKind::Colon {
+            Some(self.parse_type_annotation()?)
+        } else {
+            None
+        };
 
         let body = self.parse_block_statement()?;
 
@@ -445,17 +465,24 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_arrow_function(
-        &mut self,
-        parameters: Vec<Parameter>,
-    ) -> Result<ArrowFunctionExpression, ErrorKind> {
+    fn parse_arrow_function(&mut self) -> Result<ArrowFunctionExpression, ErrorKind> {
+        let start_pos = self.current_token.start;
+        let parameters = self.parse_parameter_list()?;
+
+        let return_type = if self.current_token.kind == TokenKind::Colon {
+            Some(self.parse_type_annotation()?)
+        } else {
+            None
+        };
+
         self.expect_and_consume_token(TokenKind::ArrowFn, ErrorKind::ExpectedArrow)?;
+        let body = self.parse_statement(false)?;
 
         Ok(ArrowFunctionExpression {
-            node: todo!(),
+            node: Node::new(start_pos, body.node().end),
             parameters,
-            return_type: todo!(),
-            body: todo!(),
+            return_type,
+            body,
         })
     }
 
@@ -465,33 +492,34 @@ impl<'a> Parser<'a> {
         let mut params: Vec<Parameter> = Vec::new();
 
         while self.current_token.kind != TokenKind::CloseParen {
+            let start_pos = self.current_token.start;
             self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedIdentifier)?;
             let id = self.current_token.value.expect_identifier();
             let identifier = Identifier {
                 node: Node::new(self.current_token.start, self.current_token.end),
                 name: id.clone(),
             };
+            let mut end_pos = self.current_token.end;
             self.advance(); // Consume Identifier token
 
-            let optional = match self.current_token.kind {
-                TokenKind::QuestionMark => {
-                    self.advance();
-                    true
-                }
-                _ => false,
+            let optional = if self.current_token.kind == TokenKind::QuestionMark {
+                end_pos = self.current_token.end;
+                self.advance(); // Consume "?" token
+                true
+            } else {
+                false
             };
 
-            let colon_pos = self.current_token.start;
-            self.expect_and_consume_token(TokenKind::Colon, ErrorKind::ExpectedColon)?;
-
-            let param_type = self.parse_type()?;
-            let type_annotation = TypeAnnotation {
-                node: Node::new(colon_pos, param_type.node.end),
-                type_value: param_type,
+            let type_annotation = if self.current_token.kind == TokenKind::Colon {
+                let ann = self.parse_type_annotation()?;
+                end_pos = ann.node.end;
+                Some(ann)
+            } else {
+                None
             };
 
             let param = Parameter {
-                node: Node::new(identifier.node.start, type_annotation.node.end),
+                node: Node::new(start_pos, end_pos),
                 identifier,
                 optional,
                 type_annotation,
@@ -570,13 +598,13 @@ impl<'a> Parser<'a> {
 
         self.expect_and_consume_token(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
 
-        let body = self.parse_statement()?;
+        let body = self.parse_statement(true)?;
 
         let consequent: Option<Statement> = match self.current_token.kind {
             TokenKind::Keyword => match self.current_token.value.expect_keyword() {
                 Keyword::Else => {
                     self.advance(); // Consume "else" keyword token
-                    Some(self.parse_statement()?)
+                    Some(self.parse_statement(true)?)
                 }
                 _ => None,
             },
@@ -603,7 +631,7 @@ impl<'a> Parser<'a> {
 
         self.expect_and_consume_token(TokenKind::OpenParen, ErrorKind::ExpectedOpenParen)?;
 
-        let initializer = self.parse_statement()?;
+        let initializer = self.parse_statement(false)?;
 
         self.expect_and_consume_token(TokenKind::SemiColon, ErrorKind::ExpectedSemiColon)?;
 
@@ -611,11 +639,11 @@ impl<'a> Parser<'a> {
 
         self.expect_and_consume_token(TokenKind::SemiColon, ErrorKind::ExpectedSemiColon)?;
 
-        let update = self.parse_statement()?;
+        let update = self.parse_statement(false)?;
 
         self.expect_and_consume_token(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
 
-        let body = self.parse_statement()?;
+        let body = self.parse_statement(false)?;
 
         Ok(ForStatement {
             node: Node::new(start_pos, body.node().end),
@@ -637,7 +665,7 @@ impl<'a> Parser<'a> {
 
         self.expect_and_consume_token(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
 
-        let body = self.parse_statement()?;
+        let body = self.parse_statement(true)?;
 
         Ok(WhileStatement {
             node: Node::new(start_pos, body.node().end),
@@ -936,8 +964,14 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses type annotations specific to TypeScript (e.g., `: string`, `: number`).
-    fn parse_type_annotation(&mut self) -> Result<(), ErrorKind> {
-        todo!()
+    fn parse_type_annotation(&mut self) -> Result<TypeAnnotation, ErrorKind> {
+        let colon_start = self.current_token.start;
+        self.expect_and_consume_token(TokenKind::Colon, ErrorKind::ExpectedColon)?;
+        let t = self.parse_type()?;
+        Ok(TypeAnnotation {
+            node: Node::new(colon_start, t.node.end),
+            type_value: t,
+        })
     }
 
     /// Parses generic type parameters (e.g., `<T>`, `<T, U>`).

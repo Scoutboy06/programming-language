@@ -430,13 +430,13 @@ fn function_declaration() {
                         node: code.node("n1", 0),
                         name: "n1".into(),
                     },
-                    type_annotation: TypeAnnotation {
+                    type_annotation: Some(TypeAnnotation {
                         node: code.node(": number", 0),
                         type_value: Type {
                             node: code.node("number", 0),
                             value: TypeValue::KeywordType(TypeKeyword::Number),
                         },
-                    },
+                    }),
                     optional: false,
                 },
                 Parameter {
@@ -445,13 +445,13 @@ fn function_declaration() {
                         node: code.node("n2", 0),
                         name: "n2".into(),
                     },
-                    type_annotation: TypeAnnotation {
+                    type_annotation: Some(TypeAnnotation {
                         node: code.node(": number", 1),
                         type_value: Type {
                             node: code.node("number", 1),
                             value: TypeValue::KeywordType(TypeKeyword::Number),
                         },
-                    },
+                    }),
                     optional: false,
                 },
             ],
@@ -524,13 +524,13 @@ fn function_expression() {
                                     node: code.node("n1", 0),
                                     name: "n1".into(),
                                 },
-                                type_annotation: TypeAnnotation {
+                                type_annotation: Some(TypeAnnotation {
                                     node: code.node(": number", 0),
                                     type_value: Type {
                                         node: code.node("number", 0),
                                         value: TypeValue::KeywordType(TypeKeyword::Number),
                                     },
-                                },
+                                }),
                                 optional: false,
                             },
                             Parameter {
@@ -539,13 +539,13 @@ fn function_expression() {
                                     node: code.node("n2", 0),
                                     name: "n2".into(),
                                 },
-                                type_annotation: TypeAnnotation {
+                                type_annotation: Some(TypeAnnotation {
                                     node: code.node(": number", 1),
                                     type_value: Type {
                                         node: code.node("number", 1),
                                         value: TypeValue::KeywordType(TypeKeyword::Number),
                                     },
-                                },
+                                }),
                                 optional: false,
                             },
                         ],
@@ -604,29 +604,46 @@ fn arrow_function() {
             node: Node::new(0, code.len()),
             kind: VariableKind::Const,
             declarations: vec![VariableDeclarator {
-                node: code.between_incl(("sum", 0), ("n2;", 0)),
+                node: code.between_incl(("sum", 0), ("n2", 1)),
                 id: Identifier {
                     node: code.node("sum", 0),
                     name: "sum".into(),
                 },
                 init: Some(
                     ArrowFunctionExpression {
-                        node: code.between_incl(("(n1", 0), ("n2;", 0)),
-                        parameters: vec![Parameter {
-                            node: code.node("n1: number", 0),
-                            identifier: Identifier {
-                                node: code.node("n1", 0),
-                                name: "n1".into(),
-                            },
-                            type_annotation: TypeAnnotation {
-                                node: code.node(": number", 0),
-                                type_value: Type {
-                                    node: code.node("number", 0),
-                                    value: TypeValue::KeywordType(TypeKeyword::Number),
+                        node: code.between_incl(("(n1", 0), ("n2", 1)),
+                        parameters: vec![
+                            Parameter {
+                                node: code.node("n1: number", 0),
+                                identifier: Identifier {
+                                    node: code.node("n1", 0),
+                                    name: "n1".into(),
                                 },
+                                type_annotation: Some(TypeAnnotation {
+                                    node: code.node(": number", 0),
+                                    type_value: Type {
+                                        node: code.node("number", 0),
+                                        value: TypeValue::KeywordType(TypeKeyword::Number),
+                                    },
+                                }),
+                                optional: false,
                             },
-                            optional: false,
-                        }],
+                            Parameter {
+                                node: code.node("n2: number", 0),
+                                identifier: Identifier {
+                                    node: code.node("n2", 0),
+                                    name: "n2".into(),
+                                },
+                                type_annotation: Some(TypeAnnotation {
+                                    node: code.node(": number", 1),
+                                    type_value: Type {
+                                        node: code.node("number", 1),
+                                        value: TypeValue::KeywordType(TypeKeyword::Number),
+                                    },
+                                }),
+                                optional: false,
+                            },
+                        ],
                         return_type: Some(TypeAnnotation {
                             node: code.node(": number", 2),
                             type_value: Type {
@@ -634,19 +651,23 @@ fn arrow_function() {
                                 value: TypeValue::KeywordType(TypeKeyword::Number),
                             },
                         }),
-                        body: BinaryExpression {
+                        body: ExpressionStatement {
                             node: code.node("n1 + n2", 0),
-                            left: Identifier {
-                                node: code.node("n1", 1),
-                                name: "n1".into(),
+                            expression: BinaryExpression {
+                                node: code.node("n1 + n2", 0),
+                                left: Identifier {
+                                    node: code.node("n1", 1),
+                                    name: "n1".into(),
+                                }
+                                .into(),
+                                right: Identifier {
+                                    node: code.node("n2", 1),
+                                    name: "n2".into(),
+                                }
+                                .into(),
+                                operator: Operator::Plus,
                             }
                             .into(),
-                            right: Identifier {
-                                node: code.node("n2", 1),
-                                name: "n2".into(),
-                            }
-                            .into(),
-                            operator: Operator::Plus,
                         }
                         .into(),
                     }
