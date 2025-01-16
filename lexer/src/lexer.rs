@@ -403,7 +403,7 @@ impl<'a> Iterator for Lexer<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let tok = self.next_token();
-        if tok.kind == TokenKind::Eof {
+        if tok.is(TokenKind::Eof) {
             None
         } else {
             Some(tok)

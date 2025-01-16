@@ -143,7 +143,7 @@ fn lexer_works() {
     let mut tok: Token;
     loop {
         tok = lex.next_token();
-        if tok.kind == TokenKind::Eof {
+        if tok.is(TokenKind::Eof) {
             break;
         }
     }

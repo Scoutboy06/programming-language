@@ -58,7 +58,7 @@ impl<'a> Parser<'a> {
         self.advance();
 
         loop {
-            if self.current_token.kind == TokenKind::Eof {
+            if self.current_token.is(TokenKind::Eof) {
                 break;
             }
 
@@ -134,14 +134,13 @@ impl<'a> Parser<'a> {
             TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
             _ => {
                 let expr = self.parse_expression()?;
-                let end_pos =
-                    if self.current_token.kind == TokenKind::SemiColon && include_basic_semi {
-                        let pos = self.current_token.end;
-                        self.advance();
-                        pos
-                    } else {
-                        expr.node().end
-                    };
+                let end_pos = if self.current_token.is(TokenKind::SemiColon) && include_basic_semi {
+                    let pos = self.current_token.end;
+                    self.advance();
+                    pos
+                } else {
+                    expr.node().end
+                };
 
                 Ok(ExpressionStatement {
                     node: Node::new(expr.node().start, end_pos),
@@ -211,7 +210,7 @@ impl<'a> Parser<'a> {
                 };
                 self.advance(); // Consume Identifier token
 
-                if self.current_token.kind == TokenKind::Dot {
+                if self.current_token.is(TokenKind::Dot) {
                     Ok(self.parse_member_expression(identifier.into())?.into())
                 } else {
                     Ok(identifier.into())
@@ -270,7 +269,7 @@ impl<'a> Parser<'a> {
         }
         match self.lexer.peek_token_at(1).kind {
             TokenKind::Colon | TokenKind::Comma => true,
-            TokenKind::CloseParen => self.lexer.peek_token_at(2).kind == TokenKind::ArrowFn,
+            TokenKind::CloseParen => self.lexer.peek_token_at(2).is(TokenKind::ArrowFn),
             _ => false,
         }
     }
@@ -356,7 +355,7 @@ impl<'a> Parser<'a> {
             }
         }
 
-        if include_semi && self.current_token.kind == TokenKind::SemiColon {
+        if include_semi && self.current_token.is(TokenKind::SemiColon) {
             end_pos = self.current_token.end;
             self.advance() // Consume ";" token
         }
@@ -384,7 +383,7 @@ impl<'a> Parser<'a> {
         };
         self.advance(); // Consume Identifier token
 
-        let is_generator = self.current_token.kind == TokenKind::Asterisk;
+        let is_generator = self.current_token.is(TokenKind::Asterisk);
         if is_generator {
             self.advance(); // Consume "*" token
         }
@@ -393,7 +392,7 @@ impl<'a> Parser<'a> {
 
         let params = self.parse_parameter_list()?;
 
-        let return_type = if self.current_token.kind == TokenKind::Colon {
+        let return_type = if self.current_token.is(TokenKind::Colon) {
             Some(self.parse_type_annotation()?)
         } else {
             None
@@ -424,12 +423,12 @@ impl<'a> Parser<'a> {
 
         self.advance(); // Consume "function" keyword token
 
-        if self.current_token.kind == TokenKind::Asterisk {
+        if self.current_token.is(TokenKind::Asterisk) {
             is_generator = true;
             self.advance(); // Consume "*" token
         }
 
-        if self.current_token.kind == TokenKind::Identifier {
+        if self.current_token.is(TokenKind::Identifier) {
             id = Some(Identifier {
                 node: Node::new(self.current_token.start, self.current_token.end),
                 name: self.current_token.value.expect_identifier().clone(),
@@ -442,7 +441,7 @@ impl<'a> Parser<'a> {
         let params = self.parse_parameter_list()?;
 
         // Explicit return type, like "function a(): number {}"
-        if self.current_token.kind == TokenKind::Colon {
+        if self.current_token.is(TokenKind::Colon) {
             let colon_start = self.current_token.start;
             self.advance(); // Consume ":" token
             let t = self.parse_type()?;
@@ -469,7 +468,7 @@ impl<'a> Parser<'a> {
         let start_pos = self.current_token.start;
         let parameters = self.parse_parameter_list()?;
 
-        let return_type = if self.current_token.kind == TokenKind::Colon {
+        let return_type = if self.current_token.is(TokenKind::Colon) {
             Some(self.parse_type_annotation()?)
         } else {
             None
@@ -502,7 +501,7 @@ impl<'a> Parser<'a> {
             let mut end_pos = self.current_token.end;
             self.advance(); // Consume Identifier token
 
-            let optional = if self.current_token.kind == TokenKind::QuestionMark {
+            let optional = if self.current_token.is(TokenKind::QuestionMark) {
                 end_pos = self.current_token.end;
                 self.advance(); // Consume "?" token
                 true
@@ -510,7 +509,7 @@ impl<'a> Parser<'a> {
                 false
             };
 
-            let type_annotation = if self.current_token.kind == TokenKind::Colon {
+            let type_annotation = if self.current_token.is(TokenKind::Colon) {
                 let ann = self.parse_type_annotation()?;
                 end_pos = ann.node.end;
                 Some(ann)
@@ -563,7 +562,7 @@ impl<'a> Parser<'a> {
         let end_pos = self.current_token.end;
         self.advance(); // Consume type token
 
-        if self.current_token.kind == TokenKind::LessThan {
+        if self.current_token.is(TokenKind::LessThan) {
             todo!("Generic types");
         }
 
@@ -687,7 +686,7 @@ impl<'a> Parser<'a> {
         let expr = self.parse_expression()?;
         let mut end_pos = expr.node().end;
 
-        if self.current_token.kind == TokenKind::SemiColon {
+        if self.current_token.is(TokenKind::SemiColon) {
             end_pos = self.current_token.end;
             self.advance();
         }
@@ -757,7 +756,7 @@ impl<'a> Parser<'a> {
         let mut items: Vec<KV> = Vec::new();
 
         loop {
-            if self.current_token.kind == TokenKind::CloseBracket {
+            if self.current_token.is(TokenKind::CloseBracket) {
                 break;
             }
 
@@ -847,7 +846,7 @@ impl<'a> Parser<'a> {
         let mut arguments: Vec<Expression> = Vec::new();
 
         loop {
-            if self.current_token.kind == TokenKind::CloseParen {
+            if self.current_token.is(TokenKind::CloseParen) {
                 break;
             }
 
