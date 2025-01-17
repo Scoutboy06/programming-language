@@ -3,15 +3,15 @@ use crate::expressions::{
     BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty, Expression,
     FunctionExpression, Literal, MemberExpression, MemberProperty, NullLiteral, NumberLiteral,
     ObjectExpression, ParenthesisExpression, StringLiteral, Type, TypeAnnotation, TypeValue,
-    UnaryExpression, UpdateExpression, KV,
+    UpdateExpression, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
-    BlockStatement, ExpressionStatement, ForStatement, FunctionDeclaration, Identifier,
-    IfStatement, Parameter, ReturnStatement, Statement, VariableDeclaration, VariableDeclarator,
-    VariableKind, WhileStatement,
+    BlockStatement, EnumMember, EnumStatement, ExpressionStatement, ForStatement,
+    FunctionDeclaration, Identifier, IfStatement, Parameter, ReturnStatement, Statement,
+    VariableDeclaration, VariableDeclarator, VariableKind, WhileStatement,
 };
-use lexer::{Keyword, Lexer, Operator, Token, TokenKind, TokenValue};
+use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
 
 pub struct Parser<'a> {
     source: &'a str,
@@ -25,20 +25,10 @@ pub struct ParserError {
     token: Token,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorKind {
     InternalError,
     InvalidToken,
-    ExpectedClosingParen,
-    ExpectedClosingBracket,
-    ExpectedClosingBrace,
-    ExpectedIdentifier,
-    ExpectedComma,
-    ExpectedOpenParen,
-    ExpectedFunctionName,
-    ExpectedColon,
-    ExpectedSemiColon,
-    ExpectedArrow,
 }
 
 impl<'a> Parser<'a> {
@@ -86,24 +76,20 @@ impl<'a> Parser<'a> {
         self.current_token = self.lexer.next_token();
     }
 
-    fn expect_token_kind(&self, kind: TokenKind, err: ErrorKind) -> Result<(), ErrorKind> {
+    fn expect_token_kind(&self, kind: TokenKind) -> Result<(), ErrorKind> {
         if self.current_token.kind == kind {
             Ok(())
         } else {
-            Err(err)
+            Err(ErrorKind::InvalidToken)
         }
     }
 
-    fn expect_and_consume_token(
-        &mut self,
-        kind: TokenKind,
-        err: ErrorKind,
-    ) -> Result<(), ErrorKind> {
+    fn expect_and_consume_token(&mut self, kind: TokenKind) -> Result<(), ErrorKind> {
         if self.current_token.kind == kind {
             self.advance();
             Ok(())
         } else {
-            Err(err)
+            Err(ErrorKind::InvalidToken)
         }
     }
 
@@ -129,6 +115,7 @@ impl<'a> Parser<'a> {
                 }
                 Keyword::While => Ok(self.parse_while_statement()?.into()),
                 Keyword::For => Ok(self.parse_for_statement()?.into()),
+                Keyword::Enum => Ok(self.parse_enum_declaration()?.into()),
                 _ => todo!(),
             },
             TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
@@ -234,10 +221,7 @@ impl<'a> Parser<'a> {
                     expression,
                 };
 
-                self.expect_and_consume_token(
-                    TokenKind::CloseParen,
-                    ErrorKind::ExpectedClosingParen,
-                )?;
+                self.expect_and_consume_token(TokenKind::CloseParen)?;
 
                 Ok(paren_expr.into())
             }
@@ -277,7 +261,7 @@ impl<'a> Parser<'a> {
     /// Parses a block of code, usually enclosed by `{}`.
     fn parse_block_statement(&mut self) -> Result<BlockStatement, ErrorKind> {
         let start_pos = self.current_token.start;
-        self.expect_and_consume_token(TokenKind::OpenBrace, ErrorKind::InternalError)?;
+        self.expect_and_consume_token(TokenKind::OpenBrace)?;
 
         let mut statements: Vec<Statement> = Vec::new();
 
@@ -317,7 +301,7 @@ impl<'a> Parser<'a> {
         loop {
             let start = self.current_token.start;
 
-            self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedIdentifier)?;
+            self.expect_token_kind(TokenKind::Identifier)?;
             let identifier = Identifier {
                 node: Node::new(start, self.current_token.end),
                 name: self.current_token.value.expect_identifier().clone(),
@@ -376,7 +360,7 @@ impl<'a> Parser<'a> {
 
         self.advance(); // Consume "function" token
 
-        self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedFunctionName)?;
+        self.expect_token_kind(TokenKind::Identifier)?;
         let id = Identifier {
             node: Node::new(self.current_token.start, self.current_token.end),
             name: self.current_token.value.expect_identifier().clone(),
@@ -388,7 +372,7 @@ impl<'a> Parser<'a> {
             self.advance(); // Consume "*" token
         }
 
-        self.expect_token_kind(TokenKind::OpenParen, ErrorKind::ExpectedOpenParen)?;
+        self.expect_token_kind(TokenKind::OpenParen)?;
 
         let params = self.parse_parameter_list()?;
 
@@ -436,7 +420,7 @@ impl<'a> Parser<'a> {
             self.advance(); // Consume Identifier token
         }
 
-        self.expect_token_kind(TokenKind::OpenParen, ErrorKind::ExpectedOpenParen)?;
+        self.expect_token_kind(TokenKind::OpenParen)?;
 
         let params = self.parse_parameter_list()?;
 
@@ -474,7 +458,7 @@ impl<'a> Parser<'a> {
             None
         };
 
-        self.expect_and_consume_token(TokenKind::ArrowFn, ErrorKind::ExpectedArrow)?;
+        self.expect_and_consume_token(TokenKind::ArrowFn)?;
         let body = self.parse_statement(false)?;
 
         Ok(ArrowFunctionExpression {
@@ -486,13 +470,13 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_parameter_list(&mut self) -> Result<Vec<Parameter>, ErrorKind> {
-        self.expect_and_consume_token(TokenKind::OpenParen, ErrorKind::InternalError)?;
+        self.expect_and_consume_token(TokenKind::OpenParen)?;
 
         let mut params: Vec<Parameter> = Vec::new();
 
         while self.current_token.kind != TokenKind::CloseParen {
             let start_pos = self.current_token.start;
-            self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedIdentifier)?;
+            self.expect_token_kind(TokenKind::Identifier)?;
             let id = self.current_token.value.expect_identifier();
             let identifier = Identifier {
                 node: Node::new(self.current_token.start, self.current_token.end),
@@ -572,30 +556,15 @@ impl<'a> Parser<'a> {
         })
     }
 
-    /// Parses a class declaration, including its methods and properties.
-    fn parse_class_declaration(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
-
-    /// Parses an `import` statement
-    fn parse_import_declaration(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
-
-    /// Parses an `export` statement
-    fn parse_export_declaration(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
-
     /// Parses an `if` statement, including `else if` and `else` clauses.
     fn parse_if_statement(&mut self) -> Result<IfStatement, ErrorKind> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "if" keyword token
-        self.expect_and_consume_token(TokenKind::OpenParen, ErrorKind::ExpectedOpenParen)?;
+        self.expect_and_consume_token(TokenKind::OpenParen)?;
 
         let condition = self.parse_expression()?;
 
-        self.expect_and_consume_token(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
+        self.expect_and_consume_token(TokenKind::CloseParen)?;
 
         let body = self.parse_statement(true)?;
 
@@ -628,19 +597,19 @@ impl<'a> Parser<'a> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "for" keyword token
 
-        self.expect_and_consume_token(TokenKind::OpenParen, ErrorKind::ExpectedOpenParen)?;
+        self.expect_and_consume_token(TokenKind::OpenParen)?;
 
         let initializer = self.parse_statement(false)?;
 
-        self.expect_and_consume_token(TokenKind::SemiColon, ErrorKind::ExpectedSemiColon)?;
+        self.expect_and_consume_token(TokenKind::SemiColon)?;
 
         let condition = self.parse_expression()?;
 
-        self.expect_and_consume_token(TokenKind::SemiColon, ErrorKind::ExpectedSemiColon)?;
+        self.expect_and_consume_token(TokenKind::SemiColon)?;
 
         let update = self.parse_statement(false)?;
 
-        self.expect_and_consume_token(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
+        self.expect_and_consume_token(TokenKind::CloseParen)?;
 
         let body = self.parse_statement(false)?;
 
@@ -658,11 +627,11 @@ impl<'a> Parser<'a> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "while" keyword token
 
-        self.expect_and_consume_token(TokenKind::OpenParen, ErrorKind::ExpectedOpenParen)?;
+        self.expect_and_consume_token(TokenKind::OpenParen)?;
 
         let condition = self.parse_expression()?;
 
-        self.expect_and_consume_token(TokenKind::CloseParen, ErrorKind::ExpectedClosingParen)?;
+        self.expect_and_consume_token(TokenKind::CloseParen)?;
 
         let body = self.parse_statement(true)?;
 
@@ -671,11 +640,6 @@ impl<'a> Parser<'a> {
             condition,
             body,
         })
-    }
-
-    /// Parses a `switch` statement, including its cases and default clause.
-    fn parse_switch_statement(&mut self) -> Result<(), ErrorKind> {
-        todo!()
     }
 
     /// Parses a `return` statement.
@@ -734,7 +698,7 @@ impl<'a> Parser<'a> {
             match self.current_token.kind {
                 TokenKind::CloseBracket => break,
                 TokenKind::Comma => continue,
-                _ => return Err(ErrorKind::ExpectedClosingBracket),
+                _ => return Err(ErrorKind::InvalidToken),
             };
         }
 
@@ -762,7 +726,7 @@ impl<'a> Parser<'a> {
 
             let key = self.parse_primary_expression()?;
 
-            self.expect_and_consume_token(TokenKind::Colon, ErrorKind::ExpectedComma)?;
+            self.expect_and_consume_token(TokenKind::Colon)?;
 
             let value = self.parse_expression()?;
 
@@ -834,14 +798,9 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Parses unary operations (e.g., `!`, `-`).
-    fn parse_unary_expression(&mut self) -> Result<UnaryExpression, ErrorKind> {
-        todo!()
-    }
-
     /// Parses a function or method call
     fn parse_call_expression(&mut self, callee: Expression) -> Result<CallExpression, ErrorKind> {
-        self.expect_and_consume_token(TokenKind::OpenParen, ErrorKind::InternalError)?;
+        self.expect_and_consume_token(TokenKind::OpenParen)?;
 
         let mut arguments: Vec<Expression> = Vec::new();
 
@@ -858,7 +817,7 @@ impl<'a> Parser<'a> {
                     self.advance(); // Consume "," token
                 }
                 TokenKind::CloseParen => break,
-                _ => return Err(ErrorKind::ExpectedClosingParen),
+                _ => return Err(ErrorKind::InvalidToken),
             }
         }
 
@@ -883,7 +842,7 @@ impl<'a> Parser<'a> {
         match self.current_token.kind {
             TokenKind::Dot => {
                 self.advance(); // Consume "." token
-                self.expect_token_kind(TokenKind::Identifier, ErrorKind::ExpectedIdentifier)?;
+                self.expect_token_kind(TokenKind::Identifier)?;
 
                 property = MemberProperty::Identifier(Identifier {
                     node: Node::new(self.current_token.start, self.current_token.end),
@@ -905,10 +864,7 @@ impl<'a> Parser<'a> {
                     expression: expr,
                 });
 
-                self.expect_and_consume_token(
-                    TokenKind::CloseBracket,
-                    ErrorKind::ExpectedClosingBracket,
-                )?;
+                self.expect_and_consume_token(TokenKind::CloseBracket)?;
             }
             _ => unreachable!(),
         }
@@ -965,7 +921,7 @@ impl<'a> Parser<'a> {
     /// Parses type annotations specific to TypeScript (e.g., `: string`, `: number`).
     fn parse_type_annotation(&mut self) -> Result<TypeAnnotation, ErrorKind> {
         let colon_start = self.current_token.start;
-        self.expect_and_consume_token(TokenKind::Colon, ErrorKind::ExpectedColon)?;
+        self.expect_and_consume_token(TokenKind::Colon)?;
         let t = self.parse_type()?;
         Ok(TypeAnnotation {
             node: Node::new(colon_start, t.node.end),
@@ -973,53 +929,61 @@ impl<'a> Parser<'a> {
         })
     }
 
-    /// Parses generic type parameters (e.g., `<T>`, `<T, U>`).
-    fn parse_generic_parameters(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
-
-    /// Parses TypeScript `interface` declarations.
-    fn parse_interface_declaration(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
-
-    /// Parses TypeScript `type` alias declarations.
-    fn parse_type_alias(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
-
     /// Parses TypeScript `enum` declarations.
-    fn parse_enum_declaration(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
+    fn parse_enum_declaration(&mut self) -> Result<EnumStatement, ErrorKind> {
+        let start_pos = self.current_token.start;
+        self.advance(); // Consume "enum" keyword token
 
-    /// Parses decorators used in TypeScript (e.g., `@Component`).
-    fn parse_decorator(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
+        self.expect_token_kind(TokenKind::Identifier)?;
+        let id = Identifier {
+            node: Node::new(self.current_token.start, self.current_token.end),
+            name: self.current_token.value.expect_identifier().clone(),
+        };
+        self.advance(); // Consume Identifier token
 
-    /// Parses optional chaining expressions (e.g., `obj?.prop`).
-    fn parse_optional_chain(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
+        self.expect_and_consume_token(TokenKind::OpenBrace)?;
 
-    /// Parses nullish coalescing (`??`).
-    fn parse_nullish_coalescing(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
+        let mut members = Vec::new();
+        loop {
+            match self.current_token.kind {
+                TokenKind::CloseBrace => break,
+                TokenKind::Comma if members.len() != 0 => self.advance(), // Consume "," token
+                _ => {}
+            };
 
-    /// Parses type assertions (e.g., `value as Type`).
-    fn parse_type_assertion(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
+            let start = self.current_token.start;
 
-    /// Parses abstract members in classes.
-    fn parse_abstract_members(&mut self) -> Result<(), ErrorKind> {
-        todo!()
-    }
+            self.expect_token_kind(TokenKind::Identifier)?;
+            let id = Identifier {
+                node: Node::new(self.current_token.start, self.current_token.end),
+                name: self.current_token.value.expect_identifier().clone(),
+            };
+            self.advance(); // Consume Identifier token
 
-    /// Parses module declarations (e.g., namespace or module).
-    fn parse_module(&mut self) -> Result<(), ParserError> {
-        todo!()
+            let (end_pos, init) = if self.current_token.is(TokenKind::Equals) {
+                self.advance(); // Consume "=" token
+                let expr = self.parse_expression()?;
+                (expr.node().end, Some(expr))
+            } else {
+                (id.node.end, None)
+            };
+
+            members.push(EnumMember {
+                node: Node::new(start, end_pos),
+                id,
+                init,
+            });
+        }
+
+        let end_pos = self.current_token.end;
+        self.advance(); // Consume "}" token
+
+        Ok(EnumStatement {
+            node: Node::new(start_pos, end_pos),
+            is_declare: false,
+            is_const: false,
+            id,
+            members,
+        })
     }
 }

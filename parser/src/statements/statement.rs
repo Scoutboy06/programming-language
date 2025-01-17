@@ -1,6 +1,6 @@
 use super::{
-    BlockStatement, ExpressionStatement, ForStatement, FunctionDeclaration, IfStatement,
-    ReturnStatement, Shebang, VariableDeclaration, WhileStatement,
+    BlockStatement, EnumStatement, ExpressionStatement, ForStatement, FunctionDeclaration,
+    IfStatement, ReturnStatement, Shebang, VariableDeclaration, WhileStatement,
 };
 use crate::nodes::Node;
 
@@ -8,6 +8,7 @@ use crate::nodes::Node;
 pub enum Statement {
     EmptyStatement(Box<EmptyStatement>),
     ExpressionStatement(Box<ExpressionStatement>),
+    EnumStatement(Box<EnumStatement>),
     BlockStatement(Box<BlockStatement>),
     IfStatement(Box<IfStatement>),
     SwitchStatement(Box<()>),

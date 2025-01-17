@@ -1,5 +1,4 @@
 - [x] Primary expression
-- [ ] Template literal
 - [x] Block statement
 - [x] Variable declaration
 - [x] Binary expression
@@ -8,7 +7,7 @@
 - [x] Call expression
 - [x] Function declaration
   - [x] Function expression
-  - [ ] Arrow function
+  - [x] Arrow function
 - [x] Return statement
 - [x] Assignment expression
 - [x] Member expression
@@ -21,14 +20,19 @@
   - [x] Update expression
   - [ ] For-in statement
   - [ ] For-of statement
-- [ ] Switch statement
-- [ ] Class declaration
-  - [ ] Abstract members
-- [ ] Unary expression
-- [ ] Generic parameters
 - [ ] Enum declaration
+  - [x] Without initializers
+  - [x] With initializers
+  - [ ] const enum
+  - [ ] declare enum
+- [ ] Template literal
+- [ ] Unary expression
 - [ ] Interface declaration
 - [ ] Type alias
+- [ ] Class declaration
+  - [ ] Abstract members
+- [ ] Switch statement
+- [ ] Generic parameters
 - [ ] Optional chain
 - [ ] Nullish coalescing
 - [ ] (Type assertion?)
