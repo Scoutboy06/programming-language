@@ -98,24 +98,23 @@ impl<'a> Parser<'a> {
         match self.current_token.kind {
             TokenKind::Keyword => match self.current_token.value.expect_keyword() {
                 Keyword::Var | Keyword::Let | Keyword::Const => {
-                    let var_dec = self.parse_variable_declaration(include_basic_semi)?;
-                    Ok(Statement::VariableDeclaration(var_dec.into()))
+                    if self.current_token.value.expect_keyword() == Keyword::Const {
+                        let peek = self.lexer.peek_token();
+                        if peek.is(TokenKind::Keyword)
+                            && peek.value.expect_keyword() == Keyword::Enum
+                        {
+                            return Ok(self.parse_enum_declaration(true, false)?.into());
+                        }
+                    }
+                    Ok(self.parse_variable_declaration(include_basic_semi)?.into())
                 }
-                Keyword::Function => {
-                    let fn_dec = self.parse_function_declaration(false)?;
-                    Ok(Statement::FunctionDeclaration(fn_dec.into()))
-                }
-                Keyword::Return => {
-                    let rt_stmt = self.parse_return_statement()?;
-                    Ok(Statement::ReturnStatement(rt_stmt.into()))
-                }
-                Keyword::If => {
-                    let if_stmt = self.parse_if_statement()?;
-                    Ok(Statement::IfStatement(if_stmt.into()))
-                }
+                Keyword::Function => Ok(self.parse_function_declaration(false)?.into()),
+                Keyword::Return => Ok(self.parse_return_statement()?.into()),
+                Keyword::If => Ok(self.parse_if_statement()?.into()),
                 Keyword::While => Ok(self.parse_while_statement()?.into()),
                 Keyword::For => Ok(self.parse_for_statement()?.into()),
-                Keyword::Enum => Ok(self.parse_enum_declaration()?.into()),
+                Keyword::Enum => Ok(self.parse_enum_declaration(false, false)?.into()),
+                Keyword::Declare => Ok(self.parse_enum_declaration(false, true)?.into()),
                 _ => todo!(),
             },
             TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
@@ -930,8 +929,17 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses TypeScript `enum` declarations.
-    fn parse_enum_declaration(&mut self) -> Result<EnumStatement, ErrorKind> {
+    fn parse_enum_declaration(
+        &mut self,
+        is_const: bool,
+        is_declare: bool,
+    ) -> Result<EnumStatement, ErrorKind> {
         let start_pos = self.current_token.start;
+
+        if self.current_token.value.expect_keyword() != Keyword::Enum {
+            self.advance(); // Consume "enum" or "declare" keyword tok
+        }
+
         self.advance(); // Consume "enum" keyword token
 
         self.expect_token_kind(TokenKind::Identifier)?;
@@ -980,8 +988,8 @@ impl<'a> Parser<'a> {
 
         Ok(EnumStatement {
             node: Node::new(start_pos, end_pos),
-            is_declare: false,
-            is_const: false,
+            is_declare,
+            is_const,
             id,
             members,
         })

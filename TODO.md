@@ -20,11 +20,11 @@
   - [x] Update expression
   - [ ] For-in statement
   - [ ] For-of statement
-- [ ] Enum declaration
+- [x] Enum declaration
   - [x] Without initializers
   - [x] With initializers
-  - [ ] const enum
-  - [ ] declare enum
+  - [x] const enum
+  - [x] declare enum
 - [ ] Template literal
 - [ ] Unary expression
 - [ ] Interface declaration

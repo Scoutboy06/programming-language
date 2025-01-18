@@ -45,6 +45,7 @@ pub enum Keyword {
     NumberType,  // : number
     BooleanType, // : boolean
     Enum,        // enum Foo {}
+    Declare,     // declare enum Foo {}
 }
 
 static KEYWORDS: phf::Map<&'static str, Keyword> = phf_map! {
@@ -90,6 +91,7 @@ static KEYWORDS: phf::Map<&'static str, Keyword> = phf_map! {
     "number" => Keyword::NumberType,
     "boolean" => Keyword::BooleanType,
     "enum" => Keyword::Enum,
+    "declare" => Keyword::Declare
 };
 
 #[derive(Debug, Clone, PartialEq)]

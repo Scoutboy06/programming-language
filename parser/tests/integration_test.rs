@@ -1247,3 +1247,87 @@ fn enum_with_initialized_values() {
 
     assert_eq!(result, Ok(expected));
 }
+
+#[test]
+fn const_enum_statement() {
+    let code = "const enum Foo { Bar, Baz }";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![EnumStatement {
+            node: Node::new(0, code.len()),
+            is_declare: false,
+            is_const: true,
+            id: Identifier {
+                node: code.node("Foo", 0),
+                name: "Foo".into(),
+            },
+            members: vec![
+                EnumMember {
+                    node: code.node("Bar", 0),
+                    id: Identifier {
+                        node: code.node("Bar", 0),
+                        name: "Bar".into(),
+                    },
+                    init: None,
+                },
+                EnumMember {
+                    node: code.node("Baz", 0),
+                    id: Identifier {
+                        node: code.node("Baz", 0),
+                        name: "Baz".into(),
+                    },
+                    init: None,
+                },
+            ],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn ambient_enum_statement() {
+    let code = "declare enum Foo { Bar, Baz }";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![EnumStatement {
+            node: Node::new(0, code.len()),
+            is_declare: true,
+            is_const: false,
+            id: Identifier {
+                node: code.node("Foo", 0),
+                name: "Foo".into(),
+            },
+            members: vec![
+                EnumMember {
+                    node: code.node("Bar", 0),
+                    id: Identifier {
+                        node: code.node("Bar", 0),
+                        name: "Bar".into(),
+                    },
+                    init: None,
+                },
+                EnumMember {
+                    node: code.node("Baz", 0),
+                    id: Identifier {
+                        node: code.node("Baz", 0),
+                        name: "Baz".into(),
+                    },
+                    init: None,
+                },
+            ],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
