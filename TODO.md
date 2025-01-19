@@ -1,48 +1,108 @@
-- [x] Primary expression
-- [x] Block statement
-- [x] Variable declaration
-- [x] Binary expression
-- [x] Array literal expression
-- [x] Object literal expression
-- [x] Call expression
-- [x] Function declaration
+- Primary expression
+  - [x] Literal values (string, number, boolean, null)
+  - [x] Identifier
+  - [ ] Array literal
+    - [x] Simple arrays
+    - [ ] Nested arrays
+  - [] Object literal
+    - [ ] Property definitions (shorthand, computed, method)
+    - [ ] Spread properties
   - [x] Function expression
-  - [x] Arrow function
-- [x] Return statement
-- [x] Assignment expression
-- [x] Member expression
-- [x] If statement
+  - [x] Arrow function expression
+- Block statement
+  - [x] Braced block (`{}`)
+  - [x] Nested blocks
+- Variable declaration
+  - [x] `let`, `var`, `const` keywords
+  - [ ] Destructuring (array, object)
+- (Re)assignment expression
+  - [x] Simple assignments
+  - [ ] Compound assignments (`+=`, `-=`, etc.)
+  - [ ] Destructuring assignments
+- Binary expression
+  - [x] Arithmetic operations (`+`, `-`, `*`, `/`, `%`)
+  - [ ] Relational operations (`<`, `>`, `<=`, `>=`)
+  - [ ] Equality operations (`==`, `!=`, `===`, `!==`)
+  - [ ] Logical operations (`&&`, `||`)
+- Call expression
+  - [x] Function calls
+  - [x] Method calls
+  - [ ] New expressions (`new Foo()`)
+- Function declaration
+  - [x] Named functions
+  - [x] Anonymous functions (expression)
+  - [ ] Default parameters
+  - [ ] Rest parameters
+  - [ ] `async` functions
+- Return statement
+  - [x] With expression
+  - [ ] Without expression
+- Member expression
+  - [x] Dot notation
+  - [x] Bracket notation
+  - [ ] Optional chaining
+- If statement
   - [x] Else statement
   - [x] Else if statement
   - [x] Without curly braces
-- [x] While statement
-- [ ] For statement
-  - [x] Update expression
+- While statement
+  - [x] While statement
+  - [ ] Do-while statement
+- For statement
+  - [x] C-style (`for (let i = 0; i < n; i++)`)
   - [ ] For-in statement
   - [ ] For-of statement
-- [x] Enum declaration
+  - [ ] For-await-of statement
+- Enum declaration
   - [x] Without initializers
   - [x] With initializers
   - [x] const enum
   - [x] declare enum
-- [ ] Types
-  - [x] Type reference (e.g. `let a: number, b: Foo`)
-  - [x] Array type (e.g. `let n: number[]`)
-  - [ ] Indexed type (e.g. `let b: nums[2]`)
-  - [x] Type param instantiation (e.g. `Array<Array<number>>`)
+- Types
+  - [x] Primitive types (e.g. `number`, `Foo`)
+  - [x] Array type (e.g. `number[]`)
+  - [x] Type parameters (e.g. `Array<Array<number>>`)
   - [x] Function type parameters (e.g. `function foo<T>() {}`)
   - [ ] Arrow function type parameters (e.g. `const foo = <T>() => {}`)
+  - [ ] Indexed type (e.g. `nums[2]`)
+  - [ ] Tuple types (e.g. `[number, string]`)
+  - [ ] Union types (e.g. `string | number`)
+  - [ ] Intersection types (e.g. `A & B`)
+  - [ ] Conditional types (e.g. `T extends U ? X : Y`)
+  - [ ] Mapped types (e.g. `{ [k in keyof T]: T[K] }`)
+  - [ ] Infer types (e.g. `infer R`)
   - [ ] Type literal (e.g. `{ a: string }`)
-  - [ ] Type alias (e.g. `type Foo = string[]`)
-- [ ] Template literal
-- [ ] Unary expression
-- [ ] Interface declaration
-- [ ] Class declaration
-  - [ ] Abstract members
-- [ ] Switch statement
-- [ ] Optional chain
-- [ ] Nullish coalescing
-- [ ] (Type assertion?)
-- [ ] Import declaration
-- [ ] Export declaration
-- [ ] Module
+  - [ ] Type alias (e.g. `type Foo = ...`)
+- Template literal
+  - [ ] Tagged templates
+  - [ ] Template spans (interpolation)
+- Unary expression
+  - [ ] Prefix operators (`+`, `-`, `!`, `~`, `++`, `--` `typeof`, `void`, `delete`)
+  - [x] Postfix operators (`++`, `--`)
+- Interface declaration
+  - [ ] Extends clauses
+  - [ ] Index signatures
+  - [ ] Method signatures
+- Class declaration
+  - [ ] Constructor overloads
+  - [ ] Method overloads
+  - [ ] Static methods and properties
+  - [ ] Private and protected members
+  - [ ] Decorators
+- Switch statement
+  - [ ] Default clause
+  - [ ] Fallthrough cases
+- Nullish coalescing
+  - [ ] Basic support
+- Import declaration
+  - [ ] Default imports
+  - [ ] Named imports
+  - [ ] Namespace imports
+  - [ ] Side-effect imports
+- Export declaration
+  - [ ] Named exports
+  - [ ] Default exports
+  - [ ] Re-exporting
+- Module
+  - [ ] Internal modules (namespaces)
+  - [ ] External modules (ESM)
