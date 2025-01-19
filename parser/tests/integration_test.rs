@@ -2,8 +2,8 @@ use lexer::{Lexer, Operator, Token, TokenKind, TypeKeyword};
 use parser::{
     expressions::{
         types::{
-            KeywordType, TypeAnnotation, TypeParameter, TypeParameterDeclaration, TypeReference,
-            TypeValue,
+            ArrayType, KeywordType, TypeAnnotation, TypeParameter, TypeParameterDeclaration,
+            TypeReference, TypeValue,
         },
         ArrowFunctionExpression, AssignmentExpression, BinaryExpression, BooleanLiteral,
         CallExpression, ComputedProperty, FunctionExpression, MemberExpression, NumberLiteral,
@@ -185,6 +185,7 @@ fn assignment_number_literal() {
                     node: code.node("a", 0),
                     name: "a".into(),
                 },
+                type_annotation: None,
                 init: Some(
                     NumberLiteral {
                         node: code.node("50.5", 0),
@@ -218,6 +219,7 @@ fn assignment_paren_literal() {
                     node: code.node("a", 0),
                     name: "a".into(),
                 },
+                type_annotation: None,
                 init: Some(
                     ParenthesisExpression {
                         node: code.node("(50.5)", 0),
@@ -239,6 +241,102 @@ fn assignment_paren_literal() {
 }
 
 #[test]
+fn assignment_with_simple_type() {
+    let code = "var el1: number, el2: Foo;";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![VariableDeclaration {
+            node: Node::new(0, code.len()),
+            kind: VariableKind::Var,
+            declarations: vec![
+                VariableDeclarator {
+                    node: code.node("el1: number", 0),
+                    id: Identifier {
+                        node: code.node("el1", 0),
+                        name: "el1".into(),
+                    },
+                    type_annotation: Some(TypeAnnotation {
+                        node: code.node(": number", 0),
+                        type_value: KeywordType {
+                            node: code.node("number", 0),
+                            kind: TypeKeyword::Number,
+                        }
+                        .into(),
+                    }),
+                    init: None,
+                },
+                VariableDeclarator {
+                    node: code.node("el2: Foo", 0),
+                    id: Identifier {
+                        node: code.node("el2", 0),
+                        name: "el2".into(),
+                    },
+                    type_annotation: Some(TypeAnnotation {
+                        node: code.node(": Foo", 0),
+                        type_value: TypeReference {
+                            node: code.node("Foo", 0),
+                            type_name: Identifier {
+                                node: code.node("Foo", 0),
+                                name: "Foo".into(),
+                            },
+                            type_params: None,
+                        }
+                        .into(),
+                    }),
+                    init: None,
+                },
+            ],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn array_type() {
+    let code = "const num: number[]";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![VariableDeclaration {
+            node: Node::new(0, code.len()),
+            kind: VariableKind::Const,
+            declarations: vec![VariableDeclarator {
+                node: code.node("num: number[]", 0),
+                id: Identifier {
+                    node: code.node("num", 0),
+                    name: "num".into(),
+                },
+                type_annotation: Some(TypeAnnotation {
+                    node: code.node(": number[]", 0),
+                    type_value: ArrayType {
+                        node: code.node("number[]", 0),
+                        item_type: KeywordType {
+                            node: code.node("number", 0),
+                            kind: TypeKeyword::Number,
+                        }
+                        .into(),
+                    }
+                    .into(),
+                }),
+                init: None,
+            }],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
 fn binary_operation() {
     let code = "let y = 6 + 5 * x";
     let mut parser = Parser::new(&code);
@@ -252,6 +350,7 @@ fn binary_operation() {
             kind: VariableKind::Let,
             declarations: vec![VariableDeclarator {
                 node: code.node("y = 6 + 5 * x", 0),
+                type_annotation: None,
                 id: Identifier {
                     node: code.node("y", 0),
                     name: "y".into(),
@@ -436,10 +535,11 @@ fn function_declaration() {
                     },
                     type_annotation: Some(TypeAnnotation {
                         node: code.node(": number", 0),
-                        type_value: TypeValue::KeywordType(KeywordType {
+                        type_value: KeywordType {
                             node: code.node("number", 0),
                             kind: TypeKeyword::Number,
-                        }),
+                        }
+                        .into(),
                     }),
                     optional: false,
                 },
@@ -451,20 +551,22 @@ fn function_declaration() {
                     },
                     type_annotation: Some(TypeAnnotation {
                         node: code.node(": number", 1),
-                        type_value: TypeValue::KeywordType(KeywordType {
+                        type_value: KeywordType {
                             node: code.node("number", 1),
                             kind: TypeKeyword::Number,
-                        }),
+                        }
+                        .into(),
                     }),
                     optional: false,
                 },
             ],
             return_type: Some(TypeAnnotation {
                 node: code.node(": number", 2),
-                type_value: TypeValue::KeywordType(KeywordType {
+                type_value: KeywordType {
                     node: code.node("number", 2),
                     kind: TypeKeyword::Number,
-                }),
+                }
+                .into(),
             }),
             body: BlockStatement {
                 node: code.between_incl(("{", 0), ("}", 0)),
@@ -515,6 +617,7 @@ fn function_expression() {
                     node: code.node("sum", 0),
                     name: "sum".into(),
                 },
+                type_annotation: None,
                 init: Some(
                     FunctionExpression {
                         node: code.between_incl(("function", 0), ("}", 0)),
@@ -530,10 +633,11 @@ fn function_expression() {
                                 },
                                 type_annotation: Some(TypeAnnotation {
                                     node: code.node(": number", 0),
-                                    type_value: TypeValue::KeywordType(KeywordType {
+                                    type_value: KeywordType {
                                         node: code.node("number", 0),
                                         kind: TypeKeyword::Number,
-                                    }),
+                                    }
+                                    .into(),
                                 }),
                                 optional: false,
                             },
@@ -545,20 +649,22 @@ fn function_expression() {
                                 },
                                 type_annotation: Some(TypeAnnotation {
                                     node: code.node(": number", 1),
-                                    type_value: TypeValue::KeywordType(KeywordType {
+                                    type_value: KeywordType {
                                         node: code.node("number", 1),
                                         kind: TypeKeyword::Number,
-                                    }),
+                                    }
+                                    .into(),
                                 }),
                                 optional: false,
                             },
                         ],
                         return_type: Some(TypeAnnotation {
                             node: code.node(": number", 2),
-                            type_value: TypeValue::KeywordType(KeywordType {
+                            type_value: KeywordType {
                                 node: code.node("number", 2),
                                 kind: TypeKeyword::Number,
-                            }),
+                            }
+                            .into(),
                         }),
                         body: BlockStatement {
                             node: code.between_incl(("{", 0), ("}", 0)),
@@ -613,6 +719,7 @@ fn arrow_function() {
                     node: code.node("sum", 0),
                     name: "sum".into(),
                 },
+                type_annotation: None,
                 init: Some(
                     ArrowFunctionExpression {
                         node: code.between_incl(("(n1", 0), ("n2", 1)),
@@ -625,10 +732,11 @@ fn arrow_function() {
                                 },
                                 type_annotation: Some(TypeAnnotation {
                                     node: code.node(": number", 0),
-                                    type_value: TypeValue::KeywordType(KeywordType {
+                                    type_value: KeywordType {
                                         node: code.node("number", 0),
                                         kind: TypeKeyword::Number,
-                                    }),
+                                    }
+                                    .into(),
                                 }),
                                 optional: false,
                             },
@@ -640,20 +748,22 @@ fn arrow_function() {
                                 },
                                 type_annotation: Some(TypeAnnotation {
                                     node: code.node(": number", 1),
-                                    type_value: TypeValue::KeywordType(KeywordType {
+                                    type_value: KeywordType {
                                         node: code.node("number", 1),
                                         kind: TypeKeyword::Number,
-                                    }),
+                                    }
+                                    .into(),
                                 }),
                                 optional: false,
                             },
                         ],
                         return_type: Some(TypeAnnotation {
                             node: code.node(": number", 2),
-                            type_value: TypeValue::KeywordType(KeywordType {
+                            type_value: KeywordType {
                                 node: code.node("number", 2),
                                 kind: TypeKeyword::Number,
-                            }),
+                            }
+                            .into(),
                         }),
                         body: ExpressionStatement {
                             node: code.node("n1 + n2", 0),
@@ -1077,6 +1187,7 @@ fn for_loop() {
                         name: "i".into(),
                     }
                     .into(),
+                    type_annotation: None,
                     init: Some(
                         NumberLiteral {
                             node: code.node("0", 0),
@@ -1374,14 +1485,15 @@ fn generics_on_function_declaration() {
                     },
                     type_annotation: Some(TypeAnnotation {
                         node: code.node(": T", 0),
-                        type_value: TypeValue::TypeReference(TypeReference {
+                        type_value: TypeReference {
                             node: code.node("T", 1),
                             type_name: Identifier {
                                 node: code.node("T", 1),
                                 name: "T".into(),
                             },
                             type_params: None,
-                        }),
+                        }
+                        .into(),
                     }),
                     optional: false,
                 },
@@ -1393,28 +1505,30 @@ fn generics_on_function_declaration() {
                     },
                     type_annotation: Some(TypeAnnotation {
                         node: code.node(": T", 1),
-                        type_value: TypeValue::TypeReference(TypeReference {
+                        type_value: TypeReference {
                             node: code.node("T", 2),
                             type_name: Identifier {
                                 node: code.node("T", 2),
                                 name: "T".into(),
                             },
                             type_params: None,
-                        }),
+                        }
+                        .into(),
                     }),
                     optional: false,
                 },
             ],
             return_type: Some(TypeAnnotation {
                 node: code.node(": T", 2),
-                type_value: TypeValue::TypeReference(TypeReference {
+                type_value: TypeReference {
                     node: code.node("T", 3),
                     type_name: Identifier {
                         node: code.node("T", 3),
                         name: "T".into(),
                     },
                     type_params: None,
-                }),
+                }
+                .into(),
             }),
             body: BlockStatement {
                 node: code.between_incl(("{", 0), ("}", 0)),

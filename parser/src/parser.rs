@@ -1,5 +1,6 @@
 use crate::expressions::types::{
-    KeywordType, TypeAnnotation, TypeParameter, TypeParameterDeclaration, TypeReference, TypeValue,
+    ArrayType, KeywordType, TypeAnnotation, TypeParameter, TypeParameterDeclaration, TypeReference,
+    TypeValue,
 };
 use crate::expressions::{
     ArrayExpression, ArrowFunctionExpression, AsUpdateOperator, AssignmentExpression,
@@ -307,37 +308,38 @@ impl<'a> Parser<'a> {
                 node: Node::new(start, self.current_token.end),
                 name: self.current_token.value.expect_identifier().clone(),
             };
-            self.advance();
+            self.advance(); // Consume Identifier token
 
-            match self.current_token.kind {
-                TokenKind::Comma => {
-                    declarations.push(VariableDeclarator {
-                        node: Node::new(start, self.current_token.end),
-                        id: identifier,
-                        init: None,
-                    });
-                    end_pos = self.current_token.end;
-                    self.advance();
-                    continue;
-                }
-                TokenKind::Colon => todo!("Type annotation"),
-                TokenKind::Equals => self.advance(),
-                _ => break,
-            }
-
-            let expr = self.parse_expression()?;
-            let decl = VariableDeclarator {
-                node: Node::new(start, expr.node().end),
-                id: identifier,
-                init: Some(expr),
+            let type_annotation = if self.current_token.is(TokenKind::Colon) {
+                let ann = self.parse_type_annotation()?;
+                end_pos = ann.node.end;
+                Some(ann)
+            } else {
+                None
             };
 
-            end_pos = decl.node.end;
+            let init = if self.current_token.is(TokenKind::Equals) {
+                self.advance(); // Consume "=" token
+                let expr = self.parse_expression()?;
+                end_pos = expr.node().end;
+                Some(expr)
+            } else {
+                None
+            };
+
+            let decl = VariableDeclarator {
+                node: Node::new(start, end_pos),
+                id: identifier,
+                type_annotation,
+                init,
+            };
+
             declarations.push(decl);
 
             if self.current_token.kind != TokenKind::Comma {
                 break;
             }
+            self.advance(); // Consume "," token
         }
 
         if include_semi && self.current_token.is(TokenKind::SemiColon) {
@@ -1005,6 +1007,31 @@ impl<'a> Parser<'a> {
     fn parse_type_value(&mut self) -> Result<TypeValue, ErrorKind> {
         let start_pos = self.current_token.start;
 
+        let mut left = self.parse_primary_type()?;
+
+        loop {
+            match self.current_token.kind {
+                TokenKind::LessThan => todo!("Type parameters"),
+                TokenKind::OpenBracket => {
+                    self.advance(); // Consume "[" token
+                    self.expect_token_kind(TokenKind::CloseBracket)?;
+                    left = ArrayType {
+                        node: Node::new(start_pos, self.current_token.end),
+                        item_type: left,
+                    }
+                    .into();
+                    self.advance(); // Consume "]" token
+                }
+                _ => break,
+            }
+        }
+
+        Ok(left)
+    }
+
+    /// Parses keyword types (number, string, etc.), type references (Foo, Bar, etc.) and type literals (e.g. { a: number })
+    fn parse_primary_type(&mut self) -> Result<TypeValue, ErrorKind> {
+        let start_pos = self.current_token.start;
         match self.current_token.kind {
             TokenKind::Keyword => {
                 let kw = self
@@ -1018,7 +1045,7 @@ impl<'a> Parser<'a> {
                     kind: kw,
                 };
                 self.advance(); // Consume Keyword token
-                Ok(TypeValue::KeywordType(t))
+                Ok(TypeValue::KeywordType(Box::new(t)))
             }
             TokenKind::Identifier => {
                 let id = self.current_token.value.expect_identifier().clone();
@@ -1031,7 +1058,7 @@ impl<'a> Parser<'a> {
                     type_params: None,
                 };
                 self.advance(); // Consume Identifier token
-                Ok(TypeValue::TypeReference(t))
+                Ok(TypeValue::TypeReference(Box::new(t)))
             }
             _ => Err(ErrorKind::InvalidToken),
         }

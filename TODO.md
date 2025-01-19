@@ -26,11 +26,12 @@
   - [x] const enum
   - [x] declare enum
 - [ ] Types
-  - [ ] Type reference (e.g. `let a: number, b: Foo`)
-  - [ ] Type parameters 
-    - [x] Function declaration (e.g. `function foo<T>() {}`)
-    - [ ] Arrow function (e.g. `const foo = <T>() => {}`)
-  - [ ] Array type (e.g. `number[]`)
+  - [x] Type reference (e.g. `let a: number, b: Foo`)
+  - [ ] Array type (e.g. `let n: number[]`)
+  - [ ] Indexed type (e.g. `let b: nums[2]`)
+  - [ ] Type param instantiation (e.g. `Array<number>`)
+  - [x] Function type parameters (e.g. `function foo<T>() {}`)
+  - [ ] Arrow function type parameters (e.g. `const foo = <T>() => {}`)
   - [ ] Type literal (e.g. `{ a: string }`)
   - [ ] Type alias (e.g. `type Foo = string[]`)
 - [ ] Template literal

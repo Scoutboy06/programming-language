@@ -15,13 +15,13 @@ pub enum Literal {
 impl Literal {
     pub fn node(&self) -> &Node {
         match self {
-            Literal::String(s) => s.node(),
-            Literal::Boolean(b) => b.node(),
-            Literal::Null(n) => n.node(),
-            Literal::Number(n) => n.node(),
-            Literal::BigInt(n) => n.node(),
-            Literal::Regex(r) => r.node(),
-            Literal::JSXText(j) => j.node(),
+            Literal::String(s) => &s.node,
+            Literal::Boolean(b) => &b.node,
+            Literal::Null(n) => &n.node,
+            Literal::Number(n) => &n.node,
+            Literal::BigInt(n) => &n.node,
+            Literal::Regex(r) => &r.node,
+            Literal::JSXText(j) => &j.node,
         }
     }
 }
@@ -34,12 +34,6 @@ impl From<Literal> for Expression {
 
 macro_rules! init_literal {
     ($literal_type:ident, $variant:path) => {
-        impl $literal_type {
-            pub fn node(&self) -> &Node {
-                &self.node
-            }
-        }
-
         impl From<$literal_type> for Expression {
             fn from(value: $literal_type) -> Self {
                 Expression::Literal(Box::new($variant(value)))

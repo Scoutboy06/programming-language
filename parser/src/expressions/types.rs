@@ -22,10 +22,20 @@ pub struct TypeAnnotation {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TypeValue {
-    KeywordType(KeywordType),
-    TypeReference(TypeReference),
-    ArrayType(ArrayType),
-    TypeLiteral(TypeLiteral),
+    KeywordType(Box<KeywordType>),
+    TypeReference(Box<TypeReference>),
+    ArrayType(Box<ArrayType>),
+    TypeLiteral(Box<TypeLiteral>),
+}
+
+macro_rules! init_type {
+    ($variant:ident) => {
+        impl From<$variant> for TypeValue {
+            fn from(value: $variant) -> Self {
+                TypeValue::$variant(Box::new(value))
+            }
+        }
+    };
 }
 
 impl TypeValue {
@@ -44,6 +54,7 @@ pub struct KeywordType {
     pub node: Node,
     pub kind: TypeKeyword,
 }
+init_type!(KeywordType);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeReference {
@@ -51,13 +62,17 @@ pub struct TypeReference {
     pub type_name: Identifier,
     pub type_params: Option<Vec<TypeValue>>,
 }
+init_type!(TypeReference);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArrayType {
-    node: Node,
+    pub node: Node,
+    pub item_type: TypeValue,
 }
+init_type!(ArrayType);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeLiteral {
-    node: Node,
+    pub node: Node,
 }
+init_type!(TypeLiteral);

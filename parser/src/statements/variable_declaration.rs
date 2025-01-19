@@ -1,3 +1,4 @@
+use crate::expressions::types::TypeAnnotation;
 use crate::expressions::Expression;
 use crate::nodes::Node;
 use string_cache::DefaultAtom as Atom;
@@ -22,6 +23,7 @@ pub struct VariableDeclarator {
     pub node: Node,
     pub id: Identifier,
     pub init: Option<Expression>,
+    pub type_annotation: Option<TypeAnnotation>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
