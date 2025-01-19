@@ -319,7 +319,7 @@ fn array_type() {
                     node: code.node(": number[]", 0),
                     type_value: ArrayType {
                         node: code.node("number[]", 0),
-                        item_type: KeywordType {
+                        type_value: KeywordType {
                             node: code.node("number", 0),
                             kind: TypeKeyword::Number,
                         }

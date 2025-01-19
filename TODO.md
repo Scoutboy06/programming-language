@@ -27,7 +27,7 @@
   - [x] declare enum
 - [ ] Types
   - [x] Type reference (e.g. `let a: number, b: Foo`)
-  - [ ] Array type (e.g. `let n: number[]`)
+  - [x] Array type (e.g. `let n: number[]`)
   - [ ] Indexed type (e.g. `let b: nums[2]`)
   - [ ] Type param instantiation (e.g. `Array<number>`)
   - [x] Function type parameters (e.g. `function foo<T>() {}`)

@@ -1017,7 +1017,7 @@ impl<'a> Parser<'a> {
                     self.expect_token_kind(TokenKind::CloseBracket)?;
                     left = ArrayType {
                         node: Node::new(start_pos, self.current_token.end),
-                        item_type: left,
+                        type_value: left,
                     }
                     .into();
                     self.advance(); // Consume "]" token

@@ -67,7 +67,7 @@ init_type!(TypeReference);
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArrayType {
     pub node: Node,
-    pub item_type: TypeValue,
+    pub type_value: TypeValue,
 }
 init_type!(ArrayType);
 
