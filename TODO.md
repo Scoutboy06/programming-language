@@ -25,14 +25,20 @@
   - [x] With initializers
   - [x] const enum
   - [x] declare enum
+- [ ] Types
+  - [ ] Type reference (e.g. `let a: number, b: Foo`)
+  - [ ] Type parameters 
+    - [ ] Function declaration (e.g. `function foo<T>() {}`)
+    - [ ] Arrow function (e.g. `const foo = <T>() => {}`)
+  - [ ] Array type (e.g. `number[]`)
+  - [ ] Type literal (e.g. `{ a: string }`)
+  - [ ] Type alias (e.g. `type Foo = string[]`)
 - [ ] Template literal
 - [ ] Unary expression
 - [ ] Interface declaration
-- [ ] Type alias
 - [ ] Class declaration
   - [ ] Abstract members
 - [ ] Switch statement
-- [ ] Generic parameters
 - [ ] Optional chain
 - [ ] Nullish coalescing
 - [ ] (Type assertion?)
