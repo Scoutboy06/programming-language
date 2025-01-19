@@ -1,10 +1,13 @@
 use lexer::{Lexer, Operator, Token, TokenKind, TypeKeyword};
 use parser::{
     expressions::{
+        types::{
+            KeywordType, TypeAnnotation, TypeParameter, TypeParameterDeclaration, TypeReference,
+            TypeValue,
+        },
         ArrowFunctionExpression, AssignmentExpression, BinaryExpression, BooleanLiteral,
         CallExpression, ComputedProperty, FunctionExpression, MemberExpression, NumberLiteral,
-        ParenthesisExpression, StringLiteral, Type, TypeAnnotation, TypeValue, UpdateExpression,
-        UpdateOperator,
+        ParenthesisExpression, StringLiteral, UpdateExpression, UpdateOperator,
     },
     nodes::{program::Program, Node},
     statements::{
@@ -407,8 +410,8 @@ fn computed_member_expression() {
 #[test]
 fn function_declaration() {
     let code = "function add(n1: number, n2: number): number {
-    return n1 + n2;
-}";
+        return n1 + n2;
+    }";
     let mut parser = Parser::new(&code);
     let result = parser.parse();
 
@@ -417,12 +420,13 @@ fn function_declaration() {
         shebang: None,
         body: vec![FunctionDeclaration {
             node: Node::new(0, code.len()),
+            is_generator: false,
+            is_async: false,
             id: Identifier {
                 node: code.node("add", 0),
                 name: "add".into(),
             },
-            is_generator: false,
-            is_async: false,
+            type_parameters: None,
             params: vec![
                 Parameter {
                     node: code.node("n1: number", 0),
@@ -432,10 +436,10 @@ fn function_declaration() {
                     },
                     type_annotation: Some(TypeAnnotation {
                         node: code.node(": number", 0),
-                        type_value: Type {
+                        type_value: TypeValue::KeywordType(KeywordType {
                             node: code.node("number", 0),
-                            value: TypeValue::KeywordType(TypeKeyword::Number),
-                        },
+                            kind: TypeKeyword::Number,
+                        }),
                     }),
                     optional: false,
                 },
@@ -447,20 +451,20 @@ fn function_declaration() {
                     },
                     type_annotation: Some(TypeAnnotation {
                         node: code.node(": number", 1),
-                        type_value: Type {
+                        type_value: TypeValue::KeywordType(KeywordType {
                             node: code.node("number", 1),
-                            value: TypeValue::KeywordType(TypeKeyword::Number),
-                        },
+                            kind: TypeKeyword::Number,
+                        }),
                     }),
                     optional: false,
                 },
             ],
             return_type: Some(TypeAnnotation {
                 node: code.node(": number", 2),
-                type_value: Type {
+                type_value: TypeValue::KeywordType(KeywordType {
                     node: code.node("number", 2),
-                    value: TypeValue::KeywordType(TypeKeyword::Number),
-                },
+                    kind: TypeKeyword::Number,
+                }),
             }),
             body: BlockStatement {
                 node: code.between_incl(("{", 0), ("}", 0)),
@@ -526,10 +530,10 @@ fn function_expression() {
                                 },
                                 type_annotation: Some(TypeAnnotation {
                                     node: code.node(": number", 0),
-                                    type_value: Type {
+                                    type_value: TypeValue::KeywordType(KeywordType {
                                         node: code.node("number", 0),
-                                        value: TypeValue::KeywordType(TypeKeyword::Number),
-                                    },
+                                        kind: TypeKeyword::Number,
+                                    }),
                                 }),
                                 optional: false,
                             },
@@ -541,20 +545,20 @@ fn function_expression() {
                                 },
                                 type_annotation: Some(TypeAnnotation {
                                     node: code.node(": number", 1),
-                                    type_value: Type {
+                                    type_value: TypeValue::KeywordType(KeywordType {
                                         node: code.node("number", 1),
-                                        value: TypeValue::KeywordType(TypeKeyword::Number),
-                                    },
+                                        kind: TypeKeyword::Number,
+                                    }),
                                 }),
                                 optional: false,
                             },
                         ],
                         return_type: Some(TypeAnnotation {
                             node: code.node(": number", 2),
-                            type_value: Type {
+                            type_value: TypeValue::KeywordType(KeywordType {
                                 node: code.node("number", 2),
-                                value: TypeValue::KeywordType(TypeKeyword::Number),
-                            },
+                                kind: TypeKeyword::Number,
+                            }),
                         }),
                         body: BlockStatement {
                             node: code.between_incl(("{", 0), ("}", 0)),
@@ -621,10 +625,10 @@ fn arrow_function() {
                                 },
                                 type_annotation: Some(TypeAnnotation {
                                     node: code.node(": number", 0),
-                                    type_value: Type {
+                                    type_value: TypeValue::KeywordType(KeywordType {
                                         node: code.node("number", 0),
-                                        value: TypeValue::KeywordType(TypeKeyword::Number),
-                                    },
+                                        kind: TypeKeyword::Number,
+                                    }),
                                 }),
                                 optional: false,
                             },
@@ -636,20 +640,20 @@ fn arrow_function() {
                                 },
                                 type_annotation: Some(TypeAnnotation {
                                     node: code.node(": number", 1),
-                                    type_value: Type {
+                                    type_value: TypeValue::KeywordType(KeywordType {
                                         node: code.node("number", 1),
-                                        value: TypeValue::KeywordType(TypeKeyword::Number),
-                                    },
+                                        kind: TypeKeyword::Number,
+                                    }),
                                 }),
                                 optional: false,
                             },
                         ],
                         return_type: Some(TypeAnnotation {
                             node: code.node(": number", 2),
-                            type_value: Type {
+                            type_value: TypeValue::KeywordType(KeywordType {
                                 node: code.node("number", 2),
-                                value: TypeValue::KeywordType(TypeKeyword::Number),
-                            },
+                                kind: TypeKeyword::Number,
+                            }),
                         }),
                         body: ExpressionStatement {
                             node: code.node("n1 + n2", 0),
@@ -1325,6 +1329,115 @@ fn ambient_enum_statement() {
                     init: None,
                 },
             ],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn generics_on_function_declaration() {
+    let code = "function add<T>(el1: T, el2: T): T {
+        return el1 + el2;
+    }";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![FunctionDeclaration {
+            node: Node::new(0, code.len()),
+            is_async: false,
+            is_generator: false,
+            id: Identifier {
+                node: code.node("add", 0),
+                name: "add".into(),
+            },
+            type_parameters: Some(TypeParameterDeclaration {
+                node: code.node("<T>", 0),
+                parameters: vec![TypeParameter {
+                    node: code.node("T", 0),
+                    id: Identifier {
+                        node: code.node("T", 0),
+                        name: "T".into(),
+                    },
+                }],
+            }),
+            params: vec![
+                Parameter {
+                    node: code.node("el1: T", 0),
+                    identifier: Identifier {
+                        node: code.node("el1", 0),
+                        name: "el1".into(),
+                    },
+                    type_annotation: Some(TypeAnnotation {
+                        node: code.node(": T", 0),
+                        type_value: TypeValue::TypeReference(TypeReference {
+                            node: code.node("T", 1),
+                            type_name: Identifier {
+                                node: code.node("T", 1),
+                                name: "T".into(),
+                            },
+                            type_params: None,
+                        }),
+                    }),
+                    optional: false,
+                },
+                Parameter {
+                    node: code.node("el2: T", 0),
+                    identifier: Identifier {
+                        node: code.node("el2", 0),
+                        name: "el2".into(),
+                    },
+                    type_annotation: Some(TypeAnnotation {
+                        node: code.node(": T", 1),
+                        type_value: TypeValue::TypeReference(TypeReference {
+                            node: code.node("T", 2),
+                            type_name: Identifier {
+                                node: code.node("T", 2),
+                                name: "T".into(),
+                            },
+                            type_params: None,
+                        }),
+                    }),
+                    optional: false,
+                },
+            ],
+            return_type: Some(TypeAnnotation {
+                node: code.node(": T", 2),
+                type_value: TypeValue::TypeReference(TypeReference {
+                    node: code.node("T", 3),
+                    type_name: Identifier {
+                        node: code.node("T", 3),
+                        name: "T".into(),
+                    },
+                    type_params: None,
+                }),
+            }),
+            body: BlockStatement {
+                node: code.between_incl(("{", 0), ("}", 0)),
+                statements: vec![ReturnStatement {
+                    node: code.node("return el1 + el2;", 0),
+                    value: BinaryExpression {
+                        node: code.node("el1 + el2", 0),
+                        left: Identifier {
+                            node: code.node("el1", 1),
+                            name: "el1".into(),
+                        }
+                        .into(),
+                        right: Identifier {
+                            node: code.node("el2", 1),
+                            name: "el2".into(),
+                        }
+                        .into(),
+                        operator: Operator::Plus,
+                    }
+                    .into(),
+                }
+                .into()],
+            },
         }
         .into()],
     };

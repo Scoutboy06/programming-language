@@ -1,4 +1,4 @@
-use super::{Expression, TypeAnnotation};
+use super::{types::TypeAnnotation, Expression};
 use crate::{
     nodes::Node,
     statements::{Parameter, Statement},

@@ -28,7 +28,7 @@
 - [ ] Types
   - [ ] Type reference (e.g. `let a: number, b: Foo`)
   - [ ] Type parameters 
-    - [ ] Function declaration (e.g. `function foo<T>() {}`)
+    - [x] Function declaration (e.g. `function foo<T>() {}`)
     - [ ] Arrow function (e.g. `const foo = <T>() => {}`)
   - [ ] Array type (e.g. `number[]`)
   - [ ] Type literal (e.g. `{ a: string }`)

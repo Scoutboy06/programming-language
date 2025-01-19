@@ -9,7 +9,7 @@ pub mod literal;
 pub mod member_expression;
 pub mod object_expression;
 pub mod parenthesis_expression;
-pub mod type_annotation;
+pub mod types;
 pub mod unary_expression;
 pub mod update_expression;
 
@@ -24,6 +24,5 @@ pub use literal::*;
 pub use member_expression::*;
 pub use object_expression::*;
 pub use parenthesis_expression::*;
-pub use type_annotation::*;
 pub use unary_expression::*;
 pub use update_expression::*;

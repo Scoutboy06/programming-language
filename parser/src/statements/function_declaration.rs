@@ -1,15 +1,19 @@
 use super::{BlockStatement, Identifier, Statement};
-use crate::{expressions::TypeAnnotation, nodes::Node};
+use crate::{
+    expressions::types::{TypeAnnotation, TypeParameterDeclaration},
+    nodes::Node,
+};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct FunctionDeclaration {
     pub node: Node,
+    pub is_async: bool,
+    pub is_generator: bool,
     pub id: Identifier,
+    pub type_parameters: Option<TypeParameterDeclaration>,
     pub params: Vec<Parameter>,
     pub return_type: Option<TypeAnnotation>,
     pub body: BlockStatement,
-    pub is_generator: bool,
-    pub is_async: bool,
 }
 
 impl From<FunctionDeclaration> for Statement {

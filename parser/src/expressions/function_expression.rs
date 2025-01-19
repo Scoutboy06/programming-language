@@ -1,6 +1,5 @@
-use super::Expression;
+use super::{types::TypeAnnotation, Expression};
 use crate::{
-    expressions::TypeAnnotation,
     nodes::Node,
     statements::{BlockStatement, Identifier, Parameter},
 };
