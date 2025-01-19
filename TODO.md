@@ -29,7 +29,7 @@
   - [x] Type reference (e.g. `let a: number, b: Foo`)
   - [x] Array type (e.g. `let n: number[]`)
   - [ ] Indexed type (e.g. `let b: nums[2]`)
-  - [ ] Type param instantiation (e.g. `Array<number>`)
+  - [x] Type param instantiation (e.g. `Array<Array<number>>`)
   - [x] Function type parameters (e.g. `function foo<T>() {}`)
   - [ ] Arrow function type parameters (e.g. `const foo = <T>() => {}`)
   - [ ] Type literal (e.g. `{ a: string }`)

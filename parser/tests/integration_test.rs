@@ -5,9 +5,9 @@ use parser::{
             ArrayType, KeywordType, TypeAnnotation, TypeParameter, TypeParameterDeclaration,
             TypeReference, TypeValue,
         },
-        ArrowFunctionExpression, AssignmentExpression, BinaryExpression, BooleanLiteral,
-        CallExpression, ComputedProperty, FunctionExpression, MemberExpression, NumberLiteral,
-        ParenthesisExpression, StringLiteral, UpdateExpression, UpdateOperator,
+        ArrayExpression, ArrowFunctionExpression, AssignmentExpression, BinaryExpression,
+        BooleanLiteral, CallExpression, ComputedProperty, FunctionExpression, MemberExpression,
+        NumberLiteral, ParenthesisExpression, StringLiteral, UpdateExpression, UpdateOperator,
     },
     nodes::{program::Program, Node},
     statements::{
@@ -299,7 +299,7 @@ fn assignment_with_simple_type() {
 
 #[test]
 fn array_type() {
-    let code = "const num: number[]";
+    let code = "const num: number[], foo: Foo[];";
     let mut parser = Parser::new(&code);
     let result = parser.parse();
 
@@ -309,25 +309,108 @@ fn array_type() {
         body: vec![VariableDeclaration {
             node: Node::new(0, code.len()),
             kind: VariableKind::Const,
-            declarations: vec![VariableDeclarator {
-                node: code.node("num: number[]", 0),
-                id: Identifier {
-                    node: code.node("num", 0),
-                    name: "num".into(),
-                },
-                type_annotation: Some(TypeAnnotation {
-                    node: code.node(": number[]", 0),
-                    type_value: ArrayType {
-                        node: code.node("number[]", 0),
-                        type_value: KeywordType {
-                            node: code.node("number", 0),
-                            kind: TypeKeyword::Number,
+            declarations: vec![
+                VariableDeclarator {
+                    node: code.node("num: number[]", 0),
+                    id: Identifier {
+                        node: code.node("num", 0),
+                        name: "num".into(),
+                    },
+                    type_annotation: Some(TypeAnnotation {
+                        node: code.node(": number[]", 0),
+                        type_value: ArrayType {
+                            node: code.node("number[]", 0),
+                            type_value: KeywordType {
+                                node: code.node("number", 0),
+                                kind: TypeKeyword::Number,
+                            }
+                            .into(),
                         }
                         .into(),
+                    }),
+                    init: None,
+                },
+                VariableDeclarator {
+                    node: code.node("foo: Foo[]", 0),
+                    id: Identifier {
+                        node: code.node("foo", 0),
+                        name: "foo".into(),
+                    },
+                    type_annotation: Some(TypeAnnotation {
+                        node: code.node(": Foo[]", 0),
+                        type_value: ArrayType {
+                            node: code.node("Foo[]", 0),
+                            type_value: TypeReference {
+                                node: code.node("Foo", 0),
+                                type_name: Identifier {
+                                    node: code.node("Foo", 0),
+                                    name: "Foo".into(),
+                                },
+                                type_params: None,
+                            }
+                            .into(),
+                        }
+                        .into(),
+                    }),
+                    init: None,
+                },
+            ],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn type_params() {
+    let code = "let grid: Array<Array<number>> = [];";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![VariableDeclaration {
+            node: Node::new(0, code.len()),
+            kind: VariableKind::Let,
+            declarations: vec![VariableDeclarator {
+                node: code.between_incl(("grid", 0), ("[]", 0)),
+                id: Identifier {
+                    node: code.node("grid", 0),
+                    name: "grid".into(),
+                },
+                type_annotation: Some(TypeAnnotation {
+                    node: code.node(": Array<Array<number>>", 0),
+                    type_value: TypeReference {
+                        node: code.node("Array<Array<number>>", 0),
+                        type_name: Identifier {
+                            node: code.node("Array", 0),
+                            name: "Array".into(),
+                        },
+                        type_params: Some(vec![TypeReference {
+                            node: code.node("Array<number>", 0),
+                            type_name: Identifier {
+                                node: code.node("Array", 1),
+                                name: "Array".into(),
+                            },
+                            type_params: Some(vec![KeywordType {
+                                node: code.node("number", 0),
+                                kind: TypeKeyword::Number,
+                            }
+                            .into()]),
+                        }
+                        .into()]),
                     }
                     .into(),
                 }),
-                init: None,
+                init: Some(
+                    ArrayExpression {
+                        node: code.node("[]", 0),
+                        items: vec![],
+                    }
+                    .into(),
+                ),
             }],
         }
         .into()],

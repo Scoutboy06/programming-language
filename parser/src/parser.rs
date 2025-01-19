@@ -664,14 +664,18 @@ impl<'a> Parser<'a> {
         let mut items: Vec<Expression> = Vec::new();
 
         loop {
+            if self.current_token.is(TokenKind::CloseBracket) {
+                break;
+            }
+
             let expr = self.parse_expression()?;
             items.push(expr);
 
             match self.current_token.kind {
+                TokenKind::Comma => self.advance(),
                 TokenKind::CloseBracket => break,
-                TokenKind::Comma => continue,
                 _ => return Err(ErrorKind::InvalidToken),
-            };
+            }
         }
 
         let arr = ArrayExpression {
@@ -706,10 +710,7 @@ impl<'a> Parser<'a> {
 
             match self.current_token.kind {
                 TokenKind::CloseBrace => break,
-                TokenKind::Comma => {
-                    self.advance();
-                    continue;
-                }
+                TokenKind::Comma => self.advance(),
                 _ => return Err(ErrorKind::InvalidToken),
             };
         }
@@ -785,9 +786,7 @@ impl<'a> Parser<'a> {
             arguments.push(expr);
 
             match self.current_token.kind {
-                TokenKind::Comma => {
-                    self.advance(); // Consume "," token
-                }
+                TokenKind::Comma => self.advance(), // Consume "," token
                 TokenKind::CloseParen => break,
                 _ => return Err(ErrorKind::InvalidToken),
             }
@@ -914,13 +913,11 @@ impl<'a> Parser<'a> {
         self.expect_and_consume_token(TokenKind::OpenBrace)?;
 
         let mut members = Vec::new();
-        loop {
-            match self.current_token.kind {
-                TokenKind::CloseBrace => break,
-                TokenKind::Comma if members.len() != 0 => self.advance(), // Consume "," token
-                _ => {}
-            };
 
+        loop {
+            if self.current_token.is(TokenKind::CloseBrace) {
+                break;
+            }
             let start = self.current_token.start;
 
             self.expect_token_kind(TokenKind::Identifier)?;
@@ -943,6 +940,12 @@ impl<'a> Parser<'a> {
                 id,
                 init,
             });
+
+            match self.current_token.kind {
+                TokenKind::CloseBrace => break,
+                TokenKind::Comma => self.advance(), // Consume "," token
+                _ => return Err(ErrorKind::InvalidToken),
+            };
         }
 
         let end_pos = self.current_token.end;
@@ -1007,31 +1010,6 @@ impl<'a> Parser<'a> {
     fn parse_type_value(&mut self) -> Result<TypeValue, ErrorKind> {
         let start_pos = self.current_token.start;
 
-        let mut left = self.parse_primary_type()?;
-
-        loop {
-            match self.current_token.kind {
-                TokenKind::LessThan => todo!("Type parameters"),
-                TokenKind::OpenBracket => {
-                    self.advance(); // Consume "[" token
-                    self.expect_token_kind(TokenKind::CloseBracket)?;
-                    left = ArrayType {
-                        node: Node::new(start_pos, self.current_token.end),
-                        type_value: left,
-                    }
-                    .into();
-                    self.advance(); // Consume "]" token
-                }
-                _ => break,
-            }
-        }
-
-        Ok(left)
-    }
-
-    /// Parses keyword types (number, string, etc.), type references (Foo, Bar, etc.) and type literals (e.g. { a: number })
-    fn parse_primary_type(&mut self) -> Result<TypeValue, ErrorKind> {
-        let start_pos = self.current_token.start;
         match self.current_token.kind {
             TokenKind::Keyword => {
                 let kw = self
@@ -1045,20 +1023,75 @@ impl<'a> Parser<'a> {
                     kind: kw,
                 };
                 self.advance(); // Consume Keyword token
-                Ok(TypeValue::KeywordType(Box::new(t)))
+
+                match self.current_token.kind {
+                    TokenKind::OpenBracket => {
+                        self.advance(); // Consume "[" token
+                        let arr = ArrayType {
+                            node: Node::new(start_pos, self.current_token.end),
+                            type_value: t.into(),
+                        };
+                        self.expect_and_consume_token(TokenKind::CloseBracket)?;
+                        Ok(arr.into())
+                    }
+                    _ => Ok(t.into()),
+                }
             }
             TokenKind::Identifier => {
-                let id = self.current_token.value.expect_identifier().clone();
-                let t = TypeReference {
+                let name = self.current_token.value.expect_identifier().clone();
+                let id = Identifier {
                     node: Node::new(start_pos, self.current_token.end),
-                    type_name: Identifier {
-                        node: Node::new(start_pos, self.current_token.end),
-                        name: id,
-                    },
-                    type_params: None,
+                    name,
                 };
                 self.advance(); // Consume Identifier token
-                Ok(TypeValue::TypeReference(Box::new(t)))
+
+                match self.current_token.kind {
+                    TokenKind::OpenBracket => {
+                        self.advance(); // Consume "[" token
+                        let arr = ArrayType {
+                            node: Node::new(start_pos, self.current_token.end),
+                            type_value: TypeReference {
+                                node: Node::new(start_pos, id.node.end),
+                                type_name: id,
+                                type_params: None,
+                            }
+                            .into(),
+                        };
+                        self.expect_and_consume_token(TokenKind::CloseBracket)?;
+                        Ok(arr.into())
+                    }
+                    TokenKind::LessThan => {
+                        self.advance(); // Consume "<" token
+
+                        let mut type_params = Vec::new();
+
+                        loop {
+                            match self.current_token.kind {
+                                TokenKind::GreaterThan => break,
+                                TokenKind::Comma if type_params.len() != 0 => {
+                                    self.advance(); // Consume "," token
+                                }
+                                _ => {}
+                            }
+                            let inner = self.parse_type_value()?;
+                            type_params.push(inner);
+                        }
+
+                        let t = TypeReference {
+                            node: Node::new(start_pos, self.current_token.end),
+                            type_name: id,
+                            type_params: Some(type_params),
+                        };
+                        self.expect_and_consume_token(TokenKind::GreaterThan)?;
+                        Ok(t.into())
+                    }
+                    _ => Ok(TypeReference {
+                        node: id.node.clone(),
+                        type_name: id,
+                        type_params: None,
+                    }
+                    .into()),
+                }
             }
             _ => Err(ErrorKind::InvalidToken),
         }
