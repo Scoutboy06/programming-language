@@ -1,9 +1,9 @@
 - Primary expression
   - [x] Literal values (string, number, boolean, null)
   - [x] Identifier
-  - [ ] Array literal
+  - [x] Array literal
     - [x] Simple arrays
-    - [ ] Nested arrays
+    - [x] Nested arrays
   - [] Object literal
     - [ ] Property definitions (shorthand, computed, method)
     - [ ] Spread properties

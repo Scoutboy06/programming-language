@@ -81,3 +81,111 @@ fn assignment_paren_literal() {
 
     assert_eq!(result, Ok(expected));
 }
+
+#[test]
+fn array_literal() {
+    let code = "const nums = [1, 2, 3, 4];";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![VariableDeclaration {
+            node: Node::new(0, code.len()),
+            kind: VariableKind::Const,
+            declarations: vec![VariableDeclarator {
+                node: code.node("nums = [1, 2, 3, 4]", 0),
+                id: Identifier {
+                    node: code.node("nums", 0),
+                    name: "nums".into(),
+                },
+                type_annotation: None,
+                init: Some(
+                    ArrayExpression {
+                        node: code.between_incl(("[", 0), ("]", 0)),
+                        items: vec![
+                            NumberLiteral {
+                                node: code.node("1", 0),
+                                value: 1.0,
+                            }
+                            .into(),
+                            NumberLiteral {
+                                node: code.node("2", 0),
+                                value: 2.0,
+                            }
+                            .into(),
+                            NumberLiteral {
+                                node: code.node("3", 0),
+                                value: 3.0,
+                            }
+                            .into(),
+                            NumberLiteral {
+                                node: code.node("4", 0),
+                                value: 4.0,
+                            }
+                            .into(),
+                        ],
+                    }
+                    .into(),
+                ),
+            }],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn nested_array() {
+    let code = "const nums = [[1], [2]];";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![VariableDeclaration {
+            node: Node::new(0, code.len()),
+            kind: VariableKind::Const,
+            declarations: vec![VariableDeclarator {
+                node: code.node("nums = [[1], [2]]", 0),
+                id: Identifier {
+                    node: code.node("nums", 0),
+                    name: "nums".into(),
+                },
+                type_annotation: None,
+                init: Some(
+                    ArrayExpression {
+                        node: code.between_incl(("[[", 0), ("]]", 0)),
+                        items: vec![
+                            ArrayExpression {
+                                node: code.node("[1]", 0),
+                                items: vec![NumberLiteral {
+                                    node: code.node("1", 0),
+                                    value: 1.0,
+                                }
+                                .into()],
+                            }
+                            .into(),
+                            ArrayExpression {
+                                node: code.node("[2]", 0),
+                                items: vec![NumberLiteral {
+                                    node: code.node("2", 0),
+                                    value: 2.0,
+                                }
+                                .into()],
+                            }
+                            .into(),
+                        ],
+                    }
+                    .into(),
+                ),
+            }],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
