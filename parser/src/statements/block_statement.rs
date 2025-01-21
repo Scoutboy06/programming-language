@@ -1,14 +1,9 @@
 use super::Statement;
 use crate::nodes::Node;
+use parser_derive::Stmt;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Stmt)]
 pub struct BlockStatement {
     pub node: Node,
     pub statements: Vec<Statement>,
-}
-
-impl From<BlockStatement> for Statement {
-    fn from(value: BlockStatement) -> Self {
-        Statement::BlockStatement(Box::new(value))
-    }
 }

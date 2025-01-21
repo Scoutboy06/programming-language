@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 lexer = { path = "../lexer" }
+parser_derive = { path = "../parser_derive" }
 string_cache = "0.8.4"
 
 [dev-dependencies]

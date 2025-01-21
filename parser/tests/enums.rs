@@ -1,7 +1,7 @@
 use parser::{
-    expressions::NumberLiteral,
+    expressions::{Identifier, NumberLiteral},
     nodes::{program::Program, Node},
-    statements::{EnumMember, EnumStatement, Identifier},
+    statements::{EnumMember, EnumStatement},
     Parser,
 };
 use pretty_assertions::assert_eq;

@@ -1,6 +1,6 @@
+use super::Identifier;
+use crate::nodes::Node;
 use lexer::TypeKeyword;
-
-use crate::{nodes::Node, statements::Identifier};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeParameterDeclaration {

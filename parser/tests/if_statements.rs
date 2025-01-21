@@ -1,8 +1,8 @@
 use lexer::Operator;
 use parser::{
-    expressions::{BinaryExpression, BooleanLiteral, NumberLiteral},
+    expressions::{BinaryExpression, BooleanLiteral, Identifier, NumberLiteral},
     nodes::{program::Program, Node},
-    statements::{BlockStatement, Identifier, IfStatement, ReturnStatement},
+    statements::{BlockStatement, IfStatement, ReturnStatement},
     Parser,
 };
 use pretty_assertions::assert_eq;

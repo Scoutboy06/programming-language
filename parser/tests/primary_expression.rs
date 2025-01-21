@@ -1,7 +1,9 @@
 use parser::{
-    expressions::{NumberLiteral, ParenthesisExpression},
+    expressions::{
+        ArrayExpression, Identifier, NumberLiteral, ParenthesisExpression, VariableKind,
+    },
     nodes::{program::Program, Node},
-    statements::{Identifier, VariableDeclaration, VariableDeclarator, VariableKind},
+    statements::{VariableDeclaration, VariableDeclarator},
     Parser,
 };
 use pretty_assertions::assert_eq;

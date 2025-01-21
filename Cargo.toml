@@ -1,5 +1,5 @@
 [workspace]
-members = ["lexer", "parser"]
+members = ["lexer", "parser", "parser_derive"]
 
 [workspace.package]
 version = "0.1.0"

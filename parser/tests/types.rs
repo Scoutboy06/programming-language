@@ -5,12 +5,12 @@ use parser::{
             ArrayType, KeywordType, TypeAnnotation, TypeParameter, TypeParameterDeclaration,
             TypeReference,
         },
-        ArrayExpression, BinaryExpression,
+        ArrayExpression, BinaryExpression, Identifier, VariableKind,
     },
     nodes::{program::Program, Node},
     statements::{
-        BlockStatement, FunctionDeclaration, Identifier, Parameter, ReturnStatement,
-        VariableDeclaration, VariableDeclarator, VariableKind,
+        BlockStatement, FunctionDeclaration, Parameter, ReturnStatement, VariableDeclaration,
+        VariableDeclarator,
     },
     Parser,
 };

@@ -1,15 +1,9 @@
-use crate::nodes::Node;
-
 use super::Expression;
+use crate::nodes::Node;
+use parser_derive::Expr;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Expr)]
 pub struct ArrayExpression {
     pub node: Node,
     pub items: Vec<Expression>,
-}
-
-impl From<ArrayExpression> for Expression {
-    fn from(value: ArrayExpression) -> Self {
-        Expression::ArrayExpression(Box::new(value))
-    }
 }

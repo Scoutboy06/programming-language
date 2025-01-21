@@ -1,7 +1,9 @@
 use super::Expression;
 use crate::nodes::Node;
+use parser_derive::Expr;
+use string_cache::DefaultAtom as Atom;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Expr)]
 pub enum Literal {
     String(StringLiteral),
     Boolean(BooleanLiteral),
@@ -23,12 +25,6 @@ impl Literal {
             Literal::Regex(r) => &r.node,
             Literal::JSXText(j) => &j.node,
         }
-    }
-}
-
-impl From<Literal> for Expression {
-    fn from(value: Literal) -> Self {
-        Expression::Literal(Box::new(value))
     }
 }
 
@@ -86,3 +82,16 @@ pub struct JSXTextLiteral {
     pub node: Node,
 }
 init_literal!(JSXTextLiteral, Literal::JSXText);
+
+#[derive(Debug, Clone, PartialEq, Expr)]
+pub struct Identifier {
+    pub node: Node,
+    pub name: Atom,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum VariableKind {
+    Var,
+    Let,
+    Const,
+}

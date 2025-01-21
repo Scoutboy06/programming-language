@@ -1,14 +1,9 @@
 use super::Expression;
 use crate::nodes::Node;
+use parser_derive::Expr;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Expr)]
 pub struct ParenthesisExpression {
     pub node: Node,
     pub expression: Expression,
-}
-
-impl From<ParenthesisExpression> for Expression {
-    fn from(value: ParenthesisExpression) -> Self {
-        Expression::ParenthesisExpression(Box::new(value))
-    }
 }

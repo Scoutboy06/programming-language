@@ -1,15 +1,9 @@
-use crate::{expressions::Expression, nodes::Node};
-
 use super::Statement;
+use crate::{expressions::Expression, nodes::Node};
+use parser_derive::Stmt;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Stmt)]
 pub struct ReturnStatement {
     pub node: Node,
     pub value: Expression,
-}
-
-impl From<ReturnStatement> for Statement {
-    fn from(value: ReturnStatement) -> Self {
-        Statement::ReturnStatement(Box::new(value))
-    }
 }

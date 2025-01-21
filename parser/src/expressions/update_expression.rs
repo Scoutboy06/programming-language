@@ -1,20 +1,14 @@
-use lexer::Operator;
-
 use super::Expression;
 use crate::nodes::Node;
+use lexer::Operator;
+use parser_derive::Expr;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Expr)]
 pub struct UpdateExpression {
     pub node: Node,
     pub argument: Expression,
     pub operator: UpdateOperator,
     pub prefix: bool,
-}
-
-impl From<UpdateExpression> for Expression {
-    fn from(value: UpdateExpression) -> Self {
-        Expression::UpdateExpression(Box::new(value))
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

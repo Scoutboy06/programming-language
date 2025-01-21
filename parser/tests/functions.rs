@@ -2,13 +2,13 @@ use lexer::{Operator, TypeKeyword};
 use parser::{
     expressions::{
         types::{KeywordType, TypeAnnotation},
-        ArrowFunctionExpression, BinaryExpression, CallExpression, FunctionExpression,
-        MemberExpression, NumberLiteral, StringLiteral,
+        ArrowFunctionExpression, BinaryExpression, CallExpression, FunctionExpression, Identifier,
+        MemberExpression, NumberLiteral, StringLiteral, VariableKind,
     },
     nodes::{program::Program, Node},
     statements::{
-        BlockStatement, ExpressionStatement, FunctionDeclaration, Identifier, Parameter,
-        ReturnStatement, VariableDeclaration, VariableDeclarator, VariableKind,
+        BlockStatement, ExpressionStatement, FunctionDeclaration, Parameter, ReturnStatement,
+        VariableDeclaration, VariableDeclarator,
     },
     Parser,
 };

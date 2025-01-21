@@ -1,10 +1,14 @@
-use super::{BlockStatement, Identifier, Statement};
+use super::{BlockStatement, Statement};
 use crate::{
-    expressions::types::{TypeAnnotation, TypeParameterDeclaration},
+    expressions::{
+        types::{TypeAnnotation, TypeParameterDeclaration},
+        Identifier,
+    },
     nodes::Node,
 };
+use parser_derive::Stmt;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Stmt)]
 pub struct FunctionDeclaration {
     pub node: Node,
     pub is_async: bool,
@@ -14,12 +18,6 @@ pub struct FunctionDeclaration {
     pub params: Vec<Parameter>,
     pub return_type: Option<TypeAnnotation>,
     pub body: BlockStatement,
-}
-
-impl From<FunctionDeclaration> for Statement {
-    fn from(value: FunctionDeclaration) -> Self {
-        Statement::FunctionDeclaration(Box::new(value))
-    }
 }
 
 #[derive(Debug, PartialEq, Clone)]

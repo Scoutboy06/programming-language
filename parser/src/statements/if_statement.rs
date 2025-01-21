@@ -1,17 +1,11 @@
-use crate::{expressions::Expression, nodes::Node};
-
 use super::Statement;
+use crate::{expressions::Expression, nodes::Node};
+use parser_derive::Stmt;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Stmt)]
 pub struct IfStatement {
     pub node: Node,
     pub condition: Expression,
     pub body: Statement,
     pub consequent: Option<Statement>,
-}
-
-impl From<IfStatement> for Statement {
-    fn from(value: IfStatement) -> Self {
-        Statement::IfStatement(Box::new(value))
-    }
 }

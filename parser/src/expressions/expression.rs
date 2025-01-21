@@ -1,9 +1,9 @@
 use super::{
     ArrayExpression, ArrowFunctionExpression, AssignmentExpression, BinaryExpression,
-    CallExpression, FunctionExpression, Literal, MemberExpression, ObjectExpression,
+    CallExpression, FunctionExpression, Identifier, Literal, MemberExpression, ObjectExpression,
     ParenthesisExpression, UnaryExpression, UpdateExpression,
 };
-use crate::{nodes::Node, statements::Identifier};
+use crate::nodes::Node;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expression {

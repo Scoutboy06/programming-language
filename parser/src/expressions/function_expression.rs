@@ -1,10 +1,11 @@
-use super::{types::TypeAnnotation, Expression};
+use super::{types::TypeAnnotation, Expression, Identifier};
 use crate::{
     nodes::Node,
-    statements::{BlockStatement, Identifier, Parameter},
+    statements::{BlockStatement, Parameter},
 };
+use parser_derive::Expr;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Expr)]
 pub struct FunctionExpression {
     pub node: Node,
     pub id: Option<Identifier>,
@@ -13,10 +14,4 @@ pub struct FunctionExpression {
     pub body: BlockStatement,
     pub is_generator: bool,
     pub is_async: bool,
-}
-
-impl From<FunctionExpression> for Expression {
-    fn from(value: FunctionExpression) -> Self {
-        Expression::FunctionExpression(Box::new(value))
-    }
 }
