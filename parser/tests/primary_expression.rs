@@ -1,6 +1,7 @@
 use parser::{
     expressions::{
-        ArrayExpression, Identifier, NumberLiteral, ParenthesisExpression, VariableKind,
+        ArrayExpression, BooleanLiteral, Identifier, NumberLiteral, ObjectExpression,
+        ParenthesisExpression, StringLiteral, VariableKind, KV,
     },
     nodes::{program::Program, Node},
     statements::{VariableDeclaration, VariableDeclarator},
@@ -178,6 +179,77 @@ fn nested_array() {
                                 .into()],
                             }
                             .into(),
+                        ],
+                    }
+                    .into(),
+                ),
+            }],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn object_literal() {
+    let code = "var obj = { k1: 101, k2: \"2\", k3: true };";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![VariableDeclaration {
+            node: code.between_incl(("var", 0), ("};", 0)),
+            kind: VariableKind::Var,
+            declarations: vec![VariableDeclarator {
+                node: code.between_incl(("obj", 0), ("}", 0)),
+                id: Identifier {
+                    node: code.node("obj", 0),
+                    name: "obj".into(),
+                },
+                type_annotation: None,
+                init: Some(
+                    ObjectExpression {
+                        node: code.between_incl(("{", 0), ("}", 0)),
+                        items: vec![
+                            KV {
+                                key: Identifier {
+                                    node: code.node("k1", 0),
+                                    name: "k1".into(),
+                                }
+                                .into(),
+                                value: NumberLiteral {
+                                    node: code.node("101", 0),
+                                    value: 101.0,
+                                }
+                                .into(),
+                            },
+                            KV {
+                                key: Identifier {
+                                    node: code.node("k2", 0),
+                                    name: "k2".into(),
+                                }
+                                .into(),
+                                value: StringLiteral {
+                                    node: code.node("\"2\"", 0),
+                                    value: "\"2\"".into(),
+                                }
+                                .into(),
+                            },
+                            KV {
+                                key: Identifier {
+                                    node: code.node("k3", 0),
+                                    name: "k3".into(),
+                                }
+                                .into(),
+                                value: BooleanLiteral {
+                                    node: code.node("true", 0),
+                                    value: true,
+                                }
+                                .into(),
+                            },
                         ],
                     }
                     .into(),

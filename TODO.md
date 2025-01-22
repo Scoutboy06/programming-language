@@ -4,8 +4,12 @@
   - [x] Array literal
     - [x] Simple arrays
     - [x] Nested arrays
-  - [] Object literal
+  - [ ] Object literal
     - [ ] Property definitions (shorthand, computed, method)
+      - [x] Literal notation
+      - [ ] Shorthand notation (`let obj = { name, age };`)
+      - [ ] Computed (`let obj = { [key]: "Alice" };`)
+      - [ ] Method (`let obj = { greet(name) { console.log("Hello,", name); } }`)
     - [ ] Spread properties
   - [x] Function expression
   - [x] Arrow function expression
