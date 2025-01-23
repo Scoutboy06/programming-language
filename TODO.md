@@ -5,20 +5,21 @@
     - [x] Simple arrays
     - [x] Nested arrays
   - [ ] Object literal
-    - [ ] Property definitions (shorthand, computed, method)
-      - [x] Literal notation
-      - [ ] Shorthand notation (`let obj = { name, age };`)
-      - [ ] Computed (`let obj = { [key]: "Alice" };`)
-      - [ ] Method (`let obj = { greet(name) { console.log("Hello,", name); } }`)
-    - [ ] Spread properties
+    - [x] Literal notation (`{ a: 1, b: "2" }`)
+    - [x] Shorthand notation (`{ name, age }`)
+    - [ ] Computed (`{ [key]: "Alice" };`)
+    - [ ] Method (`{ greet(name) { console.log("Hello,", name); } }`)
+    - [ ] Spread properties (`{ a: 1, ...b }`)
   - [x] Function expression
   - [x] Arrow function expression
 - Block statement
   - [x] Braced block (`{}`)
-  - [x] Nested blocks
+  - [ ] Nested blocks
 - Variable declaration
   - [x] `let`, `var`, `const` keywords
-  - [ ] Destructuring (array, object)
+  - [ ] Destructuring
+    - [ ] Arrays (`let [a, b] = ...`)
+    - [ ] Objects (`let { a, b } = ...`)
 - (Re)assignment expression
   - [x] Simple assignments
   - [ ] Compound assignments (`+=`, `-=`, etc.)
@@ -54,9 +55,9 @@
   - [ ] Do-while statement
 - For statement
   - [x] C-style (`for (let i = 0; i < n; i++)`)
-  - [ ] For-in statement
-  - [ ] For-of statement
-  - [ ] For-await-of statement
+  - [ ] For-in statement (`for (let i in arr)`)
+  - [ ] For-of statement (`for (const el of arr)`)
+  - [ ] For-await-of statement (`for await (const el of iter)`)
 - Enum declaration
   - [x] Without initializers
   - [x] With initializers

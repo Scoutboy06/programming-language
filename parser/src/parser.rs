@@ -6,8 +6,8 @@ use crate::expressions::{
     ArrayExpression, ArrowFunctionExpression, AsUpdateOperator, AssignmentExpression,
     BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty, Expression,
     FunctionExpression, Identifier, Literal, MemberExpression, MemberProperty, NullLiteral,
-    NumberLiteral, ObjectExpression, ParenthesisExpression, StringLiteral, UpdateExpression,
-    VariableKind, KV,
+    NumberLiteral, ObjectExpression, ObjectItem, ParenthesisExpression, StringLiteral,
+    UpdateExpression, VariableKind, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
@@ -694,20 +694,51 @@ impl<'a> Parser<'a> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "{" token
 
-        let mut items: Vec<KV> = Vec::new();
+        let mut items = Vec::new();
 
         loop {
             if self.current_token.is(TokenKind::CloseBracket) {
                 break;
             }
 
-            let key = self.parse_primary_expression()?;
+            let item: ObjectItem = match self.current_token.kind {
+                TokenKind::String => {
+                    let key = StringLiteral {
+                        node: Node::new(self.current_token.start, self.current_token.end),
+                        value: self.current_token.value.consume_string(),
+                    }
+                    .into();
+                    self.advance(); // Consume String token
+                    self.expect_and_consume_token(TokenKind::Colon)?;
+                    let value = self.parse_expression()?;
+                    ObjectItem::KV(KV { key, value })
+                }
+                TokenKind::Identifier => {
+                    let id = self.current_token.value.expect_identifier().clone();
+                    let key = Identifier {
+                        node: Node::new(self.current_token.start, self.current_token.end),
+                        name: id,
+                    };
 
-            self.expect_and_consume_token(TokenKind::Colon)?;
+                    self.advance(); // Consume Identifier token
 
-            let value = self.parse_expression()?;
+                    if self.current_token.is(TokenKind::Colon) {
+                        self.advance(); // Consume ":" token
+                        let value = self.parse_expression()?;
+                        ObjectItem::KV(KV {
+                            key: key.into(),
+                            value,
+                        })
+                    } else {
+                        ObjectItem::Identifier(key)
+                    }
+                }
+                TokenKind::OpenBracket => todo!("Computed property"),
+                TokenKind::Dot => todo!("Spread inside object"),
+                _ => return Err(ErrorKind::InvalidToken),
+            };
 
-            items.push(KV { key, value });
+            items.push(item);
 
             match self.current_token.kind {
                 TokenKind::CloseBrace => break,

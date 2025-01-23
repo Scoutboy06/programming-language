@@ -225,7 +225,8 @@ fn object_literal() {
                                     value: 101.0,
                                 }
                                 .into(),
-                            },
+                            }
+                            .into(),
                             KV {
                                 key: Identifier {
                                     node: code.node("k2", 0),
@@ -237,7 +238,8 @@ fn object_literal() {
                                     value: "\"2\"".into(),
                                 }
                                 .into(),
-                            },
+                            }
+                            .into(),
                             KV {
                                 key: Identifier {
                                     node: code.node("k3", 0),
@@ -249,8 +251,55 @@ fn object_literal() {
                                     value: true,
                                 }
                                 .into(),
-                            },
+                            }
+                            .into(),
                         ],
+                    }
+                    .into(),
+                ),
+            }],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn object_shorthand_property() {
+    let code = "var obj = { name, age };";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![VariableDeclaration {
+            node: code.between_incl(("var", 0), ("};", 0)),
+            kind: VariableKind::Var,
+            declarations: vec![VariableDeclarator {
+                node: code.between_incl(("obj", 0), ("}", 0)),
+                id: Identifier {
+                    node: code.node("obj", 0),
+                    name: "obj".into(),
+                },
+                type_annotation: None,
+                init: Some(
+                    ObjectExpression {
+                        node: code.between_incl(("{", 0), ("}", 0)),
+                        items: [
+                            Identifier {
+                                node: code.node("name", 0),
+                                name: "name".into(),
+                            }
+                            .into(),
+                            Identifier {
+                                node: code.node("age", 0),
+                                name: "age".into(),
+                            }
+                            .into(),
+                        ]
+                        .to_vec(),
                     }
                     .into(),
                 ),
