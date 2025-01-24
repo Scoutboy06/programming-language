@@ -7,7 +7,7 @@
   - [ ] Object literal
     - [x] Literal notation (`{ a: 1, b: "2" }`)
     - [x] Shorthand notation (`{ name, age }`)
-    - [ ] Computed (`{ [key]: "Alice" };`)
+    - [x] Computed (`{ [key]: "Alice" };`)
     - [ ] Method (`{ greet(name) { console.log("Hello,", name); } }`)
     - [ ] Spread properties (`{ a: 1, ...b }`)
   - [x] Function expression
