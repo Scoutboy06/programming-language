@@ -380,22 +380,6 @@ impl<'a> Lexer<'a> {
 
         &self.source[start_pos..self.position]
     }
-
-    fn multi_line_comment(&mut self) -> &str {
-        let start_pos = self.position;
-
-        while self.curr_char.is_some_and(|ch| ch != '*')
-            && self.peek_char.is_some_and(|ch| ch != '/')
-        {
-            self.advance();
-        }
-
-        // Skip */ characters
-        self.advance();
-        self.advance();
-
-        &self.source[start_pos..self.position]
-    }
 }
 
 impl<'a> Iterator for Lexer<'a> {
