@@ -5,37 +5,37 @@ use string_cache::DefaultAtom as Atom;
 
 #[derive(Debug, Clone, PartialEq, Expr)]
 pub enum Literal {
-    String(StringLiteral),
-    Boolean(BooleanLiteral),
-    Null(NullLiteral),
-    Number(NumberLiteral),
-    BigInt(BigIntLiteral),
-    Regex(RegexLiteral),
-    JSXText(JSXTextLiteral),
+    StringLiteral(StringLiteral),
+    BooleanLiteral(BooleanLiteral),
+    NullLiteral(NullLiteral),
+    NumberLiteral(NumberLiteral),
+}
+
+macro_rules! init_literal {
+    ($variant:ident) => {
+        impl From<$variant> for Expression {
+            fn from(value: $variant) -> Self {
+                Expression::Literal(Box::new(Literal::$variant(value)))
+            }
+        }
+
+        impl From<$variant> for Literal {
+            fn from(value: $variant) -> Self {
+                Literal::$variant(value)
+            }
+        }
+    };
 }
 
 impl Literal {
     pub fn node(&self) -> &Node {
         match self {
-            Literal::String(s) => &s.node,
-            Literal::Boolean(b) => &b.node,
-            Literal::Null(n) => &n.node,
-            Literal::Number(n) => &n.node,
-            Literal::BigInt(n) => &n.node,
-            Literal::Regex(r) => &r.node,
-            Literal::JSXText(j) => &j.node,
+            Literal::StringLiteral(s) => &s.node,
+            Literal::BooleanLiteral(b) => &b.node,
+            Literal::NullLiteral(n) => &n.node,
+            Literal::NumberLiteral(n) => &n.node,
         }
     }
-}
-
-macro_rules! init_literal {
-    ($literal_type:ident, $variant:path) => {
-        impl From<$literal_type> for Expression {
-            fn from(value: $literal_type) -> Self {
-                Expression::Literal(Box::new($variant(value)))
-            }
-        }
-    };
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -43,45 +43,27 @@ pub struct StringLiteral {
     pub node: Node,
     pub value: String,
 }
-init_literal!(StringLiteral, Literal::String);
+init_literal!(StringLiteral);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BooleanLiteral {
     pub node: Node,
     pub value: bool,
 }
-init_literal!(BooleanLiteral, Literal::Boolean);
+init_literal!(BooleanLiteral);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NullLiteral {
     pub node: Node,
 }
-init_literal!(NullLiteral, Literal::Null);
+init_literal!(NullLiteral);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NumberLiteral {
     pub node: Node,
     pub value: f64,
 }
-init_literal!(NumberLiteral, Literal::Number);
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct BigIntLiteral {
-    pub node: Node,
-}
-init_literal!(BigIntLiteral, Literal::BigInt);
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct RegexLiteral {
-    pub node: Node,
-}
-init_literal!(RegexLiteral, Literal::Regex);
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct JSXTextLiteral {
-    pub node: Node,
-}
-init_literal!(JSXTextLiteral, Literal::JSXText);
+init_literal!(NumberLiteral);
 
 #[derive(Debug, Clone, PartialEq, Expr)]
 pub struct Identifier {

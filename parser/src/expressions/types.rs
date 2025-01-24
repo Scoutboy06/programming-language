@@ -1,5 +1,5 @@
 use super::Identifier;
-use crate::nodes::Node;
+use crate::{impl_from, nodes::Node};
 use lexer::TypeKeyword;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,16 +28,6 @@ pub enum TypeValue {
     TypeLiteral(Box<TypeLiteral>),
 }
 
-macro_rules! init_type {
-    ($variant:ident) => {
-        impl From<$variant> for TypeValue {
-            fn from(value: $variant) -> Self {
-                TypeValue::$variant(Box::new(value))
-            }
-        }
-    };
-}
-
 impl TypeValue {
     pub fn node(&self) -> &Node {
         match self {
@@ -54,7 +44,7 @@ pub struct KeywordType {
     pub node: Node,
     pub kind: TypeKeyword,
 }
-init_type!(KeywordType);
+impl_from!(TypeValue, KeywordType);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeReference {
@@ -62,17 +52,17 @@ pub struct TypeReference {
     pub type_name: Identifier,
     pub type_params: Option<Vec<TypeValue>>,
 }
-init_type!(TypeReference);
+impl_from!(TypeValue, TypeReference);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArrayType {
     pub node: Node,
     pub type_value: TypeValue,
 }
-init_type!(ArrayType);
+impl_from!(TypeValue, ArrayType);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeLiteral {
     pub node: Node,
 }
-init_type!(TypeLiteral);
+impl_from!(TypeValue, TypeLiteral);

@@ -1,4 +1,4 @@
-use super::{ComputedProperty, Expression, Identifier};
+use super::{ComputedProperty, Expression, Identifier, StringLiteral};
 use crate::nodes::Node;
 use parser_derive::Expr;
 
@@ -12,12 +12,11 @@ pub struct ObjectExpression {
 pub enum ObjectItem {
     KV(KV),
     Identifier(Identifier),
-    Computed(ComputedProperty),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct KV {
-    pub key: Expression,
+    pub key: Key,
     pub value: Expression,
 }
 
@@ -33,8 +32,27 @@ impl From<Identifier> for ObjectItem {
     }
 }
 
-impl From<ComputedProperty> for ObjectItem {
+#[derive(Debug, Clone, PartialEq)]
+pub enum Key {
+    Identifier(Identifier),
+    StringLiteral(StringLiteral),
+    Computed(ComputedProperty),
+}
+
+impl From<Identifier> for Key {
+    fn from(value: Identifier) -> Self {
+        Key::Identifier(value)
+    }
+}
+
+impl From<StringLiteral> for Key {
+    fn from(value: StringLiteral) -> Self {
+        Key::StringLiteral(value)
+    }
+}
+
+impl From<ComputedProperty> for Key {
     fn from(value: ComputedProperty) -> Self {
-        ObjectItem::Computed(value)
+        Key::Computed(value)
     }
 }

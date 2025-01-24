@@ -1,7 +1,7 @@
 use parser::{
     expressions::{
-        ArrayExpression, BooleanLiteral, Identifier, NumberLiteral, ObjectExpression,
-        ParenthesisExpression, StringLiteral, VariableKind, KV,
+        ArrayExpression, BooleanLiteral, ComputedProperty, Identifier, NumberLiteral,
+        ObjectExpression, ParenthesisExpression, StringLiteral, VariableKind, KV,
     },
     nodes::{program::Program, Node},
     statements::{VariableDeclaration, VariableDeclarator},
@@ -300,6 +300,92 @@ fn object_shorthand_property() {
                             .into(),
                         ]
                         .to_vec(),
+                    }
+                    .into(),
+                ),
+            }],
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn object_computed_property() {
+    let code = "var obj = { [key]: value, [123]: 456, [\"hello\"]: \"world\" };";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![VariableDeclaration {
+            node: code.between_incl(("var", 0), ("};", 0)),
+            kind: VariableKind::Var,
+            declarations: vec![VariableDeclarator {
+                node: code.between_incl(("obj", 0), ("}", 0)),
+                id: Identifier {
+                    node: code.node("obj", 0),
+                    name: "obj".into(),
+                },
+                type_annotation: None,
+                init: Some(
+                    ObjectExpression {
+                        node: code.between_incl(("{", 0), ("}", 0)),
+                        items: vec![
+                            KV {
+                                key: ComputedProperty {
+                                    node: code.node("[key]", 0),
+                                    expression: Identifier {
+                                        node: code.node("key", 0),
+                                        name: "key".into(),
+                                    }
+                                    .into(),
+                                }
+                                .into(),
+                                value: Identifier {
+                                    node: code.node("value", 0),
+                                    name: "value".into(),
+                                }
+                                .into(),
+                            }
+                            .into(),
+                            KV {
+                                key: ComputedProperty {
+                                    node: code.node("[123]", 0),
+                                    expression: NumberLiteral {
+                                        node: code.node("123", 0),
+                                        value: 123.0,
+                                    }
+                                    .into(),
+                                }
+                                .into(),
+                                value: NumberLiteral {
+                                    node: code.node("456", 0),
+                                    value: 456.0,
+                                }
+                                .into(),
+                            }
+                            .into(),
+                            KV {
+                                key: ComputedProperty {
+                                    node: code.node("[\"hello\"]", 0),
+                                    expression: StringLiteral {
+                                        node: code.node("\"hello\"", 0),
+                                        value: "\"hello\"".into(),
+                                    }
+                                    .into(),
+                                }
+                                .into(),
+                                value: StringLiteral {
+                                    node: code.node("\"world\"", 0),
+                                    value: "\"world\"".into(),
+                                }
+                                .into(),
+                            }
+                            .into(),
+                        ],
                     }
                     .into(),
                 ),

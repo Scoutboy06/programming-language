@@ -5,7 +5,7 @@ use crate::expressions::types::{
 use crate::expressions::{
     ArrayExpression, ArrowFunctionExpression, AsUpdateOperator, AssignmentExpression,
     BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty, Expression,
-    FunctionExpression, Identifier, Literal, MemberExpression, MemberProperty, NullLiteral,
+    FunctionExpression, Identifier, Key, Literal, MemberExpression, MemberProperty, NullLiteral,
     NumberLiteral, ObjectExpression, ObjectItem, ParenthesisExpression, StringLiteral,
     UpdateExpression, VariableKind, KV,
 };
@@ -733,7 +733,24 @@ impl<'a> Parser<'a> {
                         ObjectItem::Identifier(key)
                     }
                 }
-                TokenKind::OpenBracket => todo!("Computed property"),
+                TokenKind::OpenBracket => {
+                    let start_pos = self.current_token.start;
+
+                    self.advance(); // Consume "[" token
+                    let expression = self.parse_expression()?;
+                    self.expect_token_kind(TokenKind::CloseBracket)?;
+                    let key = Key::Computed(ComputedProperty {
+                        node: Node::new(start_pos, self.current_token.end),
+                        expression,
+                    });
+                    self.advance(); // Consume "]" token
+
+                    self.expect_and_consume_token(TokenKind::Colon)?;
+
+                    let value = self.parse_expression()?;
+
+                    ObjectItem::KV(KV { key, value })
+                }
                 TokenKind::Dot => todo!("Spread inside object"),
                 _ => return Err(ErrorKind::InvalidToken),
             };
@@ -889,7 +906,7 @@ impl<'a> Parser<'a> {
                 };
 
                 self.advance(); // Consume String token
-                Ok(Literal::String(s))
+                Ok(Literal::StringLiteral(s))
             }
             TokenKind::Number => {
                 let n = NumberLiteral {
@@ -898,7 +915,7 @@ impl<'a> Parser<'a> {
                 };
 
                 self.advance(); // Consume Number token
-                Ok(Literal::Number(n))
+                Ok(Literal::NumberLiteral(n))
             }
             TokenKind::Boolean => {
                 let b = BooleanLiteral {
@@ -907,7 +924,7 @@ impl<'a> Parser<'a> {
                 };
 
                 self.advance(); // Consume Boolean token
-                Ok(Literal::Boolean(b))
+                Ok(Literal::BooleanLiteral(b))
             }
             TokenKind::Null => {
                 let n = NullLiteral {
@@ -915,7 +932,7 @@ impl<'a> Parser<'a> {
                 };
 
                 self.advance(); // Consume Null token
-                Ok(Literal::Null(n))
+                Ok(Literal::NullLiteral(n))
             }
             _ => Err(ErrorKind::InvalidToken),
         }
