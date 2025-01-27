@@ -16,7 +16,7 @@ use parser::{
 };
 use pretty_assertions::assert_eq;
 mod helpers;
-use helpers::*;
+use helpers::NodeConstructor;
 
 #[test]
 fn assignment_with_simple_type() {

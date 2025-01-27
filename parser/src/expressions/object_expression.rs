@@ -1,5 +1,12 @@
-use super::{ComputedProperty, Expression, Identifier, StringLiteral};
-use crate::nodes::Node;
+use super::{
+    types::{TypeAnnotation, TypeParameterDeclaration},
+    ComputedProperty, Expression, FunctionExpression, Identifier, StringLiteral,
+};
+use crate::{
+    impl_from,
+    nodes::Node,
+    statements::{BlockStatement, Parameter},
+};
 use parser_derive::Expr;
 
 #[derive(Debug, Clone, PartialEq, Expr)]
@@ -12,7 +19,11 @@ pub struct ObjectExpression {
 pub enum ObjectItem {
     KV(KV),
     Identifier(Identifier),
+    Method(Method),
 }
+impl_from!(ObjectItem, KV);
+impl_from!(ObjectItem, Identifier);
+impl_from!(ObjectItem, Method);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct KV {
@@ -20,39 +31,24 @@ pub struct KV {
     pub value: Expression,
 }
 
-impl From<KV> for ObjectItem {
-    fn from(value: KV) -> Self {
-        ObjectItem::KV(value)
-    }
-}
-
-impl From<Identifier> for ObjectItem {
-    fn from(value: Identifier) -> Self {
-        ObjectItem::Identifier(value)
-    }
+#[derive(Debug, Clone, PartialEq)]
+pub struct Method {
+    pub node: Node,
+    pub is_async: bool,
+    pub is_generator: bool,
+    pub id: Identifier,
+    pub type_parameters: Option<TypeParameterDeclaration>,
+    pub parameters: Vec<Parameter>,
+    pub return_type: Option<TypeAnnotation>,
+    pub body: BlockStatement,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Key {
     Identifier(Identifier),
     StringLiteral(StringLiteral),
-    Computed(ComputedProperty),
+    ComputedProperty(ComputedProperty),
 }
-
-impl From<Identifier> for Key {
-    fn from(value: Identifier) -> Self {
-        Key::Identifier(value)
-    }
-}
-
-impl From<StringLiteral> for Key {
-    fn from(value: StringLiteral) -> Self {
-        Key::StringLiteral(value)
-    }
-}
-
-impl From<ComputedProperty> for Key {
-    fn from(value: ComputedProperty) -> Self {
-        Key::Computed(value)
-    }
-}
+impl_from!(Key, Identifier);
+impl_from!(Key, StringLiteral);
+impl_from!(Key, ComputedProperty);

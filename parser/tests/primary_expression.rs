@@ -1,15 +1,20 @@
+use lexer::TypeKeyword;
 use parser::{
     expressions::{
-        ArrayExpression, BooleanLiteral, ComputedProperty, Identifier, NumberLiteral,
-        ObjectExpression, ParenthesisExpression, StringLiteral, VariableKind, KV,
+        types::{KeywordType, TypeAnnotation},
+        ArrayExpression, BooleanLiteral, CallExpression, ComputedProperty, Identifier,
+        MemberExpression, Method, NumberLiteral, ObjectExpression, ParenthesisExpression,
+        StringLiteral, VariableKind, KV,
     },
     nodes::{program::Program, Node},
-    statements::{VariableDeclaration, VariableDeclarator},
+    statements::{
+        BlockStatement, ExpressionStatement, Parameter, VariableDeclaration, VariableDeclarator,
+    },
     Parser,
 };
 use pretty_assertions::assert_eq;
 mod helpers;
-use helpers::*;
+use helpers::NodeConstructor;
 
 #[test]
 fn assignment_number_literal() {
@@ -323,7 +328,7 @@ fn object_computed_property() {
         body: vec![VariableDeclaration {
             node: code.between_incl(("var", 0), ("};", 0)),
             kind: VariableKind::Var,
-            declarations: vec![VariableDeclarator {
+            declarations: [VariableDeclarator {
                 node: code.between_incl(("obj", 0), ("}", 0)),
                 id: Identifier {
                     node: code.node("obj", 0),
@@ -333,7 +338,7 @@ fn object_computed_property() {
                 init: Some(
                     ObjectExpression {
                         node: code.between_incl(("{", 0), ("}", 0)),
-                        items: vec![
+                        items: [
                             KV {
                                 key: ComputedProperty {
                                     node: code.node("[key]", 0),
@@ -385,7 +390,105 @@ fn object_computed_property() {
                                 .into(),
                             }
                             .into(),
-                        ],
+                        ]
+                        .to_vec(),
+                    }
+                    .into(),
+                ),
+            }]
+            .to_vec(),
+        }
+        .into()],
+    };
+
+    assert_eq!(result, Ok(expected));
+}
+
+#[test]
+fn object_method() {
+    let code = "var obj = { print(name: string) { console.log(name); } };";
+    let mut parser = Parser::new(&code);
+    let result = parser.parse();
+
+    let expected = Program {
+        node: Node::new(0, code.len()),
+        shebang: None,
+        body: vec![VariableDeclaration {
+            node: code.between_incl(("var", 0), ("};", 0)),
+            kind: VariableKind::Var,
+            declarations: vec![VariableDeclarator {
+                node: code.between_incl(("obj", 0), ("}", 1)),
+                id: Identifier {
+                    node: code.node("obj", 0),
+                    name: "obj".into(),
+                },
+                type_annotation: None,
+                init: Some(
+                    ObjectExpression {
+                        node: code.between_incl(("{", 0), ("}", 1)),
+                        items: [Method {
+                            node: code.between_incl(("print", 0), ("}", 0)),
+                            is_async: false,
+                            is_generator: false,
+                            id: Identifier {
+                                node: code.node("print", 0),
+                                name: "print".into(),
+                            },
+                            type_parameters: None,
+                            parameters: [Parameter {
+                                node: code.node("name: string", 0),
+                                identifier: Identifier {
+                                    node: code.node("name", 0),
+                                    name: "name".into(),
+                                },
+                                type_annotation: Some(TypeAnnotation {
+                                    node: code.node(": string", 0),
+                                    type_value: KeywordType {
+                                        node: code.node("string", 0),
+                                        kind: TypeKeyword::String,
+                                    }
+                                    .into(),
+                                }),
+                                optional: false,
+                            }
+                            .into()]
+                            .to_vec(),
+                            return_type: None,
+                            body: BlockStatement {
+                                node: code.between_incl(("{", 1), ("}", 0)),
+                                statements: [ExpressionStatement {
+                                    node: code.node("console.log(name);", 0),
+                                    expression: CallExpression {
+                                        node: code.node("console.log(name)", 0),
+                                        callee: MemberExpression {
+                                            node: code.node("console.log", 0),
+                                            object: Identifier {
+                                                node: code.node("console", 0),
+                                                name: "console".into(),
+                                            }
+                                            .into(),
+                                            property: Identifier {
+                                                node: code.node("log", 0),
+                                                name: "log".into(),
+                                            }
+                                            .into(),
+                                        }
+                                        .into(),
+                                        arguments: [Identifier {
+                                            node: code.node("name", 1),
+                                            name: "name".into(),
+                                        }
+                                        .into()]
+                                        .to_vec(),
+                                    }
+                                    .into(),
+                                }
+                                .into()]
+                                .to_vec(),
+                            },
+                        }
+                        .into()]
+                        .to_vec(),
                     }
                     .into(),
                 ),

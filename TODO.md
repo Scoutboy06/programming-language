@@ -5,10 +5,10 @@
     - [x] Simple arrays
     - [x] Nested arrays
   - [ ] Object literal
-    - [x] Literal notation (`{ a: 1, b: "2" }`)
+    - [x] Literal notation (`{ a: 1, "b": "2" }`)
     - [x] Shorthand notation (`{ name, age }`)
     - [x] Computed (`{ [key]: "Alice" };`)
-    - [ ] Method (`{ greet(name) { console.log("Hello,", name); } }`)
+    - [x] Method (`{ greet(name) { console.log("Hello,", name); } }`)
     - [ ] Spread properties (`{ a: 1, ...b }`)
   - [x] Function expression
   - [x] Arrow function expression

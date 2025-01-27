@@ -1,3 +1,5 @@
+mod helpers;
+use helpers::NodeConstructor;
 use parser::{
     expressions::{Identifier, NumberLiteral},
     nodes::{program::Program, Node},
@@ -5,8 +7,6 @@ use parser::{
     Parser,
 };
 use pretty_assertions::assert_eq;
-mod helpers;
-use helpers::*;
 
 #[test]
 fn enum_statement() {

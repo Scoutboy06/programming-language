@@ -5,8 +5,8 @@ use crate::expressions::types::{
 use crate::expressions::{
     ArrayExpression, ArrowFunctionExpression, AsUpdateOperator, AssignmentExpression,
     BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty, Expression,
-    FunctionExpression, Identifier, Key, Literal, MemberExpression, MemberProperty, NullLiteral,
-    NumberLiteral, ObjectExpression, ObjectItem, ParenthesisExpression, StringLiteral,
+    FunctionExpression, Identifier, Key, Literal, MemberExpression, MemberProperty, Method,
+    NullLiteral, NumberLiteral, ObjectExpression, ObjectItem, ParenthesisExpression, StringLiteral,
     UpdateExpression, VariableKind, KV,
 };
 use crate::nodes::{program::Program, Node};
@@ -453,6 +453,60 @@ impl<'a> Parser<'a> {
         })
     }
 
+    fn parse_method(&mut self) -> Result<Method, ErrorKind> {
+        let start_pos = self.current_token.start;
+
+        let is_async = if self.current_token.is(TokenKind::Keyword)
+            && self.current_token.value.expect_keyword() == Keyword::Async
+        {
+            self.advance(); // Consume "async" keyword
+            true
+        } else {
+            false
+        };
+
+        let is_generator = if self.current_token.is(TokenKind::Asterisk) {
+            self.advance(); // Consume "*" token
+            true
+        } else {
+            false
+        };
+
+        self.expect_token_kind(TokenKind::Identifier)?;
+        let id = Identifier {
+            node: Node::new(self.current_token.start, self.current_token.end),
+            name: self.current_token.value.expect_identifier().clone(),
+        };
+        self.advance(); // Consume Identifier token
+
+        let type_parameters = if self.current_token.is(TokenKind::LessThan) {
+            Some(self.parse_type_parameter_declaration()?)
+        } else {
+            None
+        };
+
+        let parameters = self.parse_parameter_list()?;
+
+        let return_type = if self.current_token.is(TokenKind::Colon) {
+            Some(self.parse_type_annotation()?)
+        } else {
+            None
+        };
+
+        let body = self.parse_block_statement()?;
+
+        Ok(Method {
+            node: Node::new(start_pos, body.node.end),
+            is_async,
+            is_generator,
+            id,
+            type_parameters,
+            parameters,
+            return_type,
+            body,
+        })
+    }
+
     fn parse_arrow_function(&mut self) -> Result<ArrowFunctionExpression, ErrorKind> {
         let start_pos = self.current_token.start;
         let parameters = self.parse_parameter_list()?;
@@ -714,32 +768,40 @@ impl<'a> Parser<'a> {
                     ObjectItem::KV(KV { key, value })
                 }
                 TokenKind::Identifier => {
-                    let id = self.current_token.value.expect_identifier().clone();
-                    let key = Identifier {
-                        node: Node::new(self.current_token.start, self.current_token.end),
-                        name: id,
-                    };
-
-                    self.advance(); // Consume Identifier token
-
-                    if self.current_token.is(TokenKind::Colon) {
-                        self.advance(); // Consume ":" token
-                        let value = self.parse_expression()?;
-                        ObjectItem::KV(KV {
-                            key: key.into(),
-                            value,
-                        })
-                    } else {
-                        ObjectItem::Identifier(key)
+                    match self.lexer.peek_token().kind {
+                        TokenKind::OpenParen => ObjectItem::Method(self.parse_method()?),
+                        TokenKind::Colon => {
+                            let key = Identifier {
+                                node: Node::new(self.current_token.start, self.current_token.end),
+                                name: self.current_token.value.expect_identifier().clone(),
+                            }
+                            .into();
+                            self.advance(); // Consume Identifier token
+                            self.advance(); // Consume ":" token
+                            let value = self.parse_expression()?;
+                            ObjectItem::KV(KV { key, value })
+                        }
+                        _ => {
+                            let id = Identifier {
+                                node: Node::new(self.current_token.start, self.current_token.end),
+                                name: self.current_token.value.expect_identifier().clone(),
+                            };
+                            self.advance(); // Consume Identifier token
+                            ObjectItem::Identifier(id)
+                        }
                     }
                 }
+                TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+                    Keyword::Async => ObjectItem::Method(self.parse_method()?),
+                    _ => return Err(ErrorKind::InvalidToken),
+                },
                 TokenKind::OpenBracket => {
                     let start_pos = self.current_token.start;
 
                     self.advance(); // Consume "[" token
                     let expression = self.parse_expression()?;
                     self.expect_token_kind(TokenKind::CloseBracket)?;
-                    let key = Key::Computed(ComputedProperty {
+                    let key = Key::ComputedProperty(ComputedProperty {
                         node: Node::new(start_pos, self.current_token.end),
                         expression,
                     });
