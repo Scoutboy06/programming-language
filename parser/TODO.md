@@ -1,44 +1,78 @@
 - Primary expression
-  - [x] Literal values (string, number, boolean, null)
+  - [x] Literal values (`"string"`, `42`, `true`, `null`)
   - [x] Identifier
-  - [x] Array literal
-    - [x] Simple arrays
-    - [x] Nested arrays
-  - [ ] Object literal
+  - Array literal
+    - [x] Simple arrays (`[1, 2, 3]`)
+    - [x] Nested arrays (`[[1], [2, 3]]`)
+    - [ ] Spread properties (`[1, 2, ...otherNums]`)
+  - Object literal
     - [x] Literal notation (`{ a: 1, "b": "2" }`)
     - [x] Shorthand notation (`{ name, age }`)
-    - [x] Computed (`{ [key]: "Alice" };`)
-    - [x] Method (`{ greet(name) { console.log("Hello,", name); } }`)
+    - [x] Computed (`{ [key]: "value" };`)
+    - [x] Method (`{ greet(name) { console.log(name); } }`)
     - [ ] Spread properties (`{ a: 1, ...b }`)
   - [x] Function expression
   - [x] Arrow function expression
-- Block statement
-  - [x] Braced block (`{}`)
-  - [ ] Nested blocks
-- Variable declaration
-  - [x] `let`, `var`, `const` keywords
-  - [ ] Destructuring
-    - [ ] Arrays (`let [a, b] = ...`)
-    - [ ] Objects (`let { a, b } = ...`)
-- (Re)assignment expression
-  - [x] Simple assignments
-  - [ ] Compound assignments (`+=`, `-=`, etc.)
-  - [ ] Destructuring assignments
 - Binary expression
   - [x] Arithmetic operations (`+`, `-`, `*`, `/`, `%`)
   - [ ] Relational operations (`<`, `>`, `<=`, `>=`)
   - [ ] Equality operations (`==`, `!=`, `===`, `!==`)
   - [ ] Logical operations (`&&`, `||`)
 - Call expression
-  - [x] Function calls
-  - [x] Method calls
+  - [x] Function calls (`foo()`)
+  - [x] Method calls (`obj.method()`)
   - [ ] New expressions (`new Foo()`)
+- Block statement
+  - [x] Braced block (`{}`)
+  - [ ] Nested blocks (`{{}}`)
+- If statement
+  - [x] Else statement
+  - [x] Else if statement
+  - [x] Without curly braces (`if (cond) stmt;`)
+- While statement
+  - [x] While loop (`while (cond) {}`)
+  - [ ] Do-while statement (`do {} while(cond);`)
+- For statement
+  - [x] C-style (`for (let i = 0; i < n; i++)`)
+  - [ ] For-in statement (`for (let key in obj)`)
+  - [ ] For-of statement (`for (const el of arr)`)
+  - [ ] For-await-of statement (`for await (const el of iter)`)
+- Variable declaration
+  - [x] `let`, `var`, `const`
+  - [ ] Destructuring
+    - [ ] Arrays (`let [a, b] = arr`)
+    - [ ] Objects (`let { a, b } = obj`)
 - Function declaration
   - [x] Named functions
-  - [x] Anonymous functions (expression)
-  - [ ] Default parameters
-  - [ ] Rest parameters
-  - [ ] `async` functions
+  - [x] Anonymous functions
+  - [ ] Default parameters (`function foo(a = 1) {}`)
+  - [ ] Rest parameters (`function foo(...args) {}`)
+  - [ ] `async` functions (`async function foo() {}`)
+- Class declaration
+  - [ ] Constructor overloads
+  - [ ] Method overloads
+  - [ ] Static methods and properties
+  - [ ] Private and protected members
+  - [ ] Decorators
+- Types
+  - [x] Primitive types (`number`, `string`)
+  - [x] Array type (`number[]`)
+  - [x] Type parameters (e.g. `Array<Array<number>>`)
+  - [ ] Tuple types (e.g. `[number, string]`)
+  - [ ] Union types (e.g. `string | number`)
+  - [ ] Intersection types (e.g. `A & B`)
+  - [ ] Conditional types (e.g. `T extends U ? X : Y`)
+  - [x] Function type parameters (e.g. `function foo<T>() {}`)
+  - [ ] Arrow function type parameters (e.g. `const foo = <T>() => {}`)
+  - [ ] Indexed type (e.g. `nums[2]`)
+  - [ ] Mapped types (e.g. `{ [k in keyof T]: T[K] }`)
+  - [ ] Infer types (e.g. `infer R`)
+  - [ ] Type literal (e.g. `{ a: string }`)
+  - [ ] Type alias (e.g. `type Foo = ...`)
+- (Re)assignment expression
+  - [x] Simple assignments
+  - [ ] Compound assignments (`+=`, `-=`, etc.)
+  - [ ] Destructuring assignments
 - Return statement
   - [x] With expression
   - [ ] Without expression
@@ -46,38 +80,11 @@
   - [x] Dot notation
   - [x] Bracket notation
   - [ ] Optional chaining
-- If statement
-  - [x] Else statement
-  - [x] Else if statement
-  - [x] Without curly braces
-- While statement
-  - [x] While statement
-  - [ ] Do-while statement
-- For statement
-  - [x] C-style (`for (let i = 0; i < n; i++)`)
-  - [ ] For-in statement (`for (let i in arr)`)
-  - [ ] For-of statement (`for (const el of arr)`)
-  - [ ] For-await-of statement (`for await (const el of iter)`)
 - Enum declaration
   - [x] Without initializers
   - [x] With initializers
   - [x] const enum
   - [x] declare enum
-- Types
-  - [x] Primitive types (e.g. `number`, `Foo`)
-  - [x] Array type (e.g. `number[]`)
-  - [x] Type parameters (e.g. `Array<Array<number>>`)
-  - [x] Function type parameters (e.g. `function foo<T>() {}`)
-  - [ ] Arrow function type parameters (e.g. `const foo = <T>() => {}`)
-  - [ ] Indexed type (e.g. `nums[2]`)
-  - [ ] Tuple types (e.g. `[number, string]`)
-  - [ ] Union types (e.g. `string | number`)
-  - [ ] Intersection types (e.g. `A & B`)
-  - [ ] Conditional types (e.g. `T extends U ? X : Y`)
-  - [ ] Mapped types (e.g. `{ [k in keyof T]: T[K] }`)
-  - [ ] Infer types (e.g. `infer R`)
-  - [ ] Type literal (e.g. `{ a: string }`)
-  - [ ] Type alias (e.g. `type Foo = ...`)
 - Template literal
   - [ ] Tagged templates
   - [ ] Template spans (interpolation)
@@ -88,12 +95,6 @@
   - [ ] Extends clauses
   - [ ] Index signatures
   - [ ] Method signatures
-- Class declaration
-  - [ ] Constructor overloads
-  - [ ] Method overloads
-  - [ ] Static methods and properties
-  - [ ] Private and protected members
-  - [ ] Decorators
 - Switch statement
   - [ ] Default clause
   - [ ] Fallthrough cases
