@@ -1,6 +1,6 @@
 use super::{
     types::{TypeAnnotation, TypeParameterDeclaration},
-    ComputedProperty, Expression, FunctionExpression, Identifier, StringLiteral,
+    ComputedProperty, Expression, Identifier, StringLiteral,
 };
 use crate::{
     impl_from,
