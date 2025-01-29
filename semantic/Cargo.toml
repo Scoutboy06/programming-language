@@ -1,0 +1,12 @@
+[package]
+name = "semantic"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+lexer = { path = "../lexer" }
+parser = { path = "../parser" }
+string_cache = "0.8.4"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
