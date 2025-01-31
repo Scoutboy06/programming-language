@@ -1,13 +1,14 @@
+mod errors;
+mod types;
 mod visitors;
-use std::collections::HashMap;
 
 use parser::{
     expressions::types::TypeValue,
     nodes::{program::Program, Node},
 };
-use visitors::{decl_visitor::DeclVisitor, Visitor};
-
+use std::collections::HashMap;
 use string_cache::DefaultAtom as Atom;
+use visitors::{decl_visitor::DeclVisitor, Visitor};
 
 pub struct Symbol {
     pub id: Atom,
@@ -15,7 +16,6 @@ pub struct Symbol {
     pub declared_at: Node,
 }
 
-#[derive(Default)]
 pub struct SymbolTable {
     scopes: Vec<HashMap<Atom, Symbol>>,
 }
@@ -23,12 +23,12 @@ pub struct SymbolTable {
 impl SymbolTable {
     pub fn new() -> Self {
         Self {
-            scopes: vec![Default::default()],
+            scopes: vec![HashMap::new()],
         }
     }
 
     pub fn add(&mut self, id: Atom, type_value: Option<TypeValue>, declared_at: Node) {
-        assert!(self.scopes.len() > 0);
+        debug_assert!(self.scopes.len() > 0);
         let a = self.scopes.last_mut().unwrap();
         a.insert(
             id.clone(),
@@ -41,12 +41,24 @@ impl SymbolTable {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct CompilationError {
     pub message: String,
     pub node: Node,
     pub severity: ErrorSeverity,
 }
 
+impl CompilationError {
+    pub fn new(message: String, node: Node, severity: ErrorSeverity) -> Self {
+        Self {
+            message,
+            node,
+            severity,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorSeverity {
     Critical,
     Warning,
@@ -61,7 +73,7 @@ impl CheckerContext {
     pub fn new() -> Self {
         Self {
             errors: Vec::new(),
-            symbols: SymbolTable::default(),
+            symbols: SymbolTable::new(),
         }
     }
 
@@ -82,6 +94,8 @@ pub fn analyze(ast: &Program) -> Vec<CompilationError> {
 
     // let mut body_visitor = BodyVisitor::new();
     // body_visitor.visit_program(ast, &mut ctx);
+
+    dbg!(&ctx.errors);
 
     ctx.errors
 }

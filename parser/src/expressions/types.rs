@@ -1,4 +1,4 @@
-use super::Identifier;
+use super::{Identifier, Literal};
 use crate::{impl_from, nodes::Node};
 use lexer::TypeKeyword;
 
@@ -37,6 +37,30 @@ impl TypeValue {
             Self::TypeLiteral(v) => &v.node,
         }
     }
+
+    /// Checks if two `TypeValue`s structurally match, allowing for some leniency in optional type parameters
+    pub fn matches(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::KeywordType(s), Self::KeywordType(o)) => s.kind == o.kind,
+            (Self::TypeReference(s), Self::TypeReference(o)) => {
+                if s.type_name != o.type_name {
+                    return false;
+                }
+                Self::match_type_params(s.type_params.as_deref(), o.type_params.as_deref())
+            }
+            (Self::ArrayType(s), Self::ArrayType(o)) => s.type_value == o.type_value,
+            (Self::TypeLiteral(s), Self::TypeLiteral(o)) => s == o,
+            _ => false,
+        }
+    }
+
+    fn match_type_params(a: Option<&[Self]>, b: Option<&[Self]>) -> bool {
+        match (a, b) {
+            (None, None) => true,
+            (Some(a), Some(b)) => a.len() == b.len() && a.iter().zip(b).all(|(l, r)| l.matches(r)),
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -64,5 +88,6 @@ impl_from!(TypeValue, ArrayType);
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeLiteral {
     pub node: Node,
+    pub literal: Literal,
 }
 impl_from!(TypeValue, TypeLiteral);
