@@ -84,6 +84,15 @@ impl CheckerContext {
     pub fn add_symbol(&mut self, id: Atom, type_value: Option<TypeValue>, declared_at: Node) {
         self.symbols.add(id, type_value, declared_at);
     }
+
+    pub fn get_symbol(&self, id: Atom) -> Option<&Symbol> {
+        for scope in self.symbols.scopes.iter().rev() {
+            if let Some(symbol) = scope.get(&id) {
+                return Some(symbol);
+            }
+        }
+        None
+    }
 }
 
 pub fn analyze(ast: &Program) -> Vec<CompilationError> {

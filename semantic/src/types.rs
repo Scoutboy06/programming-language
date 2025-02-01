@@ -4,6 +4,7 @@ use parser::expressions::{types::TypeValue, Literal};
 #[allow(unused)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExpressionType {
+    Unknown,
     Number,
     String,
     Boolean,
