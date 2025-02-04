@@ -59,10 +59,13 @@ fn string_boolean_mismatch() {
 
 #[test]
 fn variable_reference_type_match() {
-    let code = "let foo = 123
-                      let bar: number = foo";
+    let code = r#"let foo = "abc"
+                        let bar: string = foo
+                        
+                        let n: number = 123
+                        let m: number = n"#;
     let mut parser = Parser::new(&code);
     let ast = parser.parse().unwrap();
     let errors = analyze(&ast);
-    assert_eq!(errors.len(), 0);
+    assert_eq!(errors, []);
 }

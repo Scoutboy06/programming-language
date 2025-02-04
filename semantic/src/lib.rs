@@ -1,45 +1,11 @@
 mod errors;
-mod types;
+mod symbol;
 mod visitors;
 
-use parser::{
-    expressions::types::TypeValue,
-    nodes::{program::Program, Node},
-};
-use std::collections::HashMap;
+use parser::nodes::{program::Program, Node};
 use string_cache::DefaultAtom as Atom;
+use symbol::{Symbol, SymbolTable};
 use visitors::{decl_visitor::DeclVisitor, Visitor};
-
-pub struct Symbol {
-    pub id: Atom,
-    pub type_value: Option<TypeValue>,
-    pub declared_at: Node,
-}
-
-pub struct SymbolTable {
-    scopes: Vec<HashMap<Atom, Symbol>>,
-}
-
-impl SymbolTable {
-    pub fn new() -> Self {
-        Self {
-            scopes: vec![HashMap::new()],
-        }
-    }
-
-    pub fn add(&mut self, id: Atom, type_value: Option<TypeValue>, declared_at: Node) {
-        debug_assert!(self.scopes.len() > 0);
-        let a = self.scopes.last_mut().unwrap();
-        a.insert(
-            id.clone(),
-            Symbol {
-                id: id.clone(),
-                type_value,
-                declared_at,
-            },
-        );
-    }
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompilationError {
@@ -65,8 +31,8 @@ pub enum ErrorSeverity {
 }
 
 struct CheckerContext {
-    errors: Vec<CompilationError>,
-    symbols: SymbolTable,
+    pub errors: Vec<CompilationError>,
+    pub symbols: SymbolTable,
 }
 
 impl CheckerContext {
@@ -79,10 +45,6 @@ impl CheckerContext {
 
     pub fn report_error(&mut self, error: CompilationError) {
         self.errors.push(error);
-    }
-
-    pub fn add_symbol(&mut self, id: Atom, type_value: Option<TypeValue>, declared_at: Node) {
-        self.symbols.add(id, type_value, declared_at);
     }
 
     pub fn get_symbol(&self, id: Atom) -> Option<&Symbol> {
@@ -98,13 +60,11 @@ impl CheckerContext {
 pub fn analyze(ast: &Program) -> Vec<CompilationError> {
     let mut ctx = CheckerContext::new();
 
-    let mut decl_visitor = DeclVisitor::new();
+    let decl_visitor = DeclVisitor::new();
     decl_visitor.visit_program(ast, &mut ctx);
 
     // let mut body_visitor = BodyVisitor::new();
     // body_visitor.visit_program(ast, &mut ctx);
-
-    dbg!(&ctx.errors);
 
     ctx.errors
 }
