@@ -1,7 +1,10 @@
 use super::Visitor;
-use crate::{symbol::SymbolKind, CheckerContext, CompilationError, ErrorSeverity};
+use crate::{
+    symbol::{ObjectType, SymbolKind},
+    CheckerContext, ErrorSeverity,
+};
 use parser::{
-    expressions::{types::TypeValue, Expression, Literal},
+    expressions::{Expression, Key, Literal, ObjectItem},
     nodes::program::Program,
     statements::{Statement, VariableDeclaration},
 };
@@ -42,25 +45,79 @@ impl<'a> Visitor for DeclVisitor {
             E::Identifier(id) => {
                 // Check if referenced variable exists
                 let Some(symbol) = ctx.get_symbol(id.name.clone()) else {
-                    ctx.report_error(CompilationError {
-                        message: "Unknown variable".into(),
-                        node: id.node,
-                        severity: ErrorSeverity::Critical,
-                    });
+                    ctx.report_error(
+                        "Unknown variable".to_string(),
+                        id.node,
+                        ErrorSeverity::Critical,
+                    );
                     return SymbolKind::Unknown;
                 };
 
                 // Check if referenced variable has a value
                 let Some(type_val) = symbol.unfolded_type.as_ref() else {
-                    ctx.report_error(CompilationError {
-                        message: "Variable used before initialization".into(),
-                        node: symbol.declared_at,
-                        severity: ErrorSeverity::Critical,
-                    });
+                    ctx.report_error(
+                        "Variable used before initialization".into(),
+                        symbol.declared_at,
+                        ErrorSeverity::Critical,
+                    );
                     return SymbolKind::Unknown;
                 };
 
                 type_val.to_owned()
+            }
+            E::ObjectExpression(obj) => {
+                let mut key_type = SymbolKind::Unknown;
+                let mut value_type = SymbolKind::Unknown;
+
+                for item in obj.items.iter() {
+                    match item {
+                        ObjectItem::KV(kv) => {
+                            match &kv.key {
+                                Key::Identifier(_) | Key::StringLiteral(_) => {
+                                    key_type.extend(&SymbolKind::String)
+                                }
+                                Key::ComputedProperty(key) => {
+                                    let expr_kind = self.visit_expression(&key.expression, ctx);
+                                    key_type.extend(&expr_kind);
+                                }
+                            }
+                            let val_kind = self.visit_expression(&kv.value, ctx);
+                            value_type.extend(&val_kind);
+                        }
+                        ObjectItem::Identifier(id) => {
+                            key_type.extend(&SymbolKind::String);
+
+                            let Some(sym) = ctx.get_symbol(id.name.clone()) else {
+                                ctx.report_error(
+                                    "Unknown variable".to_string(),
+                                    id.node,
+                                    ErrorSeverity::Critical,
+                                );
+                                continue;
+                            };
+
+                            let Some(t) = &sym.unfolded_type else {
+                                ctx.report_error(
+                                    "Variable used before initialization".to_string(),
+                                    id.node,
+                                    ErrorSeverity::Critical,
+                                );
+                                continue;
+                            };
+
+                            value_type.extend(&t);
+                        }
+                        _ => todo!(),
+                    };
+                }
+
+                dbg!(&key_type);
+                dbg!(&value_type);
+
+                SymbolKind::Object(Box::new(ObjectType {
+                    key_type,
+                    value_type,
+                }))
             }
             _ => todo!(),
         }
@@ -73,15 +130,15 @@ impl<'a> Visitor for DeclVisitor {
 
             let matches = annotated_type
                 .zip(init_type.as_ref())
-                .map(|(ann, init)| init.matches(ann))
+                .map(|(ann, init)| init.matches(ann, ctx))
                 .unwrap_or(true);
 
             if !matches {
-                ctx.report_error(CompilationError {
-                    message: "Mismatched types".to_string(),
-                    node: d.init.as_ref().unwrap().node().clone(),
-                    severity: ErrorSeverity::Critical,
-                });
+                ctx.report_error(
+                    "Mismatched types".to_string(),
+                    d.init.as_ref().unwrap().node().clone(),
+                    ErrorSeverity::Critical,
+                );
             }
 
             ctx.symbols.add(

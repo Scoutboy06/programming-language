@@ -31,7 +31,7 @@ pub enum ErrorSeverity {
 }
 
 struct CheckerContext {
-    pub errors: Vec<CompilationError>,
+    errors: Vec<CompilationError>,
     pub symbols: SymbolTable,
 }
 
@@ -43,8 +43,12 @@ impl CheckerContext {
         }
     }
 
-    pub fn report_error(&mut self, error: CompilationError) {
-        self.errors.push(error);
+    pub fn report_error(&mut self, message: String, node: Node, severity: ErrorSeverity) {
+        self.errors.push(CompilationError {
+            message,
+            node,
+            severity,
+        });
     }
 
     pub fn get_symbol(&self, id: Atom) -> Option<&Symbol> {

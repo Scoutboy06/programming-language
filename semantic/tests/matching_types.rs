@@ -69,3 +69,34 @@ fn variable_reference_type_match() {
     let errors = analyze(&ast);
     assert_eq!(errors, []);
 }
+
+#[test]
+fn variable_reference_type_mismatch() {
+    let code = r#"let foo = 123
+                        let bar: string = foo
+
+                        let fizz = "abc"
+                        let buzz: number = fizz"#;
+    let mut parser = Parser::new(&code);
+    let ast = parser.parse().unwrap();
+    let errors = analyze(&ast);
+    assert!(errors.len() == 2);
+}
+
+#[test]
+fn record_string_number_match() {
+    let code = r#"let obj: Record<string, number> = { days: 12, months: 2 }"#;
+    let mut parser = Parser::new(&code);
+    let ast = parser.parse().unwrap();
+    let errors = analyze(&ast);
+    assert_eq!(errors, []);
+}
+
+#[test]
+fn record_string_boolean_mismatch() {
+    let code = r#"let obj: Record<string, boolean> = { days: 12, months: 2 }"#;
+    let mut parser = Parser::new(&code);
+    let ast = parser.parse().unwrap();
+    let errors = analyze(&ast);
+    assert!(errors.len() == 2);
+}

@@ -2,10 +2,12 @@ use std::collections::HashMap;
 
 use lexer::TypeKeyword;
 use parser::{
-    expressions::{types::TypeValue, Expression, Literal},
+    expressions::{types::TypeValue, Literal},
     nodes::Node,
 };
 use string_cache::DefaultAtom as Atom;
+
+use crate::{CheckerContext, ErrorSeverity};
 
 pub struct Symbol {
     pub id: Atom,
@@ -25,6 +27,21 @@ pub enum SymbolKind {
     Object(Box<ObjectType>),
     Union(Vec<Self>),
     Function(()),
+}
+
+impl SymbolKind {
+    pub fn extend(&mut self, other: &Self) {
+        match self {
+            Self::Unknown => *self = other.clone(),
+            Self::Union(types) => {
+                if !types.contains(&other) {
+                    types.push(other.clone());
+                }
+            }
+            _ if self != other => *self = Self::Union([self.clone(), other.clone()].to_vec()),
+            _ => {}
+        }
+    }
 }
 
 impl std::fmt::Display for SymbolKind {
@@ -64,20 +81,47 @@ pub struct ObjectType {
 }
 
 impl SymbolKind {
-    pub fn matches(&self, ann_type: &TypeValue) -> bool {
-        match ann_type {
+    pub fn matches(&self, ann_type: &TypeValue, ctx: &mut CheckerContext) -> bool {
+        *self == Self::from_type_value(ann_type, ctx)
+    }
+
+    pub fn from_type_value(type_value: &TypeValue, ctx: &mut CheckerContext) -> Self {
+        match type_value {
             TypeValue::TypeLiteral(type_literal) => match type_literal.literal {
-                Literal::BooleanLiteral(_) => *self == Self::Boolean,
-                Literal::NumberLiteral(_) => *self == Self::Number,
-                Literal::NullLiteral(_) => *self == Self::Null,
-                Literal::StringLiteral(_) => *self == Self::String,
+                Literal::BooleanLiteral(_) => Self::Boolean,
+                Literal::NumberLiteral(_) => Self::Number,
+                Literal::NullLiteral(_) => Self::Null,
+                Literal::StringLiteral(_) => Self::String,
             },
             TypeValue::KeywordType(keyword_type) => match keyword_type.kind {
-                TypeKeyword::String => *self == Self::String,
-                TypeKeyword::Number => *self == Self::Number,
-                TypeKeyword::Boolean => *self == Self::Boolean,
+                TypeKeyword::Boolean => Self::Boolean,
+                TypeKeyword::String => Self::String,
+                TypeKeyword::Number => Self::Number,
             },
-            TypeValue::TypeReference(_type_reference) => todo!(),
+            TypeValue::TypeReference(type_reference) => {
+                match type_reference.type_name.name.as_bytes() {
+                    b"Array" => todo!(),
+                    b"Record" => {
+                        let p = type_reference.type_params.as_ref();
+                        if !p.is_some_and(|p| p.len() == 2) {
+                            ctx.report_error(
+                                "Invalid number of arguments".to_string(),
+                                type_value.node().clone(),
+                                ErrorSeverity::Critical,
+                            );
+                        }
+
+                        let key_type = Self::from_type_value(&p.unwrap()[0], ctx);
+                        let value_type = Self::from_type_value(&p.unwrap()[1], ctx);
+
+                        Self::Object(Box::new(ObjectType {
+                            key_type,
+                            value_type,
+                        }))
+                    }
+                    _ => todo!(),
+                }
+            }
             TypeValue::ArrayType(_array_type) => todo!(),
         }
     }
