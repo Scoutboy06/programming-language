@@ -52,3 +52,13 @@ pub enum Key {
 impl_from!(Key, Identifier);
 impl_from!(Key, StringLiteral);
 impl_from!(Key, ComputedProperty);
+
+impl Key {
+    pub fn node(&self) -> &Node {
+        match self {
+            Self::Identifier(id) => &id.node,
+            Self::ComputedProperty(pr) => &pr.node,
+            Self::StringLiteral(st) => &st.node,
+        }
+    }
+}

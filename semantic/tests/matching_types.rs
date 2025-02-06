@@ -98,5 +98,6 @@ fn record_string_boolean_mismatch() {
     let mut parser = Parser::new(&code);
     let ast = parser.parse().unwrap();
     let errors = analyze(&ast);
-    assert!(errors.len() == 2);
+    dbg!(&errors);
+    assert_eq!(errors.len(), 2);
 }

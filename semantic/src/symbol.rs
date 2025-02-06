@@ -11,13 +11,13 @@ use crate::{CheckerContext, ErrorSeverity};
 
 pub struct Symbol {
     pub id: Atom,
-    pub unfolded_type: Option<SymbolKind>,
+    pub unfolded_type: Option<ExprType>,
     pub display_type: Option<TypeValue>,
     pub declared_at: Node,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum SymbolKind {
+pub enum ExprType {
     Unknown,
     Number,
     String,
@@ -29,12 +29,16 @@ pub enum SymbolKind {
     Function(()),
 }
 
-impl SymbolKind {
+pub trait ExprTypeIncludes {
+    fn includes(&self, t: &ExprType) -> bool;
+}
+
+impl ExprType {
     pub fn extend(&mut self, other: &Self) {
         match self {
             Self::Unknown => *self = other.clone(),
             Self::Union(types) => {
-                if !types.contains(&other) {
+                if !types.contains(other) {
                     types.push(other.clone());
                 }
             }
@@ -43,8 +47,16 @@ impl SymbolKind {
         }
     }
 }
+impl ExprTypeIncludes for ExprType {
+    fn includes(&self, t: &ExprType) -> bool {
+        match self {
+            Self::Union(u) => u.contains(t),
+            _ => *self == *t,
+        }
+    }
+}
 
-impl std::fmt::Display for SymbolKind {
+impl std::fmt::Display for ExprType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Unknown => write!(f, "{{unknown}}"),
@@ -76,11 +88,11 @@ impl std::fmt::Display for SymbolKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ObjectType {
-    pub key_type: SymbolKind,
-    pub value_type: SymbolKind,
+    pub key_type: ExprType,
+    pub value_type: ExprType,
 }
 
-impl SymbolKind {
+impl ExprType {
     pub fn matches(&self, ann_type: &TypeValue, ctx: &mut CheckerContext) -> bool {
         *self == Self::from_type_value(ann_type, ctx)
     }
@@ -141,7 +153,7 @@ impl SymbolTable {
     pub fn add(
         &mut self,
         id: Atom,
-        unfolded_type: Option<SymbolKind>,
+        unfolded_type: Option<ExprType>,
         display_type: Option<TypeValue>,
         declared_at: Node,
     ) {
@@ -161,19 +173,19 @@ impl SymbolTable {
 
 #[cfg(test)]
 mod tests {
-    use super::{ObjectType, SymbolKind};
+    use super::{ExprType, ObjectType};
     use pretty_assertions::assert_eq;
 
     #[test]
     fn format_union() {
-        use SymbolKind as T;
+        use ExprType as T;
         let t = T::Union([T::String, T::Number, T::Null].to_vec());
         assert_eq!(t.to_string(), "string | number | null".to_string());
     }
 
     #[test]
     fn format_object() {
-        use SymbolKind as T;
+        use ExprType as T;
         let t = T::Object(Box::new(ObjectType {
             key_type: T::String,
             value_type: T::Union([T::Number, T::Null].to_vec()),
