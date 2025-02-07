@@ -1,6 +1,6 @@
 use super::Visitor;
 use crate::{
-    symbol::{ExprType, ExprTypeIncludes, ObjectType},
+    symbol::{ExprType, ObjectType},
     CheckerContext, ErrorSeverity,
 };
 use parser::{
@@ -106,11 +106,8 @@ impl<'a> Visitor for DeclVisitor {
 
                 type_val
             }
-            E::ObjectExpression(obj) => ExprType::Object(Box::new(self.visit_object_expression(
-                obj,
-                expected_type,
-                ctx,
-            ))),
+            E::ObjectExpression(obj) => self.visit_object_expression(obj, expected_type, ctx),
+            E::ArrayExpression(arr) => self.visit_array_expression(arr, expected_type, ctx),
             _ => todo!(),
         }
     }
@@ -120,7 +117,7 @@ impl<'a> Visitor for DeclVisitor {
         obj: &parser::expressions::ObjectExpression,
         expected_type: Option<&ExprType>,
         ctx: &mut CheckerContext,
-    ) -> ObjectType {
+    ) -> ExprType {
         let (expected_key_type, expected_value_type) = match expected_type {
             Some(t) => match t {
                 ExprType::Object(obj) => (Some(&obj.key_type), Some(&obj.value_type)),
@@ -188,12 +185,39 @@ impl<'a> Visitor for DeclVisitor {
             };
         }
 
-        dbg!(&key_type);
-        dbg!(&value_type);
-
-        ObjectType {
+        ExprType::Object(Box::new(ObjectType {
             key_type,
             value_type,
+        }))
+    }
+
+    fn visit_array_expression(
+        &self,
+        arr: &parser::expressions::ArrayExpression,
+        expected_type: Option<&ExprType>,
+        ctx: &mut CheckerContext,
+    ) -> ExprType {
+        let expected_item_type = match expected_type {
+            Some(t) => match t {
+                ExprType::Array(arr) => Some(&**arr),
+                _ => {
+                    ctx.report_error(
+                        "Mismatched types".to_string(),
+                        arr.node.clone(),
+                        ErrorSeverity::Critical,
+                    );
+                    None
+                }
+            },
+            _ => None,
+        };
+        let mut inner_type = ExprType::Unknown;
+
+        for expr in arr.items.iter() {
+            let t = self.visit_expression(expr, expected_item_type, ctx);
+            inner_type.extend(&t);
         }
+
+        ExprType::Array(Box::new(inner_type))
     }
 }

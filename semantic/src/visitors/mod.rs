@@ -1,9 +1,6 @@
-use crate::{
-    symbol::{ExprType, ObjectType},
-    CheckerContext,
-};
+use crate::{symbol::ExprType, CheckerContext};
 use parser::{
-    expressions::{Expression, ObjectExpression},
+    expressions::{ArrayExpression, Expression, ObjectExpression},
     nodes::program::Program,
     statements::{Statement, VariableDeclaration},
 };
@@ -25,5 +22,11 @@ pub trait Visitor {
         obj: &ObjectExpression,
         expected_type: Option<&ExprType>,
         ctx: &mut CheckerContext,
-    ) -> ObjectType;
+    ) -> ExprType;
+    fn visit_array_expression(
+        &self,
+        arr: &ArrayExpression,
+        expected_type: Option<&ExprType>,
+        ctx: &mut CheckerContext,
+    ) -> ExprType;
 }

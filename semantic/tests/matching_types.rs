@@ -98,6 +98,23 @@ fn record_string_boolean_mismatch() {
     let mut parser = Parser::new(&code);
     let ast = parser.parse().unwrap();
     let errors = analyze(&ast);
-    dbg!(&errors);
+    assert_eq!(errors.len(), 2);
+}
+
+#[test]
+fn array_string_match() {
+    let code = r#"let arr: number[] = [123, 456, 789];"#;
+    let mut parser = Parser::new(&code);
+    let ast = parser.parse().unwrap();
+    let errors = analyze(&ast);
+    assert_eq!(errors, []);
+}
+
+#[test]
+fn array_string_mismatch() {
+    let code = r#"let arr: string[] = ["abc", 123, "def", 456];"#;
+    let mut parser = Parser::new(&code);
+    let ast = parser.parse().unwrap();
+    let errors = analyze(&ast);
     assert_eq!(errors.len(), 2);
 }

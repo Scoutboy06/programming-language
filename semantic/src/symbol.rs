@@ -29,10 +29,6 @@ pub enum ExprType {
     Function(()),
 }
 
-pub trait ExprTypeIncludes {
-    fn includes(&self, t: &ExprType) -> bool;
-}
-
 impl ExprType {
     pub fn extend(&mut self, other: &Self) {
         match self {
@@ -46,9 +42,8 @@ impl ExprType {
             _ => {}
         }
     }
-}
-impl ExprTypeIncludes for ExprType {
-    fn includes(&self, t: &ExprType) -> bool {
+
+    pub fn includes(&self, t: &ExprType) -> bool {
         match self {
             Self::Union(u) => u.contains(t),
             _ => *self == *t,
@@ -134,7 +129,10 @@ impl ExprType {
                     _ => todo!(),
                 }
             }
-            TypeValue::ArrayType(_array_type) => todo!(),
+            TypeValue::ArrayType(array_type) => {
+                let left_type = Self::from_type_value(&array_type.type_value, ctx);
+                Self::Array(Box::new(left_type))
+            }
         }
     }
 }
