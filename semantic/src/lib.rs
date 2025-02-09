@@ -1,28 +1,21 @@
-mod errors;
-mod symbol;
-mod visitors;
+pub mod errors;
+pub mod symbol;
+pub mod types;
+pub mod visitors;
 
-use parser::nodes::{program::Program, Node};
+use errors::{CompilationError, ErrorData, ErrorSeverity};
+use parser::{
+    expressions::types::TypeValue,
+    nodes::{program::Program, Node},
+};
 use string_cache::DefaultAtom as Atom;
 use symbol::{Symbol, SymbolTable};
-use visitors::{decl_visitor::DeclVisitor, Visitor};
+use types::ExprType;
+use visitors::{body_visitor::BodyVisitor, decl_visitor::DeclVisitor};
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct CompilationError {
-    pub message: String,
-    pub node: Node,
-    pub severity: ErrorSeverity,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ErrorSeverity {
-    Critical,
-    Warning,
-}
-
-struct CheckerContext {
+pub struct CheckerContext {
     errors: Vec<CompilationError>,
-    pub symbols: SymbolTable,
+    symbols: SymbolTable,
 }
 
 impl CheckerContext {
@@ -33,9 +26,9 @@ impl CheckerContext {
         }
     }
 
-    pub fn report_error(&mut self, message: String, node: Node, severity: ErrorSeverity) {
+    pub fn report_error(&mut self, data: ErrorData, node: Node, severity: ErrorSeverity) {
         self.errors.push(CompilationError {
-            message,
+            data,
             node,
             severity,
         });
@@ -49,16 +42,33 @@ impl CheckerContext {
         }
         None
     }
+
+    pub fn get_symbol_mut(&mut self, id: Atom) -> Option<&mut Symbol> {
+        for scope in self.symbols.scopes.iter_mut().rev() {
+            if let Some(symbol) = scope.get_mut(&id) {
+                return Some(symbol);
+            }
+        }
+        None
+    }
+
+    pub fn add_symbol(
+        &mut self,
+        id: Atom,
+        unfolded_type: Option<ExprType>,
+        display_type: Option<TypeValue>,
+        declared_at: Node,
+    ) {
+        self.symbols
+            .add(id, unfolded_type, display_type, declared_at);
+    }
 }
 
 pub fn analyze(ast: &Program) -> Vec<CompilationError> {
     let mut ctx = CheckerContext::new();
 
-    let decl_visitor = DeclVisitor::new();
-    decl_visitor.visit_program(ast, &mut ctx);
-
-    // let mut body_visitor = BodyVisitor::new();
-    // body_visitor.visit_program(ast, &mut ctx);
+    DeclVisitor::visit_program(ast, &mut ctx);
+    BodyVisitor::visit_program(ast, &mut ctx);
 
     ctx.errors
 }

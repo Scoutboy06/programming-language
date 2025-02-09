@@ -1,223 +1,76 @@
-use super::Visitor;
-use crate::{
-    symbol::{ExprType, ObjectType},
-    CheckerContext, ErrorSeverity,
-};
+use crate::{types::ExprType, CheckerContext};
 use parser::{
-    expressions::{Expression, Key, Literal, ObjectItem},
+    expressions::{ArrayExpression, Expression, Key, ObjectExpression, ObjectItem},
     nodes::program::Program,
     statements::{Statement, VariableDeclaration},
 };
 
-pub struct DeclVisitor {}
-
-impl DeclVisitor {
-    pub fn new() -> Self {
-        Self {}
-    }
+pub struct DeclVisitor<'a> {
+    ctx: &'a mut CheckerContext,
 }
 
-impl<'a> Visitor for DeclVisitor {
-    fn visit_program(&self, ast: &Program, ctx: &mut CheckerContext) {
+impl<'a> DeclVisitor<'a> {
+    pub fn visit_program(ast: &Program, ctx: &'a mut CheckerContext) {
+        let mut visitor = Self { ctx };
         ast.body
             .iter()
-            .for_each(|stmt| self.visit_statement(stmt, ctx));
+            .for_each(|stmt| visitor.visit_statement(stmt));
     }
 
-    fn visit_statement(&self, stmt: &Statement, ctx: &mut CheckerContext) {
+    fn visit_statement(&mut self, stmt: &Statement) {
         use Statement as S;
 
         match stmt {
-            S::VariableDeclaration(decl) => self.visit_variable_declaration(decl, ctx),
+            S::VariableDeclaration(decl) => self.visit_variable_declaration(decl),
             _ => todo!(),
         }
     }
 
-    fn visit_variable_declaration(&self, decl: &VariableDeclaration, ctx: &mut CheckerContext) {
+    fn visit_variable_declaration(&mut self, decl: &VariableDeclaration) {
         for d in decl.declarations.iter() {
             let annotated_type = d.type_annotation.as_ref().map(|ann| &ann.type_value);
-            let ann_expr_kind = annotated_type.map(|t| ExprType::from_type_value(t, ctx));
-            let init_type = d
-                .init
-                .as_ref()
-                .map(|expr| self.visit_expression(expr, ann_expr_kind.as_ref(), ctx));
+            let ann_expr_kind = annotated_type.map(|t| ExprType::from_type_value(t, &mut self.ctx));
 
-            ctx.symbols.add(
-                d.id.name.to_owned(),
-                init_type.to_owned(),
+            d.init.as_ref().inspect(|init| {
+                self.visit_expression(init);
+            });
+
+            self.ctx.add_symbol(
+                d.id.name.clone(),
+                ann_expr_kind,
                 annotated_type.cloned(),
-                d.node,
+                d.node.clone(),
             );
         }
     }
 
-    fn visit_expression(
-        &self,
-        expr: &Expression,
-        expected_type: Option<&ExprType>,
-        ctx: &mut CheckerContext,
-    ) -> ExprType {
+    fn visit_expression(&self, expr: &Expression) {
         use Expression as E;
         match expr {
-            E::Literal(lit) => {
-                let t = match **lit {
-                    Literal::BooleanLiteral(_) => ExprType::Boolean,
-                    Literal::NullLiteral(_) => ExprType::Null,
-                    Literal::NumberLiteral(_) => ExprType::Number,
-                    Literal::StringLiteral(_) => ExprType::String,
-                };
-                if expected_type.is_some_and(|ex| t != *ex) {
-                    ctx.report_error(
-                        "Mismatched types".to_string(),
-                        lit.node().clone(),
-                        ErrorSeverity::Critical,
-                    );
-                }
-                t
-            }
-            E::Identifier(id) => {
-                // Check if referenced variable exists
-                let Some(symbol) = ctx.get_symbol(id.name.clone()) else {
-                    ctx.report_error(
-                        "Unknown variable".to_string(),
-                        id.node,
-                        ErrorSeverity::Critical,
-                    );
-                    return ExprType::Unknown;
-                };
-
-                // Check if referenced variable has a value
-                let Some(type_val) = symbol.unfolded_type.as_ref().cloned() else {
-                    ctx.report_error(
-                        "Variable used before initialization".into(),
-                        symbol.declared_at,
-                        ErrorSeverity::Critical,
-                    );
-                    return ExprType::Unknown;
-                };
-
-                if expected_type.is_some_and(|t| type_val != *t) {
-                    ctx.report_error(
-                        "Mismatched types".to_string(),
-                        id.node.clone(),
-                        ErrorSeverity::Critical,
-                    );
-                }
-
-                type_val
-            }
-            E::ObjectExpression(obj) => self.visit_object_expression(obj, expected_type, ctx),
-            E::ArrayExpression(arr) => self.visit_array_expression(arr, expected_type, ctx),
+            E::Literal(_) => {}
+            E::Identifier(_) => {}
+            E::ObjectExpression(obj) => self.visit_object_expression(obj),
+            E::ArrayExpression(arr) => self.visit_array_expression(arr),
             _ => todo!(),
         }
     }
 
-    fn visit_object_expression(
-        &self,
-        obj: &parser::expressions::ObjectExpression,
-        expected_type: Option<&ExprType>,
-        ctx: &mut CheckerContext,
-    ) -> ExprType {
-        let (expected_key_type, expected_value_type) = match expected_type {
-            Some(t) => match t {
-                ExprType::Object(obj) => (Some(&obj.key_type), Some(&obj.value_type)),
-                _ => {
-                    ctx.report_error(
-                        "Mismatched types".to_string(),
-                        obj.node.clone(),
-                        ErrorSeverity::Critical,
-                    );
-                    (None, None)
-                }
-            },
-            _ => (None, None),
-        };
-        let mut key_type = ExprType::Unknown;
-        let mut value_type = ExprType::Unknown;
-
+    fn visit_object_expression(&self, obj: &ObjectExpression) {
         for item in obj.items.iter() {
             match item {
-                ObjectItem::KV(kv) => {
-                    match &kv.key {
-                        Key::Identifier(_) | Key::StringLiteral(_) => {
-                            if expected_key_type.is_some_and(|t| !t.includes(&ExprType::String)) {
-                                ctx.report_error(
-                                    "Mismatched types".to_string(),
-                                    kv.key.node().clone(),
-                                    ErrorSeverity::Critical,
-                                );
-                            }
-                            key_type.extend(&ExprType::String);
-                        }
-                        Key::ComputedProperty(key) => {
-                            let expr_kind =
-                                self.visit_expression(&key.expression, expected_key_type, ctx);
-                            key_type.extend(&expr_kind);
-                        }
-                    }
-                    let val_kind = self.visit_expression(&kv.value, expected_value_type, ctx);
-                    value_type.extend(&val_kind);
-                }
-                ObjectItem::Identifier(id) => {
-                    key_type.extend(&ExprType::String);
-
-                    let Some(sym) = ctx.get_symbol(id.name.clone()) else {
-                        ctx.report_error(
-                            "Unknown variable".to_string(),
-                            id.node,
-                            ErrorSeverity::Critical,
-                        );
-                        continue;
-                    };
-
-                    let Some(t) = &sym.unfolded_type else {
-                        ctx.report_error(
-                            "Variable used before initialization".to_string(),
-                            id.node,
-                            ErrorSeverity::Critical,
-                        );
-                        continue;
-                    };
-
-                    value_type.extend(&t);
-                }
-                _ => todo!(),
+                ObjectItem::KV(kv) => match &kv.key {
+                    Key::Identifier(_) | Key::StringLiteral(_) => {}
+                    Key::ComputedProperty(prop) => self.visit_expression(&prop.expression),
+                },
+                ObjectItem::Identifier(_) => {}
+                ObjectItem::Method(_method) => todo!(),
             };
         }
-
-        ExprType::Object(Box::new(ObjectType {
-            key_type,
-            value_type,
-        }))
     }
 
-    fn visit_array_expression(
-        &self,
-        arr: &parser::expressions::ArrayExpression,
-        expected_type: Option<&ExprType>,
-        ctx: &mut CheckerContext,
-    ) -> ExprType {
-        let expected_item_type = match expected_type {
-            Some(t) => match t {
-                ExprType::Array(arr) => Some(&**arr),
-                _ => {
-                    ctx.report_error(
-                        "Mismatched types".to_string(),
-                        arr.node.clone(),
-                        ErrorSeverity::Critical,
-                    );
-                    None
-                }
-            },
-            _ => None,
-        };
-        let mut inner_type = ExprType::Unknown;
-
-        for expr in arr.items.iter() {
-            let t = self.visit_expression(expr, expected_item_type, ctx);
-            inner_type.extend(&t);
-        }
-
-        ExprType::Array(Box::new(inner_type))
+    fn visit_array_expression(&self, arr: &ArrayExpression) {
+        arr.items
+            .iter()
+            .for_each(|expr| self.visit_expression(expr));
     }
 }
