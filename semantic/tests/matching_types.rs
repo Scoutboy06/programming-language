@@ -1,6 +1,6 @@
 use parser::Parser;
 use pretty_assertions::assert_eq;
-use semantic::{analyze, ErrorSeverity};
+use semantic::{analyze, errors::ErrorSeverity};
 
 #[test]
 fn string_number_mismatch() {
@@ -117,4 +117,30 @@ fn array_string_mismatch() {
     let ast = parser.parse().unwrap();
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 2);
+}
+
+#[test]
+fn function_statement_matching_return_type_number() {
+    let code = r#"
+    function getNumber(): number {
+        return 123;
+    }
+    "#;
+    let mut parser = Parser::new(&code);
+    let ast = parser.parse().unwrap();
+    let errors = analyze(&ast);
+    assert_eq!(errors.len(), 0);
+}
+
+#[test]
+fn function_statement_mismatched_return_type_number() {
+    let code = r#"
+    function getNumber(): number {
+        return "abc";
+    }
+    "#;
+    let mut parser = Parser::new(&code);
+    let ast = parser.parse().unwrap();
+    let errors = analyze(&ast);
+    assert_eq!(errors.len(), 1);
 }

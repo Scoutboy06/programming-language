@@ -1,8 +1,12 @@
-use crate::{types::ExprType, CheckerContext};
+use crate::{
+    symbol::Symbol,
+    types::{ExprType, FunctionType},
+    CheckerContext,
+};
 use parser::{
     expressions::{ArrayExpression, Expression, Key, ObjectExpression, ObjectItem},
     nodes::program::Program,
-    statements::{Statement, VariableDeclaration},
+    statements::{FunctionDeclaration, Statement, VariableDeclaration},
 };
 
 pub struct DeclVisitor<'a> {
@@ -22,6 +26,7 @@ impl<'a> DeclVisitor<'a> {
 
         match stmt {
             S::VariableDeclaration(decl) => self.visit_variable_declaration(decl),
+            S::FunctionDeclaration(decl) => self.visit_function_declaration(decl),
             _ => todo!(),
         }
     }
@@ -42,6 +47,35 @@ impl<'a> DeclVisitor<'a> {
                 d.node.clone(),
             );
         }
+    }
+
+    fn visit_function_declaration(&mut self, decl: &FunctionDeclaration) {
+        let args: Vec<Symbol> = decl
+            .params
+            .iter()
+            .map(|param| Symbol {
+                id: param.identifier.name.clone(),
+                type_value: param
+                    .type_annotation
+                    .as_ref()
+                    .map(|ann| ann.type_value.to_owned()),
+                declared_at: param.node.clone(),
+            })
+            .collect();
+
+        let display_ret_type = decl.return_type.as_ref().map(|t| t.type_value.to_owned());
+        let unfolded_ret_type = display_ret_type
+            .as_ref()
+            .map(|t| ExprType::from_type_value(&t, &mut self.ctx));
+
+        let t = ExprType::Function(Box::new(FunctionType {
+            args,
+            display_ret_type,
+            unfolded_ret_type,
+        }));
+
+        self.ctx
+            .add_symbol(decl.id.name.to_owned(), Some(t), None, decl.node.clone());
     }
 
     fn visit_expression(&self, expr: &Expression) {

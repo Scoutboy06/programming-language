@@ -1,6 +1,7 @@
 use parser::{
     expressions::{
-        ArrayExpression, Expression, Identifier, Key, Literal, ObjectExpression, ObjectItem,
+        types::TypeValue, ArrayExpression, Expression, Identifier, Key, Literal, ObjectExpression,
+        ObjectItem,
     },
     nodes::program::Program,
     statements::{Statement, VariableDeclaration},
@@ -37,15 +38,15 @@ impl<'a> BodyVisitor<'a> {
             let symbol_name = d.id.name.to_owned();
             let expected_type = {
                 let symbol = self.ctx.get_symbol(symbol_name.to_owned());
-                symbol.unwrap().unfolded_type.clone()
+                symbol.unwrap().type_value.clone()
             };
 
             if let Some(init) = &d.init {
                 let init_t = self.visit_expression(init, expected_type.as_ref());
 
                 let symbol = self.ctx.get_symbol_mut(symbol_name).unwrap();
-                if symbol.unfolded_type.is_none() {
-                    symbol.unfolded_type = Some(init_t);
+                if symbol.type_value.is_none() {
+                    symbol.type_value = Some(init_t);
                 }
             }
         }
@@ -55,7 +56,7 @@ impl<'a> BodyVisitor<'a> {
         &mut self,
         expr: &Expression,
         expected_type: Option<&ExprType>,
-    ) -> ExprType {
+    ) -> TypeValue {
         use Expression as E;
         match expr {
             E::Literal(lit) => self.visit_literal(lit, expected_type),
@@ -66,7 +67,7 @@ impl<'a> BodyVisitor<'a> {
         }
     }
 
-    fn visit_literal(&mut self, lit: &Literal, expected_type: Option<&ExprType>) -> ExprType {
+    fn visit_literal(&mut self, lit: &Literal, expected_type: Option<&TypeValue>) -> TypeValue {
         let expr_type = match lit {
             Literal::BooleanLiteral(_) => ExprType::Boolean,
             Literal::StringLiteral(_) => ExprType::String,
@@ -88,7 +89,11 @@ impl<'a> BodyVisitor<'a> {
         expr_type
     }
 
-    fn visit_identifier(&mut self, id: &Identifier, expected_type: Option<&ExprType>) -> ExprType {
+    fn visit_identifier(
+        &mut self,
+        id: &Identifier,
+        expected_type: Option<&TypeValue>,
+    ) -> TypeValue {
         let Some(symbol) = self.ctx.get_symbol(id.name.clone()).cloned() else {
             self.ctx.report_error(
                 ErrorData::UnknownVariable {
@@ -100,7 +105,7 @@ impl<'a> BodyVisitor<'a> {
             return ExprType::Unknown;
         };
 
-        let Some(t) = &symbol.unfolded_type else {
+        let Some(t) = &symbol.type_value else {
             self.ctx.report_error(
                 ErrorData::UseBeforeInit {
                     id: id.name.to_owned(),

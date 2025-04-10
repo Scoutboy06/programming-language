@@ -25,7 +25,7 @@ pub struct ObjectType {
 #[derive(Debug, Clone, PartialEq)]
 pub struct FunctionType {
     pub args: Vec<Symbol>,
-    pub ret_type: Option<TypeValue>,
+    pub display_ret_type: Option<TypeValue>,
     pub unfolded_ret_type: Option<ExprType>,
 }
 
@@ -129,6 +129,26 @@ impl ExprType {
             TypeValue::ArrayType(array_type) => {
                 let left_type = Self::from_type_value(&array_type.type_value, ctx);
                 Self::Array(Box::new(left_type))
+            }
+            TypeValue::FnType(fn_type) => {
+                let args: Vec<Symbol> = fn_type
+                    .params
+                    .iter()
+                    .map(|arg| Symbol {
+                        id: arg.identifier.name.clone(),
+                        type_value: arg
+                            .type_annotation
+                            .as_ref()
+                            .map(|ann| ann.type_value.clone()),
+                        declared_at: arg.node.clone(),
+                    })
+                    .collect();
+
+                Self::Function(Box::new(FunctionType {
+                    args,
+                    display_ret_type: todo!(),
+                    unfolded_ret_type: todo!(),
+                }))
             }
         }
     }

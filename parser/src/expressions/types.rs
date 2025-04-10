@@ -1,5 +1,5 @@
 use super::{Identifier, Literal};
-use crate::{impl_from, nodes::Node};
+use crate::{impl_from, nodes::Node, statements::Parameter};
 use lexer::TypeKeyword;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -25,6 +25,7 @@ pub enum TypeValue {
     KeywordType(Box<KeywordType>),
     TypeReference(Box<TypeReference>),
     ArrayType(Box<ArrayType>),
+    FnType(Box<FnType>),
     TypeLiteral(Box<TypeLiteral>),
 }
 
@@ -34,6 +35,7 @@ impl TypeValue {
             Self::KeywordType(v) => &v.node,
             Self::TypeReference(v) => &v.node,
             Self::ArrayType(v) => &v.node,
+            Self::FnType(v) => &v.node,
             Self::TypeLiteral(v) => &v.node,
         }
     }
@@ -84,6 +86,13 @@ pub struct ArrayType {
     pub type_value: TypeValue,
 }
 impl_from!(TypeValue, ArrayType);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FnType {
+    pub node: Node,
+    pub params: Vec<Parameter>,
+    pub return_type: TypeAnnotation,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeLiteral {
