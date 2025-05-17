@@ -1,7 +1,7 @@
 use parser::nodes::Node;
 use string_cache::DefaultAtom as Atom;
 
-use crate::types::ExprType;
+use crate::types::ResolvedType;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompilationError {
@@ -19,8 +19,8 @@ pub enum ErrorData {
         id: Atom,
     },
     TypeMismatch {
-        expected_type: ExprType,
-        received_type: ExprType,
+        expected_type: ResolvedType,
+        received_type: ResolvedType,
     },
     InvalidNumberOfArguments {
         received: u8,

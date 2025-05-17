@@ -17,11 +17,11 @@ pub struct TypeParameter {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeAnnotation {
     pub node: Node,
-    pub type_value: TypeValue,
+    pub type_value: AstType,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum TypeValue {
+pub enum AstType {
     KeywordType(Box<KeywordType>),
     TypeReference(Box<TypeReference>),
     ArrayType(Box<ArrayType>),
@@ -29,7 +29,7 @@ pub enum TypeValue {
     TypeLiteral(Box<TypeLiteral>),
 }
 
-impl TypeValue {
+impl AstType {
     pub fn node(&self) -> &Node {
         match self {
             Self::KeywordType(v) => &v.node,
@@ -40,7 +40,7 @@ impl TypeValue {
         }
     }
 
-    /// Checks if two `TypeValue`s structurally match, allowing for some leniency in optional type parameters
+    /// Checks if two `AstType`s structurally match, allowing for some leniency in optional type parameters
     pub fn matches(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::KeywordType(s), Self::KeywordType(o)) => s.kind == o.kind,
@@ -70,22 +70,22 @@ pub struct KeywordType {
     pub node: Node,
     pub kind: TypeKeyword,
 }
-impl_from!(TypeValue, KeywordType);
+impl_from!(AstType, KeywordType);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeReference {
     pub node: Node,
     pub type_name: Identifier,
-    pub type_params: Option<Vec<TypeValue>>,
+    pub type_params: Option<Vec<AstType>>,
 }
-impl_from!(TypeValue, TypeReference);
+impl_from!(AstType, TypeReference);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArrayType {
     pub node: Node,
-    pub type_value: TypeValue,
+    pub type_value: AstType,
 }
-impl_from!(TypeValue, ArrayType);
+impl_from!(AstType, ArrayType);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FnType {
@@ -99,4 +99,4 @@ pub struct TypeLiteral {
     pub node: Node,
     pub literal: Literal,
 }
-impl_from!(TypeValue, TypeLiteral);
+impl_from!(AstType, TypeLiteral);

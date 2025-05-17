@@ -5,12 +5,12 @@ pub mod visitors;
 
 use errors::{CompilationError, ErrorData, ErrorSeverity};
 use parser::{
-    expressions::types::TypeValue,
+    expressions::types::AstType,
     nodes::{program::Program, Node},
 };
 use string_cache::DefaultAtom as Atom;
 use symbol::{Symbol, SymbolTable};
-use types::ExprType;
+use types::ResolvedType;
 use visitors::{body_visitor::BodyVisitor, decl_visitor::DeclVisitor};
 
 pub struct CheckerContext {
@@ -55,8 +55,8 @@ impl CheckerContext {
     pub fn add_symbol(
         &mut self,
         id: Atom,
-        unfolded_type: Option<ExprType>,
-        display_type: Option<TypeValue>,
+        unfolded_type: Option<ResolvedType>,
+        display_type: Option<AstType>,
         declared_at: Node,
     ) {
         self.symbols

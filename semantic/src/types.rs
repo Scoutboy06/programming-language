@@ -1,10 +1,10 @@
 use lexer::TypeKeyword;
-use parser::expressions::{types::TypeValue, Literal};
+use parser::expressions::{types::AstType, Literal};
 
 use crate::{errors::ErrorData, symbol::Symbol, CheckerContext, ErrorSeverity};
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ExprType {
+pub enum ResolvedType {
     Unknown,
     Number,
     String,
@@ -18,18 +18,18 @@ pub enum ExprType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ObjectType {
-    pub key_type: ExprType,
-    pub value_type: ExprType,
+    pub key_type: ResolvedType,
+    pub value_type: ResolvedType,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FunctionType {
     pub args: Vec<Symbol>,
-    pub display_ret_type: Option<TypeValue>,
-    pub unfolded_ret_type: Option<ExprType>,
+    pub display_ret_type: Option<AstType>,
+    pub unfolded_ret_type: Option<ResolvedType>,
 }
 
-impl ExprType {
+impl ResolvedType {
     pub fn extend(&mut self, other: &Self) {
         match self {
             Self::Unknown => *self = other.clone(),
@@ -43,7 +43,7 @@ impl ExprType {
         }
     }
 
-    pub fn includes(&self, t: &ExprType) -> bool {
+    pub fn includes(&self, t: &ResolvedType) -> bool {
         match self {
             Self::Union(u) => u.contains(t),
             _ => *self == *t,
@@ -51,7 +51,7 @@ impl ExprType {
     }
 }
 
-impl std::fmt::Display for ExprType {
+impl std::fmt::Display for ResolvedType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Unknown => write!(f, "{{unknown}}"),
@@ -81,25 +81,25 @@ impl std::fmt::Display for ExprType {
     }
 }
 
-impl ExprType {
-    pub fn matches(&self, ann_type: &TypeValue, ctx: &mut CheckerContext) -> bool {
+impl ResolvedType {
+    pub fn matches(&self, ann_type: &AstType, ctx: &mut CheckerContext) -> bool {
         *self == Self::from_type_value(ann_type, ctx)
     }
 
-    pub fn from_type_value(type_value: &TypeValue, ctx: &mut CheckerContext) -> Self {
+    pub fn from_type_value(type_value: &AstType, ctx: &mut CheckerContext) -> Self {
         match type_value {
-            TypeValue::TypeLiteral(type_literal) => match type_literal.literal {
+            AstType::TypeLiteral(type_literal) => match type_literal.literal {
                 Literal::BooleanLiteral(_) => Self::Boolean,
                 Literal::NumberLiteral(_) => Self::Number,
                 Literal::NullLiteral(_) => Self::Null,
                 Literal::StringLiteral(_) => Self::String,
             },
-            TypeValue::KeywordType(keyword_type) => match keyword_type.kind {
+            AstType::KeywordType(keyword_type) => match keyword_type.kind {
                 TypeKeyword::Boolean => Self::Boolean,
                 TypeKeyword::String => Self::String,
                 TypeKeyword::Number => Self::Number,
             },
-            TypeValue::TypeReference(type_reference) => {
+            AstType::TypeReference(type_reference) => {
                 match type_reference.type_name.name.as_bytes() {
                     b"Array" => todo!(),
                     b"Record" => {
@@ -126,11 +126,11 @@ impl ExprType {
                     _ => todo!(),
                 }
             }
-            TypeValue::ArrayType(array_type) => {
+            AstType::ArrayType(array_type) => {
                 let left_type = Self::from_type_value(&array_type.type_value, ctx);
                 Self::Array(Box::new(left_type))
             }
-            TypeValue::FnType(fn_type) => {
+            AstType::FnType(fn_type) => {
                 let args: Vec<Symbol> = fn_type
                     .params
                     .iter()
@@ -156,19 +156,19 @@ impl ExprType {
 
 #[cfg(test)]
 mod tests {
-    use super::{ExprType, ObjectType};
+    use super::{ObjectType, ResolvedType};
     use pretty_assertions::assert_eq;
 
     #[test]
     fn format_union() {
-        use ExprType as T;
+        use ResolvedType as T;
         let t = T::Union([T::String, T::Number, T::Null].to_vec());
         assert_eq!(t.to_string(), "string | number | null".to_string());
     }
 
     #[test]
     fn format_object() {
-        use ExprType as T;
+        use ResolvedType as T;
         let t = T::Object(Box::new(ObjectType {
             key_type: T::String,
             value_type: T::Union([T::Number, T::Null].to_vec()),
@@ -178,8 +178,8 @@ mod tests {
 
     #[test]
     fn format_array() {
-        use ExprType as T;
-        let t = T::Array(Box::new(ExprType::Union(
+        use ResolvedType as T;
+        let t = T::Array(Box::new(ResolvedType::Union(
             [T::Number, T::Null, T::String].to_vec(),
         )));
         assert_eq!(t.to_string(), "(number | null | string)[]");

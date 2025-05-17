@@ -1,6 +1,6 @@
 use crate::{
     symbol::Symbol,
-    types::{ExprType, FunctionType},
+    types::{ResolvedType, FunctionType},
     CheckerContext,
 };
 use parser::{
@@ -34,7 +34,7 @@ impl<'a> DeclVisitor<'a> {
     fn visit_variable_declaration(&mut self, decl: &VariableDeclaration) {
         for d in decl.declarations.iter() {
             let annotated_type = d.type_annotation.as_ref().map(|ann| &ann.type_value);
-            let ann_expr_kind = annotated_type.map(|t| ExprType::from_type_value(t, &mut self.ctx));
+            let ann_expr_kind = annotated_type.map(|t| ResolvedType::from_type_value(t, &mut self.ctx));
 
             d.init.as_ref().inspect(|init| {
                 self.visit_expression(init);
@@ -66,9 +66,9 @@ impl<'a> DeclVisitor<'a> {
         let display_ret_type = decl.return_type.as_ref().map(|t| t.type_value.to_owned());
         let unfolded_ret_type = display_ret_type
             .as_ref()
-            .map(|t| ExprType::from_type_value(&t, &mut self.ctx));
+            .map(|t| ResolvedType::from_type_value(&t, &mut self.ctx));
 
-        let t = ExprType::Function(Box::new(FunctionType {
+        let t = ResolvedType::Function(Box::new(FunctionType {
             args,
             display_ret_type,
             unfolded_ret_type,

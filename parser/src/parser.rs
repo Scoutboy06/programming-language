@@ -1,6 +1,6 @@
 use crate::expressions::types::{
-    ArrayType, KeywordType, TypeAnnotation, TypeParameter, TypeParameterDeclaration, TypeReference,
-    TypeValue,
+    ArrayType, AstType, KeywordType, TypeAnnotation, TypeParameter, TypeParameterDeclaration,
+    TypeReference,
 };
 use crate::expressions::{
     ArrayExpression, ArrowFunctionExpression, AsUpdateOperator, AssignmentExpression,
@@ -1118,7 +1118,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_type_value(&mut self) -> Result<TypeValue, ErrorKind> {
+    fn parse_type_value(&mut self) -> Result<AstType, ErrorKind> {
         let start_pos = self.current_token.start;
 
         match self.current_token.kind {

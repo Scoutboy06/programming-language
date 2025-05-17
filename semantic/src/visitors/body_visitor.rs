@@ -1,6 +1,6 @@
 use parser::{
     expressions::{
-        types::TypeValue, ArrayExpression, Expression, Identifier, Key, Literal, ObjectExpression,
+        types::AstType, ArrayExpression, Expression, Identifier, Key, Literal, ObjectExpression,
         ObjectItem,
     },
     nodes::program::Program,
@@ -9,7 +9,7 @@ use parser::{
 
 use crate::{
     errors::{ErrorData, ErrorSeverity},
-    types::{ExprType, ObjectType},
+    types::{ResolvedType, ObjectType},
     CheckerContext,
 };
 
@@ -52,11 +52,7 @@ impl<'a> BodyVisitor<'a> {
         }
     }
 
-    fn visit_expression(
-        &mut self,
-        expr: &Expression,
-        expected_type: Option<&ExprType>,
-    ) -> TypeValue {
+    fn visit_expression(&mut self, expr: &Expression, expected_type: Option<&ResolvedType>) -> AstType {
         use Expression as E;
         match expr {
             E::Literal(lit) => self.visit_literal(lit, expected_type),
@@ -67,12 +63,12 @@ impl<'a> BodyVisitor<'a> {
         }
     }
 
-    fn visit_literal(&mut self, lit: &Literal, expected_type: Option<&TypeValue>) -> TypeValue {
+    fn visit_literal(&mut self, lit: &Literal, expected_type: Option<&AstType>) -> AstType {
         let expr_type = match lit {
-            Literal::BooleanLiteral(_) => ExprType::Boolean,
-            Literal::StringLiteral(_) => ExprType::String,
-            Literal::NullLiteral(_) => ExprType::Null,
-            Literal::NumberLiteral(_) => ExprType::Number,
+            Literal::BooleanLiteral(_) => ResolvedType::Boolean,
+            Literal::StringLiteral(_) => ResolvedType::String,
+            Literal::NullLiteral(_) => ResolvedType::Null,
+            Literal::NumberLiteral(_) => ResolvedType::Number,
         };
 
         if expected_type.is_some_and(|t| expr_type != *t) {
@@ -89,11 +85,7 @@ impl<'a> BodyVisitor<'a> {
         expr_type
     }
 
-    fn visit_identifier(
-        &mut self,
-        id: &Identifier,
-        expected_type: Option<&TypeValue>,
-    ) -> TypeValue {
+    fn visit_identifier(&mut self, id: &Identifier, expected_type: Option<&AstType>) -> AstType {
         let Some(symbol) = self.ctx.get_symbol(id.name.clone()).cloned() else {
             self.ctx.report_error(
                 ErrorData::UnknownVariable {
@@ -102,7 +94,7 @@ impl<'a> BodyVisitor<'a> {
                 id.node.clone(),
                 ErrorSeverity::Critical,
             );
-            return ExprType::Unknown;
+            return ResolvedType::Unknown;
         };
 
         let Some(t) = &symbol.type_value else {
@@ -113,7 +105,7 @@ impl<'a> BodyVisitor<'a> {
                 id.node,
                 ErrorSeverity::Critical,
             );
-            return ExprType::Unknown;
+            return ResolvedType::Unknown;
         };
 
         if expected_type.is_some_and(|expected_type| expected_type != t) {
@@ -133,16 +125,16 @@ impl<'a> BodyVisitor<'a> {
     fn visit_object_expression(
         &mut self,
         obj: &ObjectExpression,
-        expected_type: Option<&ExprType>,
-    ) -> ExprType {
+        expected_type: Option<&ResolvedType>,
+    ) -> ResolvedType {
         let (expected_key_type, expected_value_type) =
             expected_type.map_or((None, None), |t| match t {
-                ExprType::Object(obj) => (Some(&obj.key_type), Some(&obj.value_type)),
+                ResolvedType::Object(obj) => (Some(&obj.key_type), Some(&obj.value_type)),
                 _ => {
                     self.ctx.report_error(
                         ErrorData::TypeMismatch {
                             expected_type: expected_type.unwrap().to_owned(),
-                            received_type: ExprType::Object(todo!()),
+                            received_type: ResolvedType::Object(todo!()),
                         },
                         obj.node.clone(),
                         ErrorSeverity::Critical,
@@ -150,24 +142,24 @@ impl<'a> BodyVisitor<'a> {
                     (None, None)
                 }
             });
-        let mut key_type = ExprType::Unknown;
-        let mut value_type = ExprType::Unknown;
+        let mut key_type = ResolvedType::Unknown;
+        let mut value_type = ResolvedType::Unknown;
 
         obj.items.iter().for_each(|item| match item {
             ObjectItem::KV(kv) => {
                 match &kv.key {
                     Key::Identifier(_) | Key::StringLiteral(_) => {
-                        if expected_key_type.is_some_and(|t| !t.includes(&ExprType::String)) {
+                        if expected_key_type.is_some_and(|t| !t.includes(&ResolvedType::String)) {
                             self.ctx.report_error(
                                 ErrorData::TypeMismatch {
                                     expected_type: expected_key_type.unwrap().to_owned(),
-                                    received_type: ExprType::String,
+                                    received_type: ResolvedType::String,
                                 },
                                 kv.key.node().clone(),
                                 ErrorSeverity::Critical,
                             );
                         }
-                        key_type.extend(&ExprType::String);
+                        key_type.extend(&ResolvedType::String);
                     }
                     Key::ComputedProperty(key) => {
                         let expr_t = self.visit_expression(&key.expression, expected_key_type);
@@ -178,13 +170,13 @@ impl<'a> BodyVisitor<'a> {
             }
             ObjectItem::Identifier(id) => {
                 let id_t = self.visit_identifier(id, expected_type);
-                key_type.extend(&ExprType::String);
+                key_type.extend(&ResolvedType::String);
                 value_type.extend(&id_t);
             }
             ObjectItem::Method(_method) => todo!(),
         });
 
-        ExprType::Object(Box::new(ObjectType {
+        ResolvedType::Object(Box::new(ObjectType {
             key_type,
             value_type,
         }))
@@ -193,16 +185,16 @@ impl<'a> BodyVisitor<'a> {
     fn visit_array_expression(
         &mut self,
         arr: &ArrayExpression,
-        expected_type: Option<&ExprType>,
-    ) -> ExprType {
+        expected_type: Option<&ResolvedType>,
+    ) -> ResolvedType {
         let expected_item_type = match expected_type {
             Some(t) => match t {
-                ExprType::Array(arr) => Some(&**arr),
+                ResolvedType::Array(arr) => Some(&**arr),
                 _ => {
                     self.ctx.report_error(
                         ErrorData::TypeMismatch {
                             expected_type: expected_type.unwrap().to_owned(),
-                            received_type: ExprType::Array(Box::new(todo!())),
+                            received_type: ResolvedType::Array(Box::new(todo!())),
                         },
                         arr.node.clone(),
                         ErrorSeverity::Critical,
@@ -212,13 +204,13 @@ impl<'a> BodyVisitor<'a> {
             },
             _ => None,
         };
-        let mut item_type = ExprType::Unknown;
+        let mut item_type = ResolvedType::Unknown;
 
         arr.items.iter().for_each(|it| {
             let expr_t = self.visit_expression(it, expected_item_type);
             item_type.extend(&expr_t);
         });
 
-        ExprType::Array(Box::new(item_type))
+        ResolvedType::Array(Box::new(item_type))
     }
 }

@@ -381,7 +381,7 @@ impl<'a> Lexer<'a> {
         &self.source[start_pos..self.position]
     }
 
-    fn skip_multi_line_comment(&mut self) {
+    fn _skip_multi_line_comment(&mut self) {
         self.advance();
     }
 }
