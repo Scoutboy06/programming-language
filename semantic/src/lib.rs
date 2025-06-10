@@ -4,10 +4,7 @@ pub mod types;
 pub mod visitors;
 
 use errors::{CompilationError, ErrorData, ErrorSeverity};
-use parser::{
-    expressions::types::AstType,
-    nodes::{program::Program, Node},
-};
+use parser::nodes::{program::Program, Node};
 use string_cache::DefaultAtom as Atom;
 use symbol::{Symbol, SymbolTable};
 use types::ResolvedType;
@@ -52,15 +49,8 @@ impl CheckerContext {
         None
     }
 
-    pub fn add_symbol(
-        &mut self,
-        id: Atom,
-        unfolded_type: Option<ResolvedType>,
-        display_type: Option<AstType>,
-        declared_at: Node,
-    ) {
-        self.symbols
-            .add(id, unfolded_type, display_type, declared_at);
+    pub fn add_symbol(&mut self, id: Atom, resolved_type: Option<ResolvedType>, declared_at: Node) {
+        self.symbols.add(id, resolved_type, declared_at);
     }
 }
 

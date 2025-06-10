@@ -1,6 +1,6 @@
 use crate::{
     symbol::Symbol,
-    types::{ResolvedType, FunctionType},
+    types::{FunctionType, ResolvedType},
     CheckerContext,
 };
 use parser::{
@@ -33,19 +33,15 @@ impl<'a> DeclVisitor<'a> {
 
     fn visit_variable_declaration(&mut self, decl: &VariableDeclaration) {
         for d in decl.declarations.iter() {
-            let annotated_type = d.type_annotation.as_ref().map(|ann| &ann.type_value);
-            let ann_expr_kind = annotated_type.map(|t| ResolvedType::from_type_value(t, &mut self.ctx));
+            let ast_type = d.type_annotation.as_ref().map(|ann| &ann.type_value);
+            let resolved_type = ast_type.map(|t| ResolvedType::from_type_value(t, &mut self.ctx));
 
             d.init.as_ref().inspect(|init| {
                 self.visit_expression(init);
             });
 
-            self.ctx.add_symbol(
-                d.id.name.clone(),
-                ann_expr_kind,
-                annotated_type.cloned(),
-                d.node.clone(),
-            );
+            self.ctx
+                .add_symbol(d.id.name.clone(), resolved_type, d.node.clone());
         }
     }
 
@@ -55,10 +51,10 @@ impl<'a> DeclVisitor<'a> {
             .iter()
             .map(|param| Symbol {
                 id: param.identifier.name.clone(),
-                type_value: param
+                resolved_type: param
                     .type_annotation
                     .as_ref()
-                    .map(|ann| ann.type_value.to_owned()),
+                    .map(|ann| ResolvedType::from_type_value(&ann.type_value, &mut self.ctx)),
                 declared_at: param.node.clone(),
             })
             .collect();
@@ -68,14 +64,21 @@ impl<'a> DeclVisitor<'a> {
             .as_ref()
             .map(|t| ResolvedType::from_type_value(&t, &mut self.ctx));
 
-        let t = ResolvedType::Function(Box::new(FunctionType {
+        let resolved_type = ResolvedType::Function(Box::new(FunctionType {
             args,
             display_ret_type,
             unfolded_ret_type,
         }));
 
-        self.ctx
-            .add_symbol(decl.id.name.to_owned(), Some(t), None, decl.node.clone());
+        self.ctx.add_symbol(
+            decl.id.name.to_owned(),
+            Some(resolved_type),
+            decl.node.clone(),
+        );
+
+        decl.body.statements.iter().for_each(|stmt| {
+            self.visit_statement(stmt);
+        });
     }
 
     fn visit_expression(&self, expr: &Expression) {

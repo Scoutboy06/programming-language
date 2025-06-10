@@ -136,10 +136,10 @@ impl ResolvedType {
                     .iter()
                     .map(|arg| Symbol {
                         id: arg.identifier.name.clone(),
-                        type_value: arg
+                        resolved_type: arg
                             .type_annotation
                             .as_ref()
-                            .map(|ann| ann.type_value.clone()),
+                            .map(|ann| Self::from_type_value(&ann.type_value, ctx)),
                         declared_at: arg.node.clone(),
                     })
                     .collect();

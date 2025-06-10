@@ -1,7 +1,6 @@
 use parser::{
     expressions::{
-        types::AstType, ArrayExpression, Expression, Identifier, Key, Literal, ObjectExpression,
-        ObjectItem,
+        ArrayExpression, Expression, Identifier, Key, Literal, ObjectExpression, ObjectItem,
     },
     nodes::program::Program,
     statements::{Statement, VariableDeclaration},
@@ -9,7 +8,7 @@ use parser::{
 
 use crate::{
     errors::{ErrorData, ErrorSeverity},
-    types::{ResolvedType, ObjectType},
+    types::{ObjectType, ResolvedType},
     CheckerContext,
 };
 
@@ -38,21 +37,25 @@ impl<'a> BodyVisitor<'a> {
             let symbol_name = d.id.name.to_owned();
             let expected_type = {
                 let symbol = self.ctx.get_symbol(symbol_name.to_owned());
-                symbol.unwrap().type_value.clone()
+                symbol.unwrap().resolved_type.clone()
             };
 
             if let Some(init) = &d.init {
                 let init_t = self.visit_expression(init, expected_type.as_ref());
 
                 let symbol = self.ctx.get_symbol_mut(symbol_name).unwrap();
-                if symbol.type_value.is_none() {
-                    symbol.type_value = Some(init_t);
+                if symbol.resolved_type.is_none() {
+                    symbol.resolved_type = Some(init_t);
                 }
             }
         }
     }
 
-    fn visit_expression(&mut self, expr: &Expression, expected_type: Option<&ResolvedType>) -> AstType {
+    fn visit_expression(
+        &mut self,
+        expr: &Expression,
+        expected_type: Option<&ResolvedType>,
+    ) -> ResolvedType {
         use Expression as E;
         match expr {
             E::Literal(lit) => self.visit_literal(lit, expected_type),
@@ -63,7 +66,11 @@ impl<'a> BodyVisitor<'a> {
         }
     }
 
-    fn visit_literal(&mut self, lit: &Literal, expected_type: Option<&AstType>) -> AstType {
+    fn visit_literal(
+        &mut self,
+        lit: &Literal,
+        expected_type: Option<&ResolvedType>,
+    ) -> ResolvedType {
         let expr_type = match lit {
             Literal::BooleanLiteral(_) => ResolvedType::Boolean,
             Literal::StringLiteral(_) => ResolvedType::String,
@@ -85,7 +92,11 @@ impl<'a> BodyVisitor<'a> {
         expr_type
     }
 
-    fn visit_identifier(&mut self, id: &Identifier, expected_type: Option<&AstType>) -> AstType {
+    fn visit_identifier(
+        &mut self,
+        id: &Identifier,
+        expected_type: Option<&ResolvedType>,
+    ) -> ResolvedType {
         let Some(symbol) = self.ctx.get_symbol(id.name.clone()).cloned() else {
             self.ctx.report_error(
                 ErrorData::UnknownVariable {
@@ -97,7 +108,7 @@ impl<'a> BodyVisitor<'a> {
             return ResolvedType::Unknown;
         };
 
-        let Some(t) = &symbol.type_value else {
+        let Some(t) = &symbol.resolved_type else {
             self.ctx.report_error(
                 ErrorData::UseBeforeInit {
                     id: id.name.to_owned(),
