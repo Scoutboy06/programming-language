@@ -1,10 +1,7 @@
-use parser::{
-    nodes::program::Program,
-    statements::{BlockStatement, Statement},
-};
+use parser::{nodes::program::Program, statements::Statement};
 use wasm_encoder::{
-    CodeSection, ExportKind, ExportSection, Function, FunctionSection, Instruction, Module,
-    TypeSection, ValType,
+    CodeSection, ExportSection, Function, FunctionSection, Instruction, Module, TypeSection,
+    ValType,
 };
 
 use crate::Compiler;
@@ -34,7 +31,7 @@ impl<'a> Compiler<'a> for WasmCompiler<'a> {
         }
     }
 
-    fn compile(&mut self) {
+    fn compile(&mut self, out_path: &str) {
         let mut module = Module::new();
 
         for stmt in self.program.body.iter() {
@@ -47,7 +44,7 @@ impl<'a> Compiler<'a> for WasmCompiler<'a> {
         module.section(&self.codes);
         let wasm_bytes = module.finish();
 
-        std::fs::write("out.wasm", wasm_bytes).expect("Failed to write to file");
+        std::fs::write(out_path, wasm_bytes).expect("Failed to write to file");
     }
 }
 
@@ -66,7 +63,7 @@ impl<'a> WasmCompiler<'a> {
                 self.push_scope();
 
                 // TODO: Change this to actual data types
-                let params = decl.params.iter().map(|param| ValType::I32);
+                let params = decl.params.iter().map(|_param| ValType::I32);
                 let results = vec![ValType::I32];
 
                 let type_index = self.types.len();
@@ -75,7 +72,7 @@ impl<'a> WasmCompiler<'a> {
 
                 let locals = vec![];
 
-                let mut f = Function::new(locals);
+                let mut _f = Function::new(locals);
 
                 for s in decl.body.statements.iter() {
                     self.enter_statement(s);
@@ -84,7 +81,10 @@ impl<'a> WasmCompiler<'a> {
                 self.pop_scope();
                 todo!()
             }
-            Statement::ReturnStatement(stmt) => Instruction::Return,
+            Statement::ReturnStatement(_stmt) => todo!(),
+            Statement::VariableDeclaration(_decl) => {
+                todo!()
+            }
             _ => todo!("{:?}", &stmt),
         }
     }

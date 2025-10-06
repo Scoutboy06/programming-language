@@ -9,10 +9,10 @@ pub enum CompilerTarget {
 
 pub trait Compiler<'a> {
     fn new(program: &'a Program) -> Self;
-    fn compile(&mut self);
+    fn compile(&mut self, out_path: &str);
 }
 
-pub fn compile(code: &str, target: CompilerTarget) {
+pub fn compile(code: &str, target: CompilerTarget, out_path: &str) {
     let mut parser = Parser::new(&code);
     let result = parser.parse();
 
@@ -35,7 +35,7 @@ pub fn compile(code: &str, target: CompilerTarget) {
     match target {
         CompilerTarget::Wasm => {
             let mut compiler = targets::wasm::WasmCompiler::new(&ast);
-            compiler.compile();
+            compiler.compile(out_path);
         }
     }
 }

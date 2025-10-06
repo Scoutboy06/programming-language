@@ -2,12 +2,10 @@ use compiler::{compile, CompilerTarget};
 
 fn main() {
     let code = r#"
-    function sum(num1: number, num2: number): number {
-        return num1 + num2;
-    }
+    var a = 123;
+    let b = 456;
+    const c = 789;
     "#;
 
-    let compiler_target = CompilerTarget::Wasm;
-
-    compile(&code, compiler_target);
+    compile(&code, CompilerTarget::Wasm, "out.wasm");
 }

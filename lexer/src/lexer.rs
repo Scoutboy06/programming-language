@@ -135,6 +135,7 @@ impl<'a> Lexer<'a> {
                         (TK::DivEquals, TV::None)
                     }
                     Some('/') => {
+                        // Single-line comment
                         self.advance();
                         while self.curr_char.is_some_and(|ch| ch != '\n') {
                             self.advance();
@@ -281,6 +282,10 @@ impl<'a> Lexer<'a> {
             }
             _ => (TK::Invalid, TV::None),
         };
+
+        if matches!(token_kind, TK::SingleLineComment | TK::MultiLineComment) {
+            return self.lex_next_token();
+        }
 
         Token {
             kind: token_kind,

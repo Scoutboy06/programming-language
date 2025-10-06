@@ -17,5 +17,9 @@ fn parse_jquery() {
 
     let mut parser = Parser::new(&source_code);
     let result = parser.parse();
-    assert!(result.is_ok());
+    match result {
+        Ok(program) => {}
+        Err(err) => panic!("{:?}", err),
+    }
+    // assert!(result.is_ok());
 }

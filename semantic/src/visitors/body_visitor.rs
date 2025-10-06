@@ -1,3 +1,5 @@
+#![allow(unreachable_code)]
+
 use lexer::Operator;
 use parser::{
     expressions::{

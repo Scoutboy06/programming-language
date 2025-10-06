@@ -1,3 +1,5 @@
+#![allow(unreachable_code)]
+
 use lexer::TypeKeyword;
 use parser::expressions::{types::AstType, Literal};
 
