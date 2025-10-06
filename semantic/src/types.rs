@@ -82,11 +82,7 @@ impl std::fmt::Display for ResolvedType {
 }
 
 impl ResolvedType {
-    pub fn matches(&self, ann_type: &AstType, ctx: &mut CheckerContext) -> bool {
-        *self == Self::from_type_value(ann_type, ctx)
-    }
-
-    pub fn from_type_value(type_value: &AstType, ctx: &mut CheckerContext) -> Self {
+    pub fn from_ast_type(type_value: &AstType, ctx: &mut CheckerContext) -> Self {
         match type_value {
             AstType::TypeLiteral(type_literal) => match type_literal.literal {
                 Literal::BooleanLiteral(_) => Self::Boolean,
@@ -115,8 +111,8 @@ impl ResolvedType {
                             );
                         }
 
-                        let key_type = Self::from_type_value(&p.unwrap()[0], ctx);
-                        let value_type = Self::from_type_value(&p.unwrap()[1], ctx);
+                        let key_type = Self::from_ast_type(&p.unwrap()[0], ctx);
+                        let value_type = Self::from_ast_type(&p.unwrap()[1], ctx);
 
                         Self::Object(Box::new(ObjectType {
                             key_type,
@@ -127,7 +123,7 @@ impl ResolvedType {
                 }
             }
             AstType::ArrayType(array_type) => {
-                let left_type = Self::from_type_value(&array_type.type_value, ctx);
+                let left_type = Self::from_ast_type(&array_type.type_value, ctx);
                 Self::Array(Box::new(left_type))
             }
             AstType::FnType(fn_type) => {
@@ -139,7 +135,7 @@ impl ResolvedType {
                         resolved_type: arg
                             .type_annotation
                             .as_ref()
-                            .map(|ann| Self::from_type_value(&ann.type_value, ctx)),
+                            .map(|ann| Self::from_ast_type(&ann.type_value, ctx)),
                         declared_at: arg.node.clone(),
                     })
                     .collect();

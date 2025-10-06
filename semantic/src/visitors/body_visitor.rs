@@ -1,9 +1,13 @@
+use lexer::Operator;
 use parser::{
     expressions::{
-        ArrayExpression, Expression, Identifier, Key, Literal, ObjectExpression, ObjectItem,
+        ArrayExpression, BinaryExpression, Expression, Identifier, Key, Literal, ObjectExpression,
+        ObjectItem,
     },
     nodes::program::Program,
-    statements::{Statement, VariableDeclaration},
+    statements::{
+        BlockStatement, FunctionDeclaration, ReturnStatement, Statement, VariableDeclaration,
+    },
 };
 
 use crate::{
@@ -21,14 +25,26 @@ impl<'a> BodyVisitor<'a> {
         let mut visitor = Self { ctx };
         ast.body
             .iter()
-            .for_each(|stmt| visitor.visit_statement(stmt));
+            .for_each(|stmt| visitor.visit_statement(stmt, None));
     }
 
-    fn visit_statement(&mut self, stmt: &Statement) {
+    fn visit_statement(&mut self, stmt: &Statement, expected_ret_type: Option<&ResolvedType>) {
         use Statement as S;
         match stmt {
             S::VariableDeclaration(decl) => self.visit_variable_declaration(decl),
-            _ => todo!(),
+            S::FunctionDeclaration(decl) => self.visit_function_declaration(decl),
+            S::ReturnStatement(stmt) => self.visit_return_statement(stmt, expected_ret_type),
+            _ => todo!("{:?}", &stmt),
+        }
+    }
+
+    fn visit_block_statement(
+        &mut self,
+        stmt: &BlockStatement,
+        expected_ret_type: Option<&ResolvedType>,
+    ) {
+        for s in stmt.statements.iter() {
+            self.visit_statement(s, expected_ret_type);
         }
     }
 
@@ -62,7 +78,8 @@ impl<'a> BodyVisitor<'a> {
             E::ObjectExpression(obj) => self.visit_object_expression(obj, expected_type),
             E::ArrayExpression(arr) => self.visit_array_expression(arr, expected_type),
             E::Identifier(id) => self.visit_identifier(id, expected_type),
-            _ => todo!(),
+            E::BinaryExpression(expr) => self.visit_binary_expression(expr, expected_type),
+            _ => todo!("{:?}", &expr),
         }
     }
 
@@ -223,5 +240,72 @@ impl<'a> BodyVisitor<'a> {
         });
 
         ResolvedType::Array(Box::new(item_type))
+    }
+
+    fn visit_binary_expression(
+        &mut self,
+        expr: &BinaryExpression,
+        expected_type: Option<&ResolvedType>,
+    ) -> ResolvedType {
+        let left_t = self.visit_expression(&expr.left, expected_type);
+        let right_t = self.visit_expression(&expr.right, expected_type);
+
+        use Operator as OP;
+        use ResolvedType as RT;
+        let is_allowed_operation: bool = match expr.operator {
+            OP::Plus => match (&left_t, &right_t) {
+                (RT::String, RT::String) => true,
+                (RT::Number, RT::Number) => true,
+                _ => false,
+            },
+            OP::Minus
+            | OP::Mult
+            | OP::Div
+            | OP::Mod
+            | OP::Power
+            | OP::BitwiseAnd
+            | OP::BitwiseOr
+            | OP::BitwiseXor
+            | OP::BitwiseNot
+            | OP::BitwiseLeftShift
+            | OP::BitwiseRightShift
+            | OP::ZeroFillRightShift => {
+                left_t == ResolvedType::Number && right_t == ResolvedType::Number
+            }
+            OP::Equals | OP::NotEquals => left_t.includes(&right_t) || right_t.includes(&left_t),
+            OP::StrictEquals | OP::StrictNotEquals => left_t == right_t,
+            _ => false,
+        };
+
+        if !is_allowed_operation {
+            self.ctx.report_error(
+                ErrorData::TypeMismatch {
+                    expected_type: left_t,
+                    received_type: right_t,
+                },
+                expr.left.node().to_owned(),
+                ErrorSeverity::Critical,
+            );
+            return ResolvedType::Unknown;
+        }
+
+        left_t
+    }
+
+    fn visit_function_declaration(&mut self, decl: &FunctionDeclaration) {
+        let ret_t = decl
+            .return_type
+            .as_ref()
+            .map(|t| ResolvedType::from_ast_type(&t.type_value, &mut self.ctx));
+
+        self.visit_block_statement(&decl.body, ret_t.as_ref());
+    }
+
+    fn visit_return_statement(
+        &mut self,
+        stmt: &ReturnStatement,
+        expected_ret_type: Option<&ResolvedType>,
+    ) {
+        self.visit_expression(&stmt.value, expected_ret_type);
     }
 }

@@ -3,7 +3,7 @@ pub mod symbol;
 pub mod types;
 pub mod visitors;
 
-use errors::{CompilationError, ErrorData, ErrorSeverity};
+use errors::{ErrorData, ErrorSeverity, SemanticError};
 use parser::nodes::{program::Program, Node};
 use string_cache::DefaultAtom as Atom;
 use symbol::{Symbol, SymbolTable};
@@ -11,7 +11,7 @@ use types::ResolvedType;
 use visitors::{body_visitor::BodyVisitor, decl_visitor::DeclVisitor};
 
 pub struct CheckerContext {
-    errors: Vec<CompilationError>,
+    errors: Vec<SemanticError>,
     symbols: SymbolTable,
 }
 
@@ -24,7 +24,7 @@ impl CheckerContext {
     }
 
     pub fn report_error(&mut self, data: ErrorData, node: Node, severity: ErrorSeverity) {
-        self.errors.push(CompilationError {
+        self.errors.push(SemanticError {
             data,
             node,
             severity,
@@ -54,7 +54,7 @@ impl CheckerContext {
     }
 }
 
-pub fn analyze(ast: &Program) -> Vec<CompilationError> {
+pub fn analyze(ast: &Program) -> Vec<SemanticError> {
     let mut ctx = CheckerContext::new();
 
     DeclVisitor::visit_program(ast, &mut ctx);

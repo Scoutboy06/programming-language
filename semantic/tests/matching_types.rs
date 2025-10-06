@@ -144,3 +144,29 @@ fn function_statement_mismatched_return_type_number() {
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 1);
 }
+
+#[test]
+fn function_statement_adding_same_types() {
+    let code = r#"
+    function sum(num1: number, num2: number): number {
+        return num1 + num2;
+    }
+    "#;
+    let mut parser = Parser::new(&code);
+    let ast = parser.parse().unwrap();
+    let errors = analyze(&ast);
+    assert_eq!(errors.len(), 0);
+}
+
+#[test]
+fn return_binary_operation_type_mismatch() {
+    let code = r#"
+    function foo(s: string) {
+        return 3 * s;
+    }
+    "#;
+    let mut parser = Parser::new(&code);
+    let ast = parser.parse().unwrap();
+    let errors = analyze(&ast);
+    assert_eq!(errors.len(), 1);
+}

@@ -4,9 +4,11 @@ use crate::{
     CheckerContext,
 };
 use parser::{
-    expressions::{ArrayExpression, Expression, Key, ObjectExpression, ObjectItem},
+    expressions::{
+        ArrayExpression, BinaryExpression, Expression, Key, ObjectExpression, ObjectItem,
+    },
     nodes::program::Program,
-    statements::{FunctionDeclaration, Statement, VariableDeclaration},
+    statements::{FunctionDeclaration, ReturnStatement, Statement, VariableDeclaration},
 };
 
 pub struct DeclVisitor<'a> {
@@ -27,14 +29,15 @@ impl<'a> DeclVisitor<'a> {
         match stmt {
             S::VariableDeclaration(decl) => self.visit_variable_declaration(decl),
             S::FunctionDeclaration(decl) => self.visit_function_declaration(decl),
-            _ => todo!(),
+            S::ReturnStatement(stmt) => self.visit_return_statement(stmt),
+            _ => todo!("{:?}", &stmt),
         }
     }
 
     fn visit_variable_declaration(&mut self, decl: &VariableDeclaration) {
         for d in decl.declarations.iter() {
             let ast_type = d.type_annotation.as_ref().map(|ann| &ann.type_value);
-            let resolved_type = ast_type.map(|t| ResolvedType::from_type_value(t, &mut self.ctx));
+            let resolved_type = ast_type.map(|t| ResolvedType::from_ast_type(t, &mut self.ctx));
 
             d.init.as_ref().inspect(|init| {
                 self.visit_expression(init);
@@ -54,7 +57,7 @@ impl<'a> DeclVisitor<'a> {
                 resolved_type: param
                     .type_annotation
                     .as_ref()
-                    .map(|ann| ResolvedType::from_type_value(&ann.type_value, &mut self.ctx)),
+                    .map(|ann| ResolvedType::from_ast_type(&ann.type_value, &mut self.ctx)),
                 declared_at: param.node.clone(),
             })
             .collect();
@@ -62,10 +65,10 @@ impl<'a> DeclVisitor<'a> {
         let display_ret_type = decl.return_type.as_ref().map(|t| t.type_value.to_owned());
         let unfolded_ret_type = display_ret_type
             .as_ref()
-            .map(|t| ResolvedType::from_type_value(&t, &mut self.ctx));
+            .map(|t| ResolvedType::from_ast_type(&t, &mut self.ctx));
 
         let resolved_type = ResolvedType::Function(Box::new(FunctionType {
-            args,
+            args: args.to_owned(),
             display_ret_type,
             unfolded_ret_type,
         }));
@@ -76,9 +79,17 @@ impl<'a> DeclVisitor<'a> {
             decl.node.clone(),
         );
 
-        decl.body.statements.iter().for_each(|stmt| {
+        for arg in args.iter() {
+            self.ctx.add_symbol(
+                arg.id.to_owned(),
+                arg.resolved_type.to_owned(),
+                arg.declared_at,
+            );
+        }
+
+        for stmt in decl.body.statements.iter() {
             self.visit_statement(stmt);
-        });
+        }
     }
 
     fn visit_expression(&self, expr: &Expression) {
@@ -88,7 +99,8 @@ impl<'a> DeclVisitor<'a> {
             E::Identifier(_) => {}
             E::ObjectExpression(obj) => self.visit_object_expression(obj),
             E::ArrayExpression(arr) => self.visit_array_expression(arr),
-            _ => todo!(),
+            E::BinaryExpression(bin_expr) => self.visit_binary_expression(bin_expr),
+            _ => todo!("{:?}", &expr),
         }
     }
 
@@ -109,5 +121,14 @@ impl<'a> DeclVisitor<'a> {
         arr.items
             .iter()
             .for_each(|expr| self.visit_expression(expr));
+    }
+
+    fn visit_binary_expression(&self, bin_expr: &BinaryExpression) {
+        self.visit_expression(&bin_expr.left);
+        self.visit_expression(&bin_expr.right);
+    }
+
+    fn visit_return_statement(&self, stmt: &ReturnStatement) {
+        self.visit_expression(&stmt.value);
     }
 }
