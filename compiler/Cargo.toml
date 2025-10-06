@@ -1,9 +1,10 @@
 [package]
-name = "cli"
+name = "compiler"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-compiler = { path = "../compiler" }
 parser = { path = "../parser" }
 semantic = { path = "../semantic" }
+wasm-encoder = "0.239.0"
+

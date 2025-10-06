@@ -1,23 +1,13 @@
-const FILE_PATH: &str = "test.ts";
+use compiler::{compile, CompilerTarget};
 
 fn main() {
-    let code = std::fs::read_to_string(FILE_PATH).expect("Failed to read input file");
-    let mut parser = parser::Parser::new(&code);
-    let result = parser.parse();
-
-    if let Err(err) = result {
-        panic!("{:?}", err);
+    let code = r#"
+    function sum(num1: number, num2: number): number {
+        return num1 + num2;
     }
+    "#;
 
-    let ast = result.unwrap();
+    let compiler_target = CompilerTarget::Wasm;
 
-    let semantic_result = semantic::analyze(&ast);
-
-    for err in semantic_result.iter() {
-        eprintln!("\n\n{}", &err);
-    }
-
-    if semantic_result.len() == 0 {
-        println!("No errors found!");
-    }
+    compile(&code, compiler_target);
 }
