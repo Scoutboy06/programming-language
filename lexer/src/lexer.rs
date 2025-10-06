@@ -134,8 +134,34 @@ impl<'a> Lexer<'a> {
                         self.advance();
                         (TK::DivEquals, TV::None)
                     }
-                    Some('/') => todo!("Single-line comments"),
-                    Some('*') => todo!("Multi-line comments"),
+                    Some('/') => {
+                        self.advance();
+                        while self.curr_char.is_some_and(|ch| ch != '\n') {
+                            self.advance();
+                        }
+                        (TK::SingleLineComment, TokenValue::None)
+                    }
+                    Some('*') => {
+                        // Multi-line comments
+                        let mut is_escaped = false;
+                        loop {
+                            match self.curr_char {
+                                Some('\\') => {
+                                    is_escaped = !is_escaped;
+                                }
+                                Some('*') => {
+                                    self.advance();
+                                    if self.curr_char == Some('/') {
+                                        self.advance();
+                                        break;
+                                    }
+                                }
+                                Some(_) => self.advance(),
+                                None => break,
+                            }
+                        }
+                        (TokenKind::MultiLineComment, TokenValue::None)
+                    }
                     _ => (TK::Slash, TV::None),
                 }
             }
@@ -379,10 +405,6 @@ impl<'a> Lexer<'a> {
         }
 
         &self.source[start_pos..self.position]
-    }
-
-    fn _skip_multi_line_comment(&mut self) {
-        self.advance();
     }
 }
 

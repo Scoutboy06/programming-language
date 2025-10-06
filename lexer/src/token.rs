@@ -98,6 +98,8 @@ pub enum TokenKind {
     Consumed,
     Eof,
     Shebang,
+    MultiLineComment,
+    SingleLineComment,
 
     // Identifiers and literals
     Keyword,
