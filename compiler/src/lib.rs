@@ -9,7 +9,7 @@ pub enum CompilerTarget {
 
 pub trait Compiler<'a> {
     fn new(program: &'a Program) -> Self;
-    fn compile(&self);
+    fn compile(&mut self);
 }
 
 pub fn compile(code: &str, target: CompilerTarget) {
@@ -34,7 +34,7 @@ pub fn compile(code: &str, target: CompilerTarget) {
 
     match target {
         CompilerTarget::Wasm => {
-            let compiler = targets::wasm::WasmCompiler::new(&ast);
+            let mut compiler = targets::wasm::WasmCompiler::new(&ast);
             compiler.compile();
         }
     }
