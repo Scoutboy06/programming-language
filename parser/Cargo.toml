@@ -7,7 +7,7 @@ edition.workspace = true
 lexer = { path = "../lexer" }
 parser_derive = { path = "../parser_derive" }
 string_cache = "0.8.4"
-colored = "3.0.0"
+ariadne = "0.5.1"
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
