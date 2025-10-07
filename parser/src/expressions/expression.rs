@@ -3,7 +3,7 @@ use super::{
     CallExpression, FunctionExpression, Identifier, Literal, MemberExpression, ObjectExpression,
     ParenthesisExpression, UnaryExpression, UpdateExpression,
 };
-use crate::nodes::Node;
+use crate::{expressions::TypeofExpression, nodes::Node};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
@@ -33,6 +33,7 @@ pub enum Expression {
     YieldExpression(Box<()>),
     AwaitExpression(Box<()>),
     ImportExpression(Box<()>),
+    TypeofExpression(Box<TypeofExpression>),
 }
 
 impl Expression {
@@ -64,6 +65,7 @@ impl Expression {
             Self::YieldExpression(_) => todo!("YieldExpression"),
             Self::AwaitExpression(_) => todo!("AwaitExpression"),
             Self::ImportExpression(_) => todo!("ImportExpression"),
+            Self::TypeofExpression(expr) => &expr.node,
         }
     }
 }

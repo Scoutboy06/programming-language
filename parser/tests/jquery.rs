@@ -4,7 +4,7 @@ use parser::Parser;
 
 #[test]
 fn parse_jquery() {
-    let testing = Path::new("../jquery-3.7.1.slim.min.js");
+    let testing = Path::new("../jquery-3.7.1.js");
     // dbg!(&testing.as_os_str());
 
     // Use the absolute path to the file from the root of the crate
@@ -17,9 +17,10 @@ fn parse_jquery() {
 
     let mut parser = Parser::new(&source_code);
     let result = parser.parse();
-    match result {
-        Ok(program) => {}
-        Err(err) => panic!("{:?}", err),
+
+    if let Err(err) = result {
+        err.print();
+        panic!();
     }
     // assert!(result.is_ok());
 }

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use parser::nodes::Node;
 
 pub trait NodeConstructor {

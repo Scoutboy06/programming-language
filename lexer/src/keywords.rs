@@ -39,6 +39,7 @@ pub enum Keyword {
     Interface,
     True,
     False,
+    Typeof,
 
     // Typescript keywords
     StringType,  // : string
@@ -85,6 +86,7 @@ static KEYWORDS: phf::Map<&'static str, Keyword> = phf_map! {
     "interface" => Keyword::Interface,
     "true" => Keyword::True,
     "false" => Keyword::False,
+    "typeof" => Keyword::Typeof,
 
     // TypeScript keywords
     "string" => Keyword::StringType,

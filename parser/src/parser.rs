@@ -7,7 +7,7 @@ use crate::expressions::{
     BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty, Expression,
     FunctionExpression, Identifier, Key, Literal, MemberExpression, MemberProperty, Method,
     NullLiteral, NumberLiteral, ObjectExpression, ObjectItem, ParenthesisExpression, StringLiteral,
-    UpdateExpression, VariableKind, KV,
+    TypeofExpression, UpdateExpression, VariableKind, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
@@ -15,18 +15,13 @@ use crate::statements::{
     FunctionDeclaration, IfStatement, Parameter, ReturnStatement, Statement, VariableDeclaration,
     VariableDeclarator, WhileStatement,
 };
+use crate::utils::parser_error::ParserError;
 use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
 
 pub struct Parser<'a> {
     source: &'a str,
     lexer: Lexer<'a>,
     current_token: Token,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ParserError {
-    kind: ErrorKind,
-    token: Token,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -44,7 +39,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Program, ParserError> {
+    pub fn parse(&mut self) -> Result<Program, ParserError<'a>> {
         let mut body: Vec<Statement> = Vec::new();
         let source_len = self.source.len();
 
@@ -64,7 +59,8 @@ impl<'a> Parser<'a> {
                     return Err(ParserError {
                         kind: err,
                         token: self.current_token.clone(),
-                    })
+                        source: self.source,
+                    });
                 }
             }
         }
@@ -119,6 +115,14 @@ impl<'a> Parser<'a> {
                 Keyword::For => Ok(self.parse_for_statement()?.into()),
                 Keyword::Enum => Ok(self.parse_enum_declaration(false, false)?.into()),
                 Keyword::Declare => Ok(self.parse_enum_declaration(false, true)?.into()),
+                Keyword::Typeof => {
+                    let expr = self.parse_expression()?;
+                    Ok(ExpressionStatement {
+                        node: *expr.node(),
+                        expression: expr,
+                    }
+                    .into())
+                }
                 _ => todo!(),
             },
             TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
@@ -147,6 +151,10 @@ impl<'a> Parser<'a> {
 
         loop {
             match self.current_token.kind {
+                TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+                    Keyword::Typeof => lhs = self.parse_typeof_expression()?.into(),
+                    _ => todo!(),
+                },
                 TokenKind::OpenParen => {
                     let call_exp = self.parse_call_expression(lhs)?;
                     lhs = Expression::CallExpression(Box::new(call_exp));
@@ -1206,5 +1214,15 @@ impl<'a> Parser<'a> {
             }
             _ => Err(ErrorKind::InvalidToken),
         }
+    }
+
+    fn parse_typeof_expression(&mut self) -> Result<TypeofExpression, ErrorKind> {
+        let start_pos = self.current_token.start;
+        self.advance(); // Consume "typeof" token
+        let expr = self.parse_expression()?;
+        Ok(TypeofExpression {
+            node: Node::new(start_pos, expr.node().end),
+            expression: expr,
+        })
     }
 }
