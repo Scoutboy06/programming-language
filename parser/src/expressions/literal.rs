@@ -1,6 +1,6 @@
 use super::Expression;
 use crate::nodes::Node;
-use lexer::Keyword;
+use lexer::{Keyword, RegexValue};
 use parser_derive::Expr;
 use string_cache::DefaultAtom as Atom;
 
@@ -10,6 +10,7 @@ pub enum Literal {
     BooleanLiteral(BooleanLiteral),
     NullLiteral(NullLiteral),
     NumberLiteral(NumberLiteral),
+    RegexLiteral(RegexLiteral),
 }
 
 macro_rules! init_literal {
@@ -35,6 +36,7 @@ impl Literal {
             Literal::BooleanLiteral(b) => &b.node,
             Literal::NullLiteral(n) => &n.node,
             Literal::NumberLiteral(n) => &n.node,
+            Literal::RegexLiteral(r) => &r.node,
         }
     }
 }
@@ -65,6 +67,13 @@ pub struct NumberLiteral {
     pub value: f64,
 }
 init_literal!(NumberLiteral);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct RegexLiteral {
+    pub node: Node,
+    pub value: RegexValue,
+}
+init_literal!(RegexLiteral);
 
 #[derive(Debug, Clone, PartialEq, Expr)]
 pub struct Identifier {

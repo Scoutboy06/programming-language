@@ -1,4 +1,4 @@
-use crate::{Keyword, Token, TokenKind, TokenValue};
+use crate::{token::RegexValue, Keyword, Token, TokenKind, TokenValue};
 use std::{collections::VecDeque, str::Chars};
 
 pub struct Lexer<'a> {
@@ -497,10 +497,10 @@ impl<'a> Lexer<'a> {
         self.curr_char = self.char_queue.pop_back();
         self.char_queue.clear();
 
-        Some(TokenValue::Regex {
+        Some(TokenValue::Regex(RegexValue {
             pattern: self.source[start_pos + 1..pattern_end].to_owned(),
             flags: self.source[flags_start..flags_end].to_owned(),
-        })
+        }))
     }
 }
 

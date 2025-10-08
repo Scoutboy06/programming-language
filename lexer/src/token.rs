@@ -36,10 +36,13 @@ pub enum TokenValue {
     Boolean(bool),
     Keyword(Keyword),
     Identifier(Atom),
-    Regex {
-        pattern: String,
-        flags: String,
-    },
+    Regex(RegexValue),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct RegexValue {
+    pub pattern: String,
+    pub flags: String,
 }
 
 impl TokenValue {
@@ -90,6 +93,20 @@ impl TokenValue {
         match self {
             TokenValue::Identifier(atom) => atom,
             _ => unreachable!("Expected an Identifier token"),
+        }
+    }
+
+    pub fn expect_regex(&self) -> &RegexValue {
+        match self {
+            TokenValue::Regex(r) => &r,
+            _ => unreachable!("Expected a Regex token"),
+        }
+    }
+
+    pub fn consume_regex(&mut self) -> RegexValue {
+        match std::mem::replace(self, Self::Consumed) {
+            TokenValue::Regex(r) => r,
+            _ => unreachable!("Expected a Regex token"),
         }
     }
 }

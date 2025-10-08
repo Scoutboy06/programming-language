@@ -7,8 +7,8 @@ use crate::expressions::{
     BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty, Expression,
     FunctionExpression, Identifier, Key, Literal, MemberExpression, MemberProperty, Method,
     NewExpression, NullLiteral, NumberLiteral, ObjectExpression, ObjectItem, ParenthesisExpression,
-    StringLiteral, TernaryExpression, ThisExpression, TypeofExpression, UnaryExpression, UnaryKind,
-    UpdateExpression, VariableKind, KV,
+    RegexLiteral, StringLiteral, TernaryExpression, ThisExpression, TypeofExpression,
+    UnaryExpression, UnaryKind, UpdateExpression, VariableKind, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
@@ -296,7 +296,12 @@ impl<'a> Parser<'a> {
                 }
                 _ => Err(ErrorKind::InvalidToken),
             },
-            TokenKind::RegexLiteral => todo!(),
+            TokenKind::RegexLiteral => {
+                let node = Node::new(self.current_token.start, self.current_token.end);
+                let value = self.current_token.value.consume_regex();
+                self.advance(); // Consume Regex token
+                Ok(Literal::RegexLiteral(RegexLiteral { node, value }).into())
+            }
             _ => Err(ErrorKind::InvalidToken),
         }
     }
