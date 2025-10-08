@@ -6,7 +6,7 @@ pub struct Lexer<'a> {
     chars: Chars<'a>,
     position: usize,
     curr_char: Option<char>,
-    peek_char: Option<char>,
+    char_queue: VecDeque<char>,
     token_queue: VecDeque<Token>,
 }
 
@@ -14,14 +14,13 @@ impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
         let mut chars = source.chars();
         let curr_char = chars.next();
-        let peek_char = chars.next();
 
         Self {
             source,
             chars,
             position: 0,
             curr_char,
-            peek_char,
+            char_queue: Default::default(),
             token_queue: Default::default(),
         }
     }
@@ -48,6 +47,34 @@ impl<'a> Lexer<'a> {
             self.token_queue.push_back(token);
         }
         self.token_queue.get(offset).unwrap()
+    }
+
+    fn peek_char(&mut self, offset: usize) -> Option<char> {
+        while self.char_queue.len() <= offset {
+            if let Some(ch) = self.chars.next() {
+                self.char_queue.push_back(ch);
+            } else {
+                return None;
+            }
+        }
+        self.char_queue.get(offset).cloned()
+    }
+
+    fn advance(&mut self) {
+        if let Some(ch) = self.curr_char {
+            self.position += ch.len_utf8();
+        }
+        if self.char_queue.len() > 0 {
+            self.curr_char = self.char_queue.pop_front();
+        } else {
+            self.curr_char = self.chars.next();
+        }
+    }
+
+    fn skip_whitespace(&mut self) {
+        while self.curr_char.is_some_and(|ch| ch.is_whitespace()) {
+            self.advance();
+        }
     }
 
     fn lex_next_token(&mut self) -> Token {
@@ -179,7 +206,15 @@ impl<'a> Lexer<'a> {
                         }
                         (TokenKind::MultiLineComment, TokenValue::None)
                     }
-                    _ => (TK::Slash, TV::None),
+                    None => (TK::Slash, TV::None),
+                    _ => {
+                        if let Some(regex_val) = self.maybe_consume_regex(start) {
+                            (TK::RegexLiteral, TV::Regex(regex_val.to_owned()))
+                        } else {
+                            self.advance();
+                            (TK::Slash, TV::None)
+                        }
+                    }
                 }
             }
             '%' => {
@@ -311,20 +346,6 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn advance(&mut self) {
-        if let Some(ch) = self.curr_char {
-            self.position += ch.len_utf8();
-        }
-        self.curr_char = self.peek_char;
-        self.peek_char = self.chars.next();
-    }
-
-    fn skip_whitespace(&mut self) {
-        while self.curr_char.is_some_and(|ch| ch.is_whitespace()) {
-            self.advance();
-        }
-    }
-
     fn parse_identifier(&mut self) -> &str {
         let start_pos = self.position;
 
@@ -347,8 +368,8 @@ impl<'a> Lexer<'a> {
                 Some('0'..='9') => self.advance(),
                 Some('.') => {
                     if has_decimal
-                        || self.peek_char.is_none()
-                        || self.peek_char.is_some_and(|ch| ch < '0' || ch > '9')
+                        || self.peek_char(0).is_none()
+                        || self.peek_char(0).is_some_and(|ch| ch < '0' || ch > '9')
                     {
                         break;
                     }
@@ -413,7 +434,7 @@ impl<'a> Lexer<'a> {
             } else if ch == '\\' {
                 self.advance(); // Skip '\'
                 self.advance(); // Skip escaped character
-            } else if ch == '$' && self.peek_char == Some('{') {
+            } else if ch == '$' && self.peek_char(0) == Some('{') {
                 self.advance(); // Skip '&'
                 self.advance(); // Skip '{'
                 brace_depth += 1;
@@ -426,6 +447,55 @@ impl<'a> Lexer<'a> {
         }
 
         &self.source[start_pos..self.position]
+    }
+
+    fn maybe_consume_regex(&mut self, start_pos: usize) -> Option<&str> {
+        let mut i = 0;
+        let mut is_escaped = false;
+
+        loop {
+            let Some(ch) = self.peek_char(i) else {
+                return None;
+            };
+
+            match ch {
+                '\n' => return None,
+                '\\' => {
+                    is_escaped = !is_escaped;
+                }
+                '/' if !is_escaped => {
+                    // Enf of regex pattern
+                    i += 1;
+                    break;
+                }
+                _ => {
+                    is_escaped = false;
+                }
+            }
+
+            i += 1;
+        }
+
+        // We found a regex pattern
+        // Now we find the flags
+        while let Some(ch) = self.peek_char(i) {
+            match ch {
+                'd' | 'g' | 'i' | 'm' | 's' | 'u' | 'v' | 'y' => {
+                    i += 1;
+                }
+                _ => break,
+            }
+        }
+
+        // +1 to include last '/'
+        let regex_str = &self.source[start_pos..start_pos + i + 1];
+
+        // Consume the whole char queue
+        self.position += i + 1;
+        self.curr_char = self.char_queue.pop_back();
+        self.char_queue.clear();
+
+        Some(regex_str)
     }
 }
 

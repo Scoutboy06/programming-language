@@ -36,6 +36,7 @@ pub enum TokenValue {
     Boolean(bool),
     Keyword(Keyword),
     Identifier(Atom),
+    Regex(String),
 }
 
 impl TokenValue {
@@ -167,6 +168,7 @@ pub enum TokenKind {
 
     // Other
     ArrowFn,
+    RegexLiteral,
 }
 
 impl TokenKind {
