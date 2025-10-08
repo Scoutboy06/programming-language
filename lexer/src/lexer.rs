@@ -209,7 +209,7 @@ impl<'a> Lexer<'a> {
                     None => (TK::Slash, TV::None),
                     _ => {
                         if let Some(regex_val) = self.maybe_consume_regex(start) {
-                            (TK::RegexLiteral, TV::Regex(regex_val.to_owned()))
+                            (TK::RegexLiteral, regex_val)
                         } else {
                             self.advance();
                             (TK::Slash, TV::None)
@@ -449,9 +449,10 @@ impl<'a> Lexer<'a> {
         &self.source[start_pos..self.position]
     }
 
-    fn maybe_consume_regex(&mut self, start_pos: usize) -> Option<&str> {
+    fn maybe_consume_regex(&mut self, start_pos: usize) -> Option<TokenValue> {
         let mut i = 0;
         let mut is_escaped = false;
+        let pattern_end: usize;
 
         loop {
             let Some(ch) = self.peek_char(i) else {
@@ -466,6 +467,7 @@ impl<'a> Lexer<'a> {
                 '/' if !is_escaped => {
                     // Enf of regex pattern
                     i += 1;
+                    pattern_end = start_pos + i + 1;
                     break;
                 }
                 _ => {
@@ -478,24 +480,27 @@ impl<'a> Lexer<'a> {
 
         // We found a regex pattern
         // Now we find the flags
+        let flags_start = start_pos + i + 2;
+        let mut flags_end: usize = flags_start;
         while let Some(ch) = self.peek_char(i) {
             match ch {
                 'd' | 'g' | 'i' | 'm' | 's' | 'u' | 'v' | 'y' => {
                     i += 1;
+                    flags_end += 1;
                 }
                 _ => break,
             }
         }
-
-        // +1 to include last '/'
-        let regex_str = &self.source[start_pos..start_pos + i + 1];
 
         // Consume the whole char queue
         self.position += i + 1;
         self.curr_char = self.char_queue.pop_back();
         self.char_queue.clear();
 
-        Some(regex_str)
+        Some(TokenValue::Regex {
+            pattern: self.source[start_pos + 1..pattern_end].to_owned(),
+            flags: self.source[flags_start..flags_end].to_owned(),
+        })
     }
 }
 

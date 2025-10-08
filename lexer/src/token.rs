@@ -36,7 +36,10 @@ pub enum TokenValue {
     Boolean(bool),
     Keyword(Keyword),
     Identifier(Atom),
-    Regex(String),
+    Regex {
+        pattern: String,
+        flags: String,
+    },
 }
 
 impl TokenValue {

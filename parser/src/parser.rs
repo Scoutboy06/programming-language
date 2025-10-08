@@ -296,6 +296,7 @@ impl<'a> Parser<'a> {
                 }
                 _ => Err(ErrorKind::InvalidToken),
             },
+            TokenKind::RegexLiteral => todo!(),
             _ => Err(ErrorKind::InvalidToken),
         }
     }
