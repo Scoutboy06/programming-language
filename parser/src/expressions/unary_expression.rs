@@ -12,5 +12,6 @@ pub struct UnaryExpression {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UnaryKind {
     Not,
-    Negative,
+    Minus,
+    Plus,
 }

@@ -272,13 +272,19 @@ impl<'a> Parser<'a> {
             }
             TokenKind::OpenBracket => Ok(self.parse_array_literal()?.into()),
             TokenKind::OpenBrace => Ok(self.parse_object_literal()?.into()),
-            TokenKind::Exclamation => {
+            TokenKind::Exclamation | TokenKind::Plus | TokenKind::Minus => {
+                let unary_kind = match self.current_token.kind {
+                    TokenKind::Exclamation => UnaryKind::Not,
+                    TokenKind::Plus => UnaryKind::Plus,
+                    TokenKind::Minus => UnaryKind::Minus,
+                    _ => unreachable!(),
+                };
                 let start_pos = self.current_token.start;
-                self.advance(); // Consume '!' token
+                self.advance(); // Consume unary token
                 let expr = self.parse_expression()?;
                 Ok(UnaryExpression {
                     node: Node::new(start_pos, expr.node().end),
-                    kind: UnaryKind::Not,
+                    kind: unary_kind,
                     expression: Box::new(expr),
                 }
                 .into())
@@ -1086,7 +1092,7 @@ impl<'a> Parser<'a> {
             TokenKind::String => {
                 let s = StringLiteral {
                     node: Node::new(self.current_token.start, self.current_token.end),
-                    value: self.current_token.value.consume_string(), // WARN: must not be used again
+                    value: self.current_token.value.consume_string(),
                 };
 
                 self.advance(); // Consume String token
