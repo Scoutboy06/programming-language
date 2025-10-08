@@ -16,6 +16,7 @@ pub enum ResolvedType {
     Object(Box<ObjectType>),
     Union(Vec<Self>),
     Function(Box<FunctionType>),
+    Regex,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -79,6 +80,7 @@ impl std::fmt::Display for ResolvedType {
                 write!(f, "{}", out)
             }
             Self::Function(_) => todo!(),
+            Self::Regex => write!(f, "Regex"),
         }
     }
 }
@@ -91,6 +93,7 @@ impl ResolvedType {
                 Literal::NumberLiteral(_) => Self::Number,
                 Literal::NullLiteral(_) => Self::Null,
                 Literal::StringLiteral(_) => Self::String,
+                Literal::RegexLiteral(_) => Self::Regex,
             },
             AstType::KeywordType(keyword_type) => match keyword_type.kind {
                 TypeKeyword::Boolean => Self::Boolean,

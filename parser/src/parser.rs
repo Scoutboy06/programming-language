@@ -13,12 +13,11 @@ use crate::expressions::{
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
     BlockStatement, EnumMember, EnumStatement, ExpressionStatement, ForInStatement, ForInVariable,
-    ForOfStatement, ForStatement, FunctionDeclaration, IfStatement, Parameter, ReturnStatement,
-    Statement, ThrowStatement, VariableDeclaration, VariableDeclarator, WhileStatement,
+    FunctionDeclaration, IfStatement, Parameter, ReturnStatement, Statement, ThrowStatement,
+    VariableDeclaration, VariableDeclarator, WhileStatement,
 };
 use crate::utils::parser_error::ParserError;
 use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
-use string_cache::DefaultAtom as Atom;
 
 pub struct Parser<'a> {
     source: &'a str,
@@ -76,7 +75,6 @@ impl<'a> Parser<'a> {
 
     fn advance(&mut self) {
         self.current_token = self.lexer.next_token();
-        println!("{:?}", self.current_token);
     }
 
     fn expect_token_kind(&self, kind: TokenKind) -> Result<(), ErrorKind> {
@@ -130,6 +128,9 @@ impl<'a> Parser<'a> {
                     let start_pos = self.current_token.start;
                     self.advance(); // Consume "throw" token
                     let expr = self.parse_expression()?;
+                    if self.current_token.is(TokenKind::SemiColon) {
+                        self.advance(); // Consume ";" token
+                    }
                     Ok(ThrowStatement {
                         node: Node::new(start_pos, expr.node().end),
                         expr,
@@ -210,10 +211,10 @@ impl<'a> Parser<'a> {
                     .into();
                     break;
                 }
-                TokenKind::SemiColon => {
-                    self.advance(); // Comsume ',' token
-                    break;
-                }
+                // TokenKind::SemiColon => {
+                //     self.advance(); // Comsume ';' token
+                //     break;
+                // }
                 _ if self.current_token.kind.is_assignment_operator() => {
                     let expr = self.parse_assignment_expression(lhs)?;
                     lhs = Expression::AssignmentExpression(Box::new(expr));
@@ -411,6 +412,11 @@ impl<'a> Parser<'a> {
         if include_semi && self.current_token.is(TokenKind::SemiColon) {
             end_pos = self.current_token.end;
             self.advance() // Consume ";" token
+        } else if !self.current_token.is(TokenKind::Eof) {
+            // panic!(
+            //     "Include semi: {}, curr_tok: {:?}",
+            //     include_semi, self.current_token
+            // );
         }
 
         Ok(VariableDeclaration {
@@ -713,10 +719,10 @@ impl<'a> Parser<'a> {
                     let body = self.parse_statement(false)?;
 
                     let variable: ForInVariable = match variable_kind {
-                        Some(kind) => ForInVariable::VariableDeclaration(VariableDeclaration {
+                        Some(_kind) => ForInVariable::VariableDeclaration(VariableDeclaration {
                             node: todo!(),
                             declarations: todo!(),
-                            kind,
+                            kind: _kind,
                         }),
                         None => ForInVariable::Identifier(Identifier {
                             node: variable_node,
@@ -794,6 +800,8 @@ impl<'a> Parser<'a> {
         if self.current_token.is(TokenKind::SemiColon) {
             end_pos = self.current_token.end;
             self.advance();
+        } else if !self.current_token.is(TokenKind::Eof) {
+            // panic!("Token: {:?}\nExpr: {:?}", self.current_token, expr);
         }
 
         Ok(ReturnStatement {

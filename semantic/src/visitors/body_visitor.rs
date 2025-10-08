@@ -95,6 +95,7 @@ impl<'a> BodyVisitor<'a> {
             Literal::StringLiteral(_) => ResolvedType::String,
             Literal::NullLiteral(_) => ResolvedType::Null,
             Literal::NumberLiteral(_) => ResolvedType::Number,
+            Literal::RegexLiteral(_) => ResolvedType::Regex,
         };
 
         if expected_type.is_some_and(|t| expr_type != *t) {
