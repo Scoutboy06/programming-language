@@ -10,8 +10,8 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Stmt)]
 pub struct ForOfStatement {
     pub node: Node,
-    pub variable: ForOfVariable,
-    pub iterable: Expression,
+    pub left: ForOfVariable,
+    pub right: Expression,
     pub body: Statement,
 }
 
@@ -19,4 +19,15 @@ pub struct ForOfStatement {
 pub enum ForOfVariable {
     VariableDeclaration(VariableDeclaration),
     Identifier(Identifier),
+}
+
+impl From<VariableDeclaration> for ForOfVariable {
+    fn from(value: VariableDeclaration) -> Self {
+        Self::VariableDeclaration(value)
+    }
+}
+impl From<Identifier> for ForOfVariable {
+    fn from(value: Identifier) -> Self {
+        Self::Identifier(value)
+    }
 }

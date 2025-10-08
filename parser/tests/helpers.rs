@@ -6,7 +6,6 @@ pub trait NodeConstructor {
     fn find_n(&self, target: &str, n: usize) -> Option<usize>;
     fn node(&self, target: &str, n: usize) -> Node;
     fn between(&self, left: (&str, usize), right: (&str, usize)) -> Node;
-    #[allow(unused)]
     fn between_incl(&self, left: (&str, usize), right: (&str, usize)) -> Node;
 }
 

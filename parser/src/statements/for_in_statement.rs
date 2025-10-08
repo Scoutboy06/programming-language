@@ -10,8 +10,8 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Stmt)]
 pub struct ForInStatement {
     pub node: Node,
-    pub variable: ForInVariable,
-    pub object: Expression,
+    pub left: ForInVariable,
+    pub right: Expression,
     pub body: Statement,
 }
 
@@ -19,4 +19,16 @@ pub struct ForInStatement {
 pub enum ForInVariable {
     VariableDeclaration(VariableDeclaration),
     Identifier(Identifier),
+}
+
+impl From<VariableDeclaration> for ForInVariable {
+    fn from(value: VariableDeclaration) -> Self {
+        Self::VariableDeclaration(value)
+    }
+}
+
+impl From<Identifier> for ForInVariable {
+    fn from(value: Identifier) -> Self {
+        Self::Identifier(value)
+    }
 }

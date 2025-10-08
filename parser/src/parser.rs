@@ -12,7 +12,7 @@ use crate::expressions::{
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
-    BlockStatement, EnumMember, EnumStatement, ExpressionStatement, ForInStatement, ForInVariable,
+    BlockStatement, EnumMember, EnumStatement, ExpressionStatement, ForStatement,
     FunctionDeclaration, IfStatement, Parameter, ReturnStatement, Statement, ThrowStatement,
     VariableDeclaration, VariableDeclarator, WhileStatement,
 };
@@ -412,11 +412,6 @@ impl<'a> Parser<'a> {
         if include_semi && self.current_token.is(TokenKind::SemiColon) {
             end_pos = self.current_token.end;
             self.advance() // Consume ";" token
-        } else if !self.current_token.is(TokenKind::Eof) {
-            // panic!(
-            //     "Include semi: {}, curr_tok: {:?}",
-            //     include_semi, self.current_token
-            // );
         }
 
         Ok(VariableDeclaration {
@@ -696,57 +691,109 @@ impl<'a> Parser<'a> {
         self.advance(); // Consume "for" keyword token
         self.expect_and_consume_token(TokenKind::OpenParen)?;
 
-        let variable_kind: Option<VariableKind> = match self.current_token.kind {
+        let var_decl: Option<VariableDeclaration> = match self.current_token.kind {
+            TokenKind::SemiColon => None,
             TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-                Keyword::Var | Keyword::Let | Keyword::Const => todo!(),
+                Keyword::Let | Keyword::Var | Keyword::Const => {
+                    Some(self.parse_variable_declaration(false)?)
+                }
                 _ => return Err(ErrorKind::InvalidToken),
             },
-            TokenKind::Identifier => None,
+            // TokenKind::Identifier => Some(self.parse_update_expression()),
             _ => return Err(ErrorKind::InvalidToken),
         };
 
-        let variable_node = Node::new(self.current_token.start, self.current_token.end);
-        self.expect_token_kind(TokenKind::Identifier)?;
-        let identifier = self.current_token.value.expect_identifier().to_owned();
-        self.advance();
-
-        match self.current_token.kind {
-            TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-                Keyword::In => {
-                    self.advance(); // Consume "in" token
-                    let object = self.parse_expression()?;
-                    self.expect_and_consume_token(TokenKind::CloseParen)?;
-                    let body = self.parse_statement(false)?;
-
-                    let variable: ForInVariable = match variable_kind {
-                        Some(_kind) => ForInVariable::VariableDeclaration(VariableDeclaration {
-                            node: todo!(),
-                            declarations: todo!(),
-                            kind: _kind,
-                        }),
-                        None => ForInVariable::Identifier(Identifier {
-                            node: variable_node,
-                            name: identifier,
-                        }),
-                    };
-
-                    Ok(ForInStatement {
-                        node: Node::new(start_pos, body.node().end),
-                        variable,
-                        object,
-                        body,
-                    }
-                    .into())
-                }
-                Keyword::Of => todo!("for..of"),
+        if var_decl.as_ref().is_some_and(|v| v.declarations.len() == 0) {
+            match self.current_token.kind {
+                TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+                    Keyword::In => todo!(),
+                    Keyword::Of => todo!(),
+                    _ => return Err(ErrorKind::InvalidToken),
+                },
                 _ => return Err(ErrorKind::InvalidToken),
-            },
-            TokenKind::Equals => todo!("Initializer"),
-            TokenKind::SemiColon => todo!("Semicolon"),
-            _ => return Err(ErrorKind::InvalidToken),
+            }
+        } else {
+            self.expect_and_consume_token(TokenKind::SemiColon)?;
+
+            let condition = if self.current_token.is(TokenKind::SemiColon) {
+                None
+            } else {
+                Some(self.parse_expression()?)
+            };
+
+            self.expect_and_consume_token(TokenKind::SemiColon)?;
+
+            let update = if self.current_token.is(TokenKind::CloseParen) {
+                None
+            } else {
+                Some(self.parse_statement(false)?)
+            };
+
+            self.expect_and_consume_token(TokenKind::CloseParen)?;
+
+            let body = self.parse_statement(false)?;
+
+            Ok(ForStatement {
+                node: Node::new(start_pos, body.node().end),
+                initializer: var_decl.map(|decl| decl.into()),
+                condition,
+                update,
+                body,
+            }
+            .into())
         }
 
-        // let initializer = self.parse_statement(false)?;
+        // panic!("{:?}", &var_decl);
+
+        // let variable_kind: Option<VariableKind> = match self.current_token.kind {
+        //     TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+        //         Keyword::Var | Keyword::Let | Keyword::Const => todo!(),
+        //         _ => return Err(ErrorKind::InvalidToken),
+        //     },
+        //     TokenKind::Identifier | TokenKind::SemiColon => None,
+        //     _ => return Err(ErrorKind::InvalidToken),
+        // };
+        //
+        // // let variable_node = Node::new(self.current_token.start, self.current_token.end);
+        // self.expect_token_kind(TokenKind::Identifier)?;
+        // let identifier = self.current_token.value.expect_identifier().to_owned();
+        // self.advance();
+        //
+        // match self.current_token.kind {
+        //     TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+        //         Keyword::In => {
+        //             self.advance(); // Consume "in" token
+        //             let object = self.parse_expression()?;
+        //             self.expect_and_consume_token(TokenKind::CloseParen)?;
+        //             let body = self.parse_statement(false)?;
+        //
+        //             let variable: ForInVariable = match variable_kind {
+        //                 Some(_kind) => ForInVariable::VariableDeclaration(VariableDeclaration {
+        //                     node: todo!(),
+        //                     declarations: todo!(),
+        //                     kind: _kind,
+        //                 }),
+        //                 None => ForInVariable::Identifier(Identifier {
+        //                     node: variable_node,
+        //                     name: identifier,
+        //                 }),
+        //             };
+        //
+        //             Ok(ForInStatement {
+        //                 node: Node::new(start_pos, body.node().end),
+        //                 variable,
+        //                 object,
+        //                 body,
+        //             }
+        //             .into())
+        //         }
+        //         Keyword::Of => todo!("for..of"),
+        //         _ => return Err(ErrorKind::InvalidToken),
+        //     },
+        //     TokenKind::Equals => todo!("Initializer"),
+        //     TokenKind::SemiColon => todo!("Semicolon"),
+        //     _ => return Err(ErrorKind::InvalidToken),
+        // }
 
         // self.expect_and_consume_token(TokenKind::SemiColon)?;
 
@@ -800,8 +847,6 @@ impl<'a> Parser<'a> {
         if self.current_token.is(TokenKind::SemiColon) {
             end_pos = self.current_token.end;
             self.advance();
-        } else if !self.current_token.is(TokenKind::Eof) {
-            // panic!("Token: {:?}\nExpr: {:?}", self.current_token, expr);
         }
 
         Ok(ReturnStatement {
