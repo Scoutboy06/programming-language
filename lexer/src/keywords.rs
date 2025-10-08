@@ -35,18 +35,73 @@ pub enum Keyword {
     Switch,
     Case,
     Default,
-    Type,
     Interface,
     True,
     False,
     Typeof,
+    Throw,
 
     // Typescript keywords
     StringType,  // : string
     NumberType,  // : number
     BooleanType, // : boolean
+    Type,        // type T = ...
     Enum,        // enum Foo {}
     Declare,     // declare enum Foo {}
+}
+
+impl std::fmt::Display for Keyword {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let out: &'static str = match self {
+            // Javascript keywords
+            Self::Var => "var",
+            Self::Let => "let",
+            Self::Const => "const",
+            Self::Function => "function",
+            Self::Return => "return",
+            Self::Async => "async",
+            Self::Await => "await",
+            Self::Static => "static",
+            Self::If => "if",
+            Self::Else => "else",
+            Self::Try => "try",
+            Self::Catch => "catch",
+            Self::Finally => "finally",
+            Self::While => "while",
+            Self::Do => "do",
+            Self::For => "for",
+            Self::In => "in",
+            Self::Of => "of",
+            Self::Break => "break",
+            Self::Continue => "continue",
+            Self::Class => "class",
+            Self::Abstract => "abstract",
+            Self::Extends => "extends",
+            Self::Implements => "implements",
+            Self::New => "new",
+            Self::This => "this",
+            Self::Super => "super",
+            Self::Private => "private",
+            Self::Protected => "protected",
+            Self::Switch => "switch",
+            Self::Case => "case",
+            Self::Default => "default",
+            Self::Interface => "interface",
+            Self::True => "true",
+            Self::False => "false",
+            Self::Typeof => "typeof",
+            Self::Throw => "throw",
+
+            // Typescript keywords
+            Self::StringType => "string",
+            Self::NumberType => "number",
+            Self::BooleanType => "boolean",
+            Self::Type => "type",
+            Self::Enum => "enum",
+            Self::Declare => "declare",
+        };
+        write!(f, "{}", out)
+    }
 }
 
 static KEYWORDS: phf::Map<&'static str, Keyword> = phf_map! {
@@ -87,6 +142,7 @@ static KEYWORDS: phf::Map<&'static str, Keyword> = phf_map! {
     "true" => Keyword::True,
     "false" => Keyword::False,
     "typeof" => Keyword::Typeof,
+    "throw" => Keyword::Throw,
 
     // TypeScript keywords
     "string" => Keyword::StringType,

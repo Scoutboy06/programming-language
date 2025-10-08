@@ -79,6 +79,22 @@ impl<'a> Lexer<'a> {
                 TK::String,
                 TV::String(self.parse_string_literal(false).into()),
             ),
+            '!' => {
+                self.advance();
+                match self.curr_char {
+                    Some('=') => {
+                        self.advance();
+                        match self.curr_char {
+                            Some('=') => {
+                                self.advance();
+                                (TK::StrictNotEqual, TV::None)
+                            }
+                            _ => (TK::NotEqual, TV::None),
+                        }
+                    }
+                    _ => (TK::Exclamation, TV::None),
+                }
+            }
             '+' => {
                 self.advance();
                 match self.curr_char {

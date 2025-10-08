@@ -6,17 +6,19 @@ use crate::expressions::{
     ArrayExpression, ArrowFunctionExpression, AsUpdateOperator, AssignmentExpression,
     BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty, Expression,
     FunctionExpression, Identifier, Key, Literal, MemberExpression, MemberProperty, Method,
-    NullLiteral, NumberLiteral, ObjectExpression, ObjectItem, ParenthesisExpression, StringLiteral,
-    TypeofExpression, UpdateExpression, VariableKind, KV,
+    NewExpression, NullLiteral, NumberLiteral, ObjectExpression, ObjectItem, ParenthesisExpression,
+    StringLiteral, TernaryExpression, ThisExpression, TypeofExpression, UnaryExpression, UnaryKind,
+    UpdateExpression, VariableKind, KV,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
-    BlockStatement, EnumMember, EnumStatement, ExpressionStatement, ForStatement,
-    FunctionDeclaration, IfStatement, Parameter, ReturnStatement, Statement, VariableDeclaration,
-    VariableDeclarator, WhileStatement,
+    BlockStatement, EnumMember, EnumStatement, ExpressionStatement, ForInStatement, ForInVariable,
+    ForOfStatement, ForStatement, FunctionDeclaration, IfStatement, Parameter, ReturnStatement,
+    Statement, ThrowStatement, VariableDeclaration, VariableDeclarator, WhileStatement,
 };
 use crate::utils::parser_error::ParserError;
 use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
+use string_cache::DefaultAtom as Atom;
 
 pub struct Parser<'a> {
     source: &'a str,
@@ -74,6 +76,7 @@ impl<'a> Parser<'a> {
 
     fn advance(&mut self) {
         self.current_token = self.lexer.next_token();
+        println!("{:?}", self.current_token);
     }
 
     fn expect_token_kind(&self, kind: TokenKind) -> Result<(), ErrorKind> {
@@ -123,6 +126,24 @@ impl<'a> Parser<'a> {
                     }
                     .into())
                 }
+                Keyword::Throw => {
+                    let start_pos = self.current_token.start;
+                    self.advance(); // Consume "throw" token
+                    let expr = self.parse_expression()?;
+                    Ok(ThrowStatement {
+                        node: Node::new(start_pos, expr.node().end),
+                        expr,
+                    }
+                    .into())
+                }
+                Keyword::New | Keyword::This => {
+                    let expr = self.parse_expression()?;
+                    Ok(ExpressionStatement {
+                        node: *expr.node(),
+                        expression: expr,
+                    }
+                    .into())
+                }
                 _ => todo!(),
             },
             TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
@@ -151,10 +172,6 @@ impl<'a> Parser<'a> {
 
         loop {
             match self.current_token.kind {
-                TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-                    Keyword::Typeof => lhs = self.parse_typeof_expression()?.into(),
-                    _ => todo!(),
-                },
                 TokenKind::OpenParen => {
                     let call_exp = self.parse_call_expression(lhs)?;
                     lhs = Expression::CallExpression(Box::new(call_exp));
@@ -179,6 +196,23 @@ impl<'a> Parser<'a> {
                     };
                     self.advance(); // Consume Update operator token
                     lhs = expr.into();
+                }
+                TokenKind::QuestionMark => {
+                    self.advance();
+                    let truthy_expr = self.parse_expression()?;
+                    self.expect_and_consume_token(TokenKind::Colon)?;
+                    let falsy_expr = self.parse_expression()?;
+                    lhs = TernaryExpression {
+                        node: Node::new(lhs.node().start, falsy_expr.node().end),
+                        truthy_expr: Box::new(truthy_expr),
+                        falsy_expr: Box::new(falsy_expr),
+                    }
+                    .into();
+                    break;
+                }
+                TokenKind::SemiColon => {
+                    self.advance(); // Comsume ',' token
+                    break;
                 }
                 _ if self.current_token.kind.is_assignment_operator() => {
                     let expr = self.parse_assignment_expression(lhs)?;
@@ -236,18 +270,29 @@ impl<'a> Parser<'a> {
 
                 Ok(paren_expr.into())
             }
-            TokenKind::OpenBracket => {
-                let arr = self.parse_array_literal()?;
-                Ok(Expression::ArrayExpression(Box::new(arr)))
-            }
-            TokenKind::OpenBrace => {
-                let obj = self.parse_object_literal()?;
-                Ok(Expression::ObjectExpression(Box::new(obj)))
+            TokenKind::OpenBracket => Ok(self.parse_array_literal()?.into()),
+            TokenKind::OpenBrace => Ok(self.parse_object_literal()?.into()),
+            TokenKind::Exclamation => {
+                let start_pos = self.current_token.start;
+                self.advance(); // Consume '!' token
+                let expr = self.parse_expression()?;
+                Ok(UnaryExpression {
+                    node: Node::new(start_pos, expr.node().end),
+                    kind: UnaryKind::Not,
+                    expression: Box::new(expr),
+                }
+                .into())
             }
             TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-                Keyword::Function => {
-                    let fn_expr = self.parse_function_expression(false)?;
-                    Ok(Expression::FunctionExpression(Box::new(fn_expr)))
+                Keyword::Function => Ok(self.parse_function_expression(false)?.into()),
+                Keyword::Typeof => Ok(self.parse_typeof_expression()?.into()),
+                Keyword::New => Ok(self.parse_new_expression()?.into()),
+                Keyword::This => {
+                    let expr = ThisExpression {
+                        node: Node::new(self.current_token.start, self.current_token.end),
+                    };
+                    self.advance(); // Consume "this" token
+                    Ok(expr.into())
                 }
                 _ => Err(ErrorKind::InvalidToken),
             },
@@ -628,33 +673,82 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a `for` loop, including `for-in` and `for-of` loops.
-    fn parse_for_statement(&mut self) -> Result<ForStatement, ErrorKind> {
+    fn parse_for_statement(&mut self) -> Result<Statement, ErrorKind> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "for" keyword token
-
         self.expect_and_consume_token(TokenKind::OpenParen)?;
 
-        let initializer = self.parse_statement(false)?;
+        let variable_kind: Option<VariableKind> = match self.current_token.kind {
+            TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+                Keyword::Var | Keyword::Let | Keyword::Const => todo!(),
+                _ => return Err(ErrorKind::InvalidToken),
+            },
+            TokenKind::Identifier => None,
+            _ => return Err(ErrorKind::InvalidToken),
+        };
 
-        self.expect_and_consume_token(TokenKind::SemiColon)?;
+        let variable_node = Node::new(self.current_token.start, self.current_token.end);
+        self.expect_token_kind(TokenKind::Identifier)?;
+        let identifier = self.current_token.value.expect_identifier().to_owned();
+        self.advance();
 
-        let condition = self.parse_expression()?;
+        match self.current_token.kind {
+            TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+                Keyword::In => {
+                    self.advance(); // Consume "in" token
+                    let object = self.parse_expression()?;
+                    self.expect_and_consume_token(TokenKind::CloseParen)?;
+                    let body = self.parse_statement(false)?;
 
-        self.expect_and_consume_token(TokenKind::SemiColon)?;
+                    let variable: ForInVariable = match variable_kind {
+                        Some(kind) => ForInVariable::VariableDeclaration(VariableDeclaration {
+                            node: todo!(),
+                            declarations: todo!(),
+                            kind,
+                        }),
+                        None => ForInVariable::Identifier(Identifier {
+                            node: variable_node,
+                            name: identifier,
+                        }),
+                    };
 
-        let update = self.parse_statement(false)?;
+                    Ok(ForInStatement {
+                        node: Node::new(start_pos, body.node().end),
+                        variable,
+                        object,
+                        body,
+                    }
+                    .into())
+                }
+                Keyword::Of => todo!("for..of"),
+                _ => return Err(ErrorKind::InvalidToken),
+            },
+            TokenKind::Equals => todo!("Initializer"),
+            TokenKind::SemiColon => todo!("Semicolon"),
+            _ => return Err(ErrorKind::InvalidToken),
+        }
 
-        self.expect_and_consume_token(TokenKind::CloseParen)?;
+        // let initializer = self.parse_statement(false)?;
 
-        let body = self.parse_statement(false)?;
+        // self.expect_and_consume_token(TokenKind::SemiColon)?;
 
-        Ok(ForStatement {
-            node: Node::new(start_pos, body.node().end),
-            initializer,
-            condition,
-            update,
-            body,
-        })
+        // let condition = self.parse_expression()?;
+
+        // self.expect_and_consume_token(TokenKind::SemiColon)?;
+
+        // let update = self.parse_statement(false)?;
+
+        // self.expect_and_consume_token(TokenKind::CloseParen)?;
+
+        // let body = self.parse_statement(false)?;
+
+        // Ok(ForStatement {
+        //     node: Node::new(start_pos, body.node().end),
+        //     initializer,
+        //     condition,
+        //     update,
+        //     body,
+        // })
     }
 
     /// Parses `while` loop
@@ -759,7 +853,7 @@ impl<'a> Parser<'a> {
         let mut items = Vec::new();
 
         loop {
-            if self.current_token.is(TokenKind::CloseBracket) {
+            if self.current_token.is(TokenKind::CloseBrace) {
                 break;
             }
 
@@ -801,6 +895,20 @@ impl<'a> Parser<'a> {
                 }
                 TokenKind::Keyword => match self.current_token.value.expect_keyword() {
                     Keyword::Async => ObjectItem::Method(self.parse_method()?),
+                    Keyword::StringType
+                    | Keyword::NumberType
+                    | Keyword::BooleanType
+                    | Keyword::Type => {
+                        let key = StringLiteral {
+                            node: Node::new(self.current_token.start, self.current_token.end),
+                            value: self.current_token.value.expect_keyword().to_string(),
+                        }
+                        .into();
+                        self.advance(); // Consume keyword token
+                        self.expect_and_consume_token(TokenKind::Colon)?;
+                        let value = self.parse_expression()?;
+                        ObjectItem::KV(KV { key, value })
+                    }
                     _ => return Err(ErrorKind::InvalidToken),
                 },
                 TokenKind::OpenBracket => {
@@ -1223,6 +1331,16 @@ impl<'a> Parser<'a> {
         Ok(TypeofExpression {
             node: Node::new(start_pos, expr.node().end),
             expression: expr,
+        })
+    }
+
+    fn parse_new_expression(&mut self) -> Result<NewExpression, ErrorKind> {
+        let start_pos = self.current_token.start;
+        self.advance(); // Consume "new" token
+        let expr = self.parse_expression()?;
+        Ok(NewExpression {
+            node: Node::new(start_pos, expr.node().end),
+            expr: Box::new(expr),
         })
     }
 }

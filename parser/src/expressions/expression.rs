@@ -3,7 +3,10 @@ use super::{
     CallExpression, FunctionExpression, Identifier, Literal, MemberExpression, ObjectExpression,
     ParenthesisExpression, UnaryExpression, UpdateExpression,
 };
-use crate::{expressions::TypeofExpression, nodes::Node};
+use crate::{
+    expressions::{NewExpression, TernaryExpression, ThisExpression, TypeofExpression},
+    nodes::Node,
+};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
@@ -21,10 +24,10 @@ pub enum Expression {
     ArrowFunctionExpression(Box<ArrowFunctionExpression>),
     ObjectExpression(Box<ObjectExpression>),
     ArrayExpression(Box<ArrayExpression>),
-    NewExpression(Box<()>),
+    NewExpression(Box<NewExpression>),
     SequenceExpression(Box<()>),
     UpdateExpression(Box<UpdateExpression>),
-    ThisExpression(Box<()>),
+    ThisExpression(Box<ThisExpression>),
     SuperExpression(Box<()>),
     ClassExpression(Box<()>),
     TemplateLiteral(Box<()>),
@@ -34,6 +37,7 @@ pub enum Expression {
     AwaitExpression(Box<()>),
     ImportExpression(Box<()>),
     TypeofExpression(Box<TypeofExpression>),
+    TernaryExpression(Box<TernaryExpression>),
 }
 
 impl Expression {
@@ -53,10 +57,10 @@ impl Expression {
             Self::ArrowFunctionExpression(a) => &a.node,
             Self::ObjectExpression(o) => &o.node,
             Self::ArrayExpression(a) => &a.node,
-            Self::NewExpression(_) => todo!("NewExpression"),
+            Self::NewExpression(e) => &e.node,
             Self::SequenceExpression(_) => todo!("SequenceExpression"),
             Self::UpdateExpression(e) => &e.node,
-            Self::ThisExpression(_) => todo!("ThisExpression"),
+            Self::ThisExpression(e) => &e.node,
             Self::SuperExpression(_) => todo!("SuperExpression"),
             Self::ClassExpression(_) => todo!("ClassExpression"),
             Self::TemplateLiteral(_) => todo!("TemplateLiteral"),
@@ -66,6 +70,7 @@ impl Expression {
             Self::AwaitExpression(_) => todo!("AwaitExpression"),
             Self::ImportExpression(_) => todo!("ImportExpression"),
             Self::TypeofExpression(expr) => &expr.node,
+            Self::TernaryExpression(expr) => &expr.node,
         }
     }
 }

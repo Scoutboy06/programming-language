@@ -1,5 +1,6 @@
 use super::Expression;
 use crate::nodes::Node;
+use lexer::Keyword;
 use parser_derive::Expr;
 use string_cache::DefaultAtom as Atom;
 
@@ -76,4 +77,17 @@ pub enum VariableKind {
     Var,
     Let,
     Const,
+}
+
+impl TryFrom<Keyword> for VariableKind {
+    type Error = ();
+
+    fn try_from(value: Keyword) -> Result<Self, Self::Error> {
+        match value {
+            Keyword::Var => Ok(Self::Var),
+            Keyword::Let => Ok(Self::Let),
+            Keyword::Const => Ok(Self::Const),
+            _ => Err(()),
+        }
+    }
 }

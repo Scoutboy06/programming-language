@@ -1,8 +1,9 @@
-use super::{
-    BlockStatement, EnumStatement, ExpressionStatement, ForStatement, FunctionDeclaration,
-    IfStatement, ReturnStatement, Shebang, VariableDeclaration, WhileStatement,
-};
 use crate::nodes::Node;
+use crate::statements::{
+    BlockStatement, EnumStatement, ExpressionStatement, ForInStatement, ForOfStatement,
+    ForStatement, FunctionDeclaration, IfStatement, ReturnStatement, Shebang, ThrowStatement,
+    VariableDeclaration, WhileStatement,
+};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
@@ -15,14 +16,14 @@ pub enum Statement {
     WhileStatement(Box<WhileStatement>),
     DoWhileStatement(Box<()>),
     ForStatement(Box<ForStatement>),
-    ForInStatement(Box<()>),
-    ForOfStatement(Box<()>),
+    ForInStatement(Box<ForInStatement>),
+    ForOfStatement(Box<ForOfStatement>),
     FunctionDeclaration(Box<FunctionDeclaration>),
     VariableDeclaration(Box<VariableDeclaration>),
     ReturnStatement(Box<ReturnStatement>),
     BreakStatement(Box<()>),
     ContinueStatement(Box<()>),
-    ThrowStatement(Box<()>),
+    ThrowStatement(Box<ThrowStatement>),
     TryStatement(Box<()>),
     DebuggerStatement(Box<()>),
     LabeledStatement(Box<()>),
@@ -49,6 +50,8 @@ impl Statement {
             Self::VariableDeclaration(s) => &s.node,
             Self::ReturnStatement(s) => &s.node,
             Self::Shebang(s) => &s.node,
+            Self::ThrowStatement(s) => &s.node,
+            Self::ForOfStatement(s) => &s.node,
             _ => todo!("Statement::node()"),
         }
     }

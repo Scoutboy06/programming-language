@@ -132,6 +132,7 @@ pub enum TokenKind {
     Increment,      // ++
     Decrement,      // --
     QuestionMark,   // ?
+    Exclamation,    // !
 
     // Assignment operators
     PlusEquals,  // +=
@@ -209,6 +210,7 @@ impl TokenKind {
     pub fn as_operator(&self) -> Option<Operator> {
         match self {
             // Highest precedence
+            TokenKind::Equals => Some(Operator::Assignment),
             TokenKind::Exponentiation => Some(Operator::Power),
 
             // Multiplicative operations
@@ -319,7 +321,8 @@ impl TokenKind {
 
     pub fn is_assignment_operator(&self) -> bool {
         match self {
-            TokenKind::PlusEquals
+            TokenKind::Equals
+            | TokenKind::PlusEquals
             | TokenKind::MinusEquals
             | TokenKind::TimesEquals
             | TokenKind::DivEquals
