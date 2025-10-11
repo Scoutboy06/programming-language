@@ -72,6 +72,11 @@ fn assignment_with_simple_type() {
         .into()],
     };
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, Ok(expected));
 }
 
@@ -137,6 +142,11 @@ fn array_type() {
         .into()],
     };
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, Ok(expected));
 }
 
@@ -193,6 +203,11 @@ fn type_params() {
         }
         .into()],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }
@@ -305,6 +320,11 @@ fn generics_on_function_declaration() {
         }
         .into()],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }

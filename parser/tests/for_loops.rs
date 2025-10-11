@@ -91,6 +91,11 @@ fn for_loop() {
         .into()],
     });
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, expected);
 }
 
@@ -148,6 +153,11 @@ fn for_loop_without_initializer() {
         }
         .into()],
     });
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, expected);
 }
@@ -212,6 +222,11 @@ fn for_loop_without_test() {
         .into()],
     });
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, expected);
 }
 
@@ -275,6 +290,11 @@ fn for_loop_without_update() {
         .into()],
     });
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, expected);
 }
 
@@ -308,6 +328,11 @@ fn for_in_loop() {
         .into()],
     });
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, expected);
 }
 
@@ -340,6 +365,11 @@ fn for_of_loop() {
         }
         .into()],
     });
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, expected);
 }

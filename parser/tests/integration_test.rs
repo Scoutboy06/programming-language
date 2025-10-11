@@ -96,7 +96,12 @@ fn binary_operation() {
         .into()],
     };
 
-    assert_eq!(result, Ok(expected));
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
+    assert_eq!(result.unwrap(), expected);
 }
 
 #[test]
@@ -131,6 +136,11 @@ fn computed_member_expression() {
         }
         .into()],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }
@@ -185,6 +195,11 @@ fn assignment_statement() {
             .into(),
         ],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }
@@ -241,6 +256,11 @@ fn while_loop() {
         .into()],
     };
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, Ok(expected));
 }
 
@@ -270,6 +290,11 @@ fn update_expression() {
         .into()],
     };
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, Ok(expected));
 }
 
@@ -284,66 +309,72 @@ fn for_loop() {
         shebang: None,
         body: vec![ForStatement {
             node: Node::new(0, code.len()),
-            initializer: VariableDeclaration {
-                node: code.node("let i = 0", 0),
-                declarations: vec![VariableDeclarator {
-                    node: code.node("i = 0", 0),
-                    id: Identifier {
-                        node: code.node("i", 0),
-                        name: "i".into(),
-                    }
-                    .into(),
-                    type_annotation: None,
-                    init: Some(
-                        NumberLiteral {
-                            node: code.node("0", 0),
-                            value: 0.0,
+            initializer: Some(
+                VariableDeclaration {
+                    node: code.node("let i = 0", 0),
+                    declarations: vec![VariableDeclarator {
+                        node: code.node("i = 0", 0),
+                        id: Identifier {
+                            node: code.node("i", 0),
+                            name: "i".into(),
                         }
                         .into(),
-                    ),
-                }],
-                kind: VariableKind::Let,
-            }
-            .into(),
-            condition: BinaryExpression {
-                node: code.node("i < code.length", 0),
-                left: Identifier {
-                    node: code.node("i", 1),
-                    name: "i".into(),
+                        type_annotation: None,
+                        init: Some(
+                            NumberLiteral {
+                                node: code.node("0", 0),
+                                value: 0.0,
+                            }
+                            .into(),
+                        ),
+                    }],
+                    kind: VariableKind::Let,
                 }
                 .into(),
-                right: MemberExpression {
-                    node: code.node("code.length", 0),
-                    object: Identifier {
-                        node: code.node("code", 0),
-                        name: "code".into(),
-                    }
-                    .into(),
-                    property: Identifier {
-                        node: code.node("length", 0),
-                        name: "length".into(),
-                    }
-                    .into(),
-                }
-                .into(),
-                operator: Operator::LessThan,
-            }
-            .into(),
-            update: ExpressionStatement {
-                node: code.node("i++", 0),
-                expression: UpdateExpression {
-                    node: code.node("i++", 0),
-                    argument: Identifier {
-                        node: code.node("i", 2),
+            ),
+            condition: Some(
+                BinaryExpression {
+                    node: code.node("i < code.length", 0),
+                    left: Identifier {
+                        node: code.node("i", 1),
                         name: "i".into(),
                     }
                     .into(),
-                    operator: UpdateOperator::Increment,
-                    prefix: false,
+                    right: MemberExpression {
+                        node: code.node("code.length", 0),
+                        object: Identifier {
+                            node: code.node("code", 0),
+                            name: "code".into(),
+                        }
+                        .into(),
+                        property: Identifier {
+                            node: code.node("length", 0),
+                            name: "length".into(),
+                        }
+                        .into(),
+                    }
+                    .into(),
+                    operator: Operator::LessThan,
                 }
                 .into(),
-            }
-            .into(),
+            ),
+            update: Some(
+                ExpressionStatement {
+                    node: code.node("i++", 0),
+                    expression: UpdateExpression {
+                        node: code.node("i++", 0),
+                        argument: Identifier {
+                            node: code.node("i", 2),
+                            name: "i".into(),
+                        }
+                        .into(),
+                        operator: UpdateOperator::Increment,
+                        prefix: false,
+                    }
+                    .into(),
+                }
+                .into(),
+            ),
             body: BlockStatement {
                 node: code.between_incl(("{", 0), ("}", 0)),
                 statements: vec![ExpressionStatement {
@@ -369,6 +400,11 @@ fn for_loop() {
         }
         .into()],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }

@@ -55,7 +55,12 @@ fn if_statement() {
         .into()],
     };
 
-    assert_eq!(result, Ok(expected));
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
+    assert_eq!(result.unwrap(), expected);
 }
 
 #[test]
@@ -120,7 +125,12 @@ fn if_else_statement() {
         .into()],
     };
 
-    assert_eq!(result, Ok(expected));
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
+    assert_eq!(result.unwrap(), expected);
 }
 
 #[test]
@@ -193,7 +203,12 @@ fn if_if_else_else_statement() {
         .into()],
     };
 
-    assert_eq!(result, Ok(expected));
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
+    assert_eq!(result.unwrap(), expected);
 }
 
 #[test]
@@ -240,5 +255,10 @@ fn if_else_without_curly_braces() {
         .into()],
     };
 
-    assert_eq!(result, Ok(expected));
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
+    assert_eq!(result.unwrap(), expected);
 }

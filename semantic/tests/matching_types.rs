@@ -6,7 +6,10 @@ use semantic::{analyze, errors::ErrorSeverity};
 fn string_number_mismatch() {
     let code = "let foo: string = 123;";
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 1);
     assert_eq!(errors[0].severity, ErrorSeverity::Critical);
@@ -65,7 +68,10 @@ fn variable_reference_type_match() {
                         let n: number = 123
                         let m: number = n"#;
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors, []);
 }

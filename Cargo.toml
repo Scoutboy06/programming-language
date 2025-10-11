@@ -1,5 +1,6 @@
 [workspace]
-members = ["cli", "compiler","lexer", "parser", "parser_derive", "semantic"]
+members = ["cli", "compiler", "lexer", "parser", "parser_derive", "semantic"]
+resolver = "3"
 
 [workspace.package]
 version = "0.1.0"

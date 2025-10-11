@@ -1,3 +1,5 @@
+use crate::throw_error;
+
 use crate::expressions::types::{
     ArrayType, AstType, KeywordType, TypeAnnotation, TypeParameter, TypeParameterDeclaration,
     TypeReference,
@@ -12,23 +14,17 @@ use crate::expressions::{
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
-    BlockStatement, EnumMember, EnumStatement, ExpressionStatement, ForStatement,
-    FunctionDeclaration, IfStatement, Parameter, ReturnStatement, Statement, ThrowStatement,
-    VariableDeclaration, VariableDeclarator, WhileStatement,
+    BlockStatement, EnumMember, EnumStatement, ExpressionStatement, ForInStatement, ForInVariable,
+    ForStatement, FunctionDeclaration, IfStatement, Parameter, ReturnStatement, Statement,
+    ThrowStatement, VariableDeclaration, VariableDeclarator, WhileStatement,
 };
-use crate::utils::parser_error::ParserError;
+use crate::utils::parser_error::{ParserError, ParserErrorInfo};
 use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
 
 pub struct Parser<'a> {
     source: &'a str,
     lexer: Lexer<'a>,
     current_token: Token,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ErrorKind {
-    InternalError,
-    InvalidToken,
 }
 
 impl<'a> Parser<'a> {
@@ -40,7 +36,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Program, ParserError<'a>> {
+    pub fn parse(&mut self) -> Result<Program, ParserError> {
         let mut body: Vec<Statement> = Vec::new();
         let source_len = self.source.len();
 
@@ -58,10 +54,10 @@ impl<'a> Parser<'a> {
                 Ok(s) => body.push(s),
                 Err(err) => {
                     return Err(ParserError {
-                        kind: err,
+                        id: err.id,
+                        kind: err.kind,
                         token: self.current_token.clone(),
-                        source: self.source,
-                    });
+                    })
                 }
             }
         }
@@ -77,25 +73,25 @@ impl<'a> Parser<'a> {
         self.current_token = self.lexer.next_token();
     }
 
-    fn expect_token_kind(&self, kind: TokenKind) -> Result<(), ErrorKind> {
+    fn expect_token_kind(&self, kind: TokenKind) -> Result<(), ParserErrorInfo> {
         if self.current_token.kind == kind {
             Ok(())
         } else {
-            Err(ErrorKind::InvalidToken)
+            throw_error!(InvalidToken);
         }
     }
 
-    fn expect_and_consume_token(&mut self, kind: TokenKind) -> Result<(), ErrorKind> {
+    fn expect_and_consume_token(&mut self, kind: TokenKind) -> Result<(), ParserErrorInfo> {
         if self.current_token.kind == kind {
             self.advance();
             Ok(())
         } else {
-            Err(ErrorKind::InvalidToken)
+            throw_error!(InvalidToken);
         }
     }
 
     /// Parses a single statement (e.g., variable declarations, control flow statements, function definitions).
-    fn parse_statement(&mut self, include_basic_semi: bool) -> Result<Statement, ErrorKind> {
+    fn parse_statement(&mut self, include_basic_semi: bool) -> Result<Statement, ParserErrorInfo> {
         match self.current_token.kind {
             TokenKind::Keyword => match self.current_token.value.expect_keyword() {
                 Keyword::Var | Keyword::Let | Keyword::Const => {
@@ -168,7 +164,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses an expression (e.g., arithmetic operations, logical operations, or function calls).
-    fn parse_expression(&mut self) -> Result<Expression, ErrorKind> {
+    fn parse_expression(&mut self) -> Result<Expression, ParserErrorInfo> {
         let mut lhs = self.parse_primary_expression()?;
 
         loop {
@@ -231,7 +227,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses literal values, such as numbers, strings, booleans, null, arrays, objects, member expressions, and parenthesised expressions
-    fn parse_primary_expression(&mut self) -> Result<Expression, ErrorKind> {
+    fn parse_primary_expression(&mut self) -> Result<Expression, ParserErrorInfo> {
         match self.current_token.kind {
             TokenKind::String | TokenKind::Boolean | TokenKind::Number | TokenKind::Null => {
                 Ok(self.parse_literal()?.into())
@@ -301,7 +297,7 @@ impl<'a> Parser<'a> {
                     self.advance(); // Consume "this" token
                     Ok(expr.into())
                 }
-                _ => Err(ErrorKind::InvalidToken),
+                _ => throw_error!(InvalidToken),
             },
             TokenKind::RegexLiteral => {
                 let node = Node::new(self.current_token.start, self.current_token.end);
@@ -309,7 +305,7 @@ impl<'a> Parser<'a> {
                 self.advance(); // Consume Regex token
                 Ok(Literal::RegexLiteral(RegexLiteral { node, value }).into())
             }
-            _ => Err(ErrorKind::InvalidToken),
+            _ => throw_error!(InvalidToken),
         }
     }
 
@@ -328,7 +324,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a block of code, usually enclosed by `{}`.
-    fn parse_block_statement(&mut self) -> Result<BlockStatement, ErrorKind> {
+    fn parse_block_statement(&mut self) -> Result<BlockStatement, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.expect_and_consume_token(TokenKind::OpenBrace)?;
 
@@ -353,7 +349,7 @@ impl<'a> Parser<'a> {
     fn parse_variable_declaration(
         &mut self,
         include_semi: bool,
-    ) -> Result<VariableDeclaration, ErrorKind> {
+    ) -> Result<VariableDeclaration, ParserErrorInfo> {
         let start_pos = self.current_token.start;
 
         let kind = match self.current_token.value.expect_keyword() {
@@ -403,6 +399,14 @@ impl<'a> Parser<'a> {
 
             declarations.push(decl);
 
+            match self.current_token.kind {
+                TokenKind::Comma => break,
+                TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+                    Keyword::In | Keyword::Of => break,
+                    _ => throw_error!(InvalidToken),
+                },
+                _ => {}
+            }
             if self.current_token.kind != TokenKind::Comma {
                 break;
             }
@@ -425,7 +429,7 @@ impl<'a> Parser<'a> {
     fn parse_function_declaration(
         &mut self,
         is_async: bool,
-    ) -> Result<FunctionDeclaration, ErrorKind> {
+    ) -> Result<FunctionDeclaration, ParserErrorInfo> {
         let start_pos = self.current_token.start;
 
         self.advance(); // Consume "function" token
@@ -476,7 +480,7 @@ impl<'a> Parser<'a> {
     fn parse_function_expression(
         &mut self,
         is_async: bool,
-    ) -> Result<FunctionExpression, ErrorKind> {
+    ) -> Result<FunctionExpression, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         let mut is_generator = false;
         let mut return_type: Option<TypeAnnotation> = None;
@@ -519,7 +523,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_method(&mut self) -> Result<Method, ErrorKind> {
+    fn parse_method(&mut self) -> Result<Method, ParserErrorInfo> {
         let start_pos = self.current_token.start;
 
         let is_async = if self.current_token.is(TokenKind::Keyword)
@@ -573,7 +577,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_arrow_function(&mut self) -> Result<ArrowFunctionExpression, ErrorKind> {
+    fn parse_arrow_function(&mut self) -> Result<ArrowFunctionExpression, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         let parameters = self.parse_parameter_list()?;
 
@@ -594,7 +598,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_parameter_list(&mut self) -> Result<Vec<Parameter>, ErrorKind> {
+    fn parse_parameter_list(&mut self) -> Result<Vec<Parameter>, ParserErrorInfo> {
         self.expect_and_consume_token(TokenKind::OpenParen)?;
 
         let mut params: Vec<Parameter> = Vec::new();
@@ -640,7 +644,7 @@ impl<'a> Parser<'a> {
                     self.advance(); // Consume "," token
                 }
                 TokenKind::CloseParen => break,
-                _ => return Err(ErrorKind::InvalidToken),
+                _ => throw_error!(InvalidToken),
             }
         }
 
@@ -650,7 +654,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses an `if` statement, including `else if` and `else` clauses.
-    fn parse_if_statement(&mut self) -> Result<IfStatement, ErrorKind> {
+    fn parse_if_statement(&mut self) -> Result<IfStatement, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "if" keyword token
         self.expect_and_consume_token(TokenKind::OpenParen)?;
@@ -686,7 +690,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a `for` loop, including `for-in` and `for-of` loops.
-    fn parse_for_statement(&mut self) -> Result<Statement, ErrorKind> {
+    fn parse_for_statement(&mut self) -> Result<Statement, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "for" keyword token
         self.expect_and_consume_token(TokenKind::OpenParen)?;
@@ -697,20 +701,32 @@ impl<'a> Parser<'a> {
                 Keyword::Let | Keyword::Var | Keyword::Const => {
                     Some(self.parse_variable_declaration(false)?)
                 }
-                _ => return Err(ErrorKind::InvalidToken),
+                _ => throw_error!(InvalidToken),
             },
             // TokenKind::Identifier => Some(self.parse_update_expression()),
-            _ => return Err(ErrorKind::InvalidToken),
+            _ => throw_error!(InvalidToken),
         };
 
         if var_decl.as_ref().is_some_and(|v| v.declarations.len() == 0) {
             match self.current_token.kind {
                 TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-                    Keyword::In => todo!(),
+                    Keyword::In => {
+                        self.advance(); // Consume "in" token
+                        let expr = self.parse_expression()?;
+                        self.expect_and_consume_token(TokenKind::CloseParen)?;
+                        let body = self.parse_statement(true)?;
+                        Ok(ForInStatement {
+                            node: Node::new(0, 0),
+                            left: ForInVariable::VariableDeclaration(var_decl.unwrap()),
+                            right: expr,
+                            body,
+                        }
+                        .into())
+                    }
                     Keyword::Of => todo!(),
-                    _ => return Err(ErrorKind::InvalidToken),
+                    _ => throw_error!(InvalidToken),
                 },
-                _ => return Err(ErrorKind::InvalidToken),
+                _ => throw_error!(InvalidToken),
             }
         } else {
             self.expect_and_consume_token(TokenKind::SemiColon)?;
@@ -742,82 +758,10 @@ impl<'a> Parser<'a> {
             }
             .into())
         }
-
-        // panic!("{:?}", &var_decl);
-
-        // let variable_kind: Option<VariableKind> = match self.current_token.kind {
-        //     TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-        //         Keyword::Var | Keyword::Let | Keyword::Const => todo!(),
-        //         _ => return Err(ErrorKind::InvalidToken),
-        //     },
-        //     TokenKind::Identifier | TokenKind::SemiColon => None,
-        //     _ => return Err(ErrorKind::InvalidToken),
-        // };
-        //
-        // // let variable_node = Node::new(self.current_token.start, self.current_token.end);
-        // self.expect_token_kind(TokenKind::Identifier)?;
-        // let identifier = self.current_token.value.expect_identifier().to_owned();
-        // self.advance();
-        //
-        // match self.current_token.kind {
-        //     TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-        //         Keyword::In => {
-        //             self.advance(); // Consume "in" token
-        //             let object = self.parse_expression()?;
-        //             self.expect_and_consume_token(TokenKind::CloseParen)?;
-        //             let body = self.parse_statement(false)?;
-        //
-        //             let variable: ForInVariable = match variable_kind {
-        //                 Some(_kind) => ForInVariable::VariableDeclaration(VariableDeclaration {
-        //                     node: todo!(),
-        //                     declarations: todo!(),
-        //                     kind: _kind,
-        //                 }),
-        //                 None => ForInVariable::Identifier(Identifier {
-        //                     node: variable_node,
-        //                     name: identifier,
-        //                 }),
-        //             };
-        //
-        //             Ok(ForInStatement {
-        //                 node: Node::new(start_pos, body.node().end),
-        //                 variable,
-        //                 object,
-        //                 body,
-        //             }
-        //             .into())
-        //         }
-        //         Keyword::Of => todo!("for..of"),
-        //         _ => return Err(ErrorKind::InvalidToken),
-        //     },
-        //     TokenKind::Equals => todo!("Initializer"),
-        //     TokenKind::SemiColon => todo!("Semicolon"),
-        //     _ => return Err(ErrorKind::InvalidToken),
-        // }
-
-        // self.expect_and_consume_token(TokenKind::SemiColon)?;
-
-        // let condition = self.parse_expression()?;
-
-        // self.expect_and_consume_token(TokenKind::SemiColon)?;
-
-        // let update = self.parse_statement(false)?;
-
-        // self.expect_and_consume_token(TokenKind::CloseParen)?;
-
-        // let body = self.parse_statement(false)?;
-
-        // Ok(ForStatement {
-        //     node: Node::new(start_pos, body.node().end),
-        //     initializer,
-        //     condition,
-        //     update,
-        //     body,
-        // })
     }
 
     /// Parses `while` loop
-    fn parse_while_statement(&mut self) -> Result<WhileStatement, ErrorKind> {
+    fn parse_while_statement(&mut self) -> Result<WhileStatement, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "while" keyword token
 
@@ -837,7 +781,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a `return` statement.
-    fn parse_return_statement(&mut self) -> Result<ReturnStatement, ErrorKind> {
+    fn parse_return_statement(&mut self) -> Result<ReturnStatement, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "return" token
 
@@ -859,11 +803,11 @@ impl<'a> Parser<'a> {
     fn parse_assignment_expression(
         &mut self,
         lhs: Expression,
-    ) -> Result<AssignmentExpression, ErrorKind> {
+    ) -> Result<AssignmentExpression, ParserErrorInfo> {
         let operator: Operator = if self.current_token.kind.is_assignment_operator() {
             Ok(self.current_token.kind.as_operator().unwrap())
         } else {
-            Err(ErrorKind::InternalError)
+            throw_error!(InternalError)
         }?;
 
         self.advance(); // Consume operator token
@@ -879,7 +823,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses an array literal, such as [42]
-    fn parse_array_literal(&mut self) -> Result<ArrayExpression, ErrorKind> {
+    fn parse_array_literal(&mut self) -> Result<ArrayExpression, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "[" token
 
@@ -896,7 +840,7 @@ impl<'a> Parser<'a> {
             match self.current_token.kind {
                 TokenKind::Comma => self.advance(),
                 TokenKind::CloseBracket => break,
-                _ => return Err(ErrorKind::InvalidToken),
+                _ => throw_error!(InvalidToken),
             }
         }
 
@@ -911,7 +855,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses an object literal, such as { a: 4 }
-    fn parse_object_literal(&mut self) -> Result<ObjectExpression, ErrorKind> {
+    fn parse_object_literal(&mut self) -> Result<ObjectExpression, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "{" token
 
@@ -974,7 +918,7 @@ impl<'a> Parser<'a> {
                         let value = self.parse_expression()?;
                         ObjectItem::KV(KV { key, value })
                     }
-                    _ => return Err(ErrorKind::InvalidToken),
+                    _ => throw_error!(InvalidToken),
                 },
                 TokenKind::OpenBracket => {
                     let start_pos = self.current_token.start;
@@ -995,7 +939,7 @@ impl<'a> Parser<'a> {
                     ObjectItem::KV(KV { key, value })
                 }
                 TokenKind::Dot => todo!("Spread inside object"),
-                _ => return Err(ErrorKind::InvalidToken),
+                _ => throw_error!(InvalidToken),
             };
 
             items.push(item);
@@ -1003,7 +947,7 @@ impl<'a> Parser<'a> {
             match self.current_token.kind {
                 TokenKind::CloseBrace => break,
                 TokenKind::Comma => self.advance(),
-                _ => return Err(ErrorKind::InvalidToken),
+                _ => throw_error!(InvalidToken),
             };
         }
 
@@ -1022,7 +966,7 @@ impl<'a> Parser<'a> {
         &mut self,
         left: Option<Expression>,
         precedence: u8,
-    ) -> Result<BinaryExpression, ErrorKind> {
+    ) -> Result<BinaryExpression, ParserErrorInfo> {
         let mut left = match left {
             Some(expr) => expr,
             None => self.parse_primary_expression()?,
@@ -1059,12 +1003,15 @@ impl<'a> Parser<'a> {
         if let Expression::BinaryExpression(bin_exp) = left {
             Ok(*bin_exp)
         } else {
-            Err(ErrorKind::InvalidToken) // Only happens if we never enter the while loop
+            throw_error!(InvalidToken) // Only happens if we never enter the while loop
         }
     }
 
     /// Parses a function or method call
-    fn parse_call_expression(&mut self, callee: Expression) -> Result<CallExpression, ErrorKind> {
+    fn parse_call_expression(
+        &mut self,
+        callee: Expression,
+    ) -> Result<CallExpression, ParserErrorInfo> {
         self.expect_and_consume_token(TokenKind::OpenParen)?;
 
         let mut arguments: Vec<Expression> = Vec::new();
@@ -1080,7 +1027,7 @@ impl<'a> Parser<'a> {
             match self.current_token.kind {
                 TokenKind::Comma => self.advance(), // Consume "," token
                 TokenKind::CloseParen => break,
-                _ => return Err(ErrorKind::InvalidToken),
+                _ => throw_error!(InvalidToken),
             }
         }
 
@@ -1098,7 +1045,7 @@ impl<'a> Parser<'a> {
     fn parse_member_expression(
         &mut self,
         object: Expression,
-    ) -> Result<MemberExpression, ErrorKind> {
+    ) -> Result<MemberExpression, ParserErrorInfo> {
         let property: MemberProperty;
         let end_pos: usize;
 
@@ -1140,7 +1087,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses literal values (e.g., strings, numbers, booleans).
-    fn parse_literal(&mut self) -> Result<Literal, ErrorKind> {
+    fn parse_literal(&mut self) -> Result<Literal, ParserErrorInfo> {
         match self.current_token.kind {
             TokenKind::String => {
                 let s = StringLiteral {
@@ -1177,7 +1124,7 @@ impl<'a> Parser<'a> {
                 self.advance(); // Consume Null token
                 Ok(Literal::NullLiteral(n))
             }
-            _ => Err(ErrorKind::InvalidToken),
+            _ => throw_error!(InvalidToken),
         }
     }
 
@@ -1186,7 +1133,7 @@ impl<'a> Parser<'a> {
         &mut self,
         is_const: bool,
         is_declare: bool,
-    ) -> Result<EnumStatement, ErrorKind> {
+    ) -> Result<EnumStatement, ParserErrorInfo> {
         let start_pos = self.current_token.start;
 
         if self.current_token.value.expect_keyword() != Keyword::Enum {
@@ -1236,7 +1183,7 @@ impl<'a> Parser<'a> {
             match self.current_token.kind {
                 TokenKind::CloseBrace => break,
                 TokenKind::Comma => self.advance(), // Consume "," token
-                _ => return Err(ErrorKind::InvalidToken),
+                _ => throw_error!(InvalidToken),
             };
         }
 
@@ -1252,7 +1199,9 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_type_parameter_declaration(&mut self) -> Result<TypeParameterDeclaration, ErrorKind> {
+    fn parse_type_parameter_declaration(
+        &mut self,
+    ) -> Result<TypeParameterDeclaration, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.expect_and_consume_token(TokenKind::LessThan)?;
 
@@ -1289,7 +1238,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses type annotations specific to TypeScript (e.g., `: string`, `: number`).
-    fn parse_type_annotation(&mut self) -> Result<TypeAnnotation, ErrorKind> {
+    fn parse_type_annotation(&mut self) -> Result<TypeAnnotation, ParserErrorInfo> {
         let colon_start = self.current_token.start;
         self.expect_and_consume_token(TokenKind::Colon)?;
         let t = self.parse_type_value()?;
@@ -1299,17 +1248,15 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_type_value(&mut self) -> Result<AstType, ErrorKind> {
+    fn parse_type_value(&mut self) -> Result<AstType, ParserErrorInfo> {
         let start_pos = self.current_token.start;
 
         match self.current_token.kind {
             TokenKind::Keyword => {
-                let kw = self
-                    .current_token
-                    .value
-                    .expect_keyword()
-                    .as_type_keyword()
-                    .ok_or(ErrorKind::InvalidToken)?;
+                let Some(kw) = self.current_token.value.expect_keyword().as_type_keyword() else {
+                    throw_error!(InvalidToken);
+                };
+
                 let t = KeywordType {
                     node: Node::new(start_pos, self.current_token.end),
                     kind: kw,
@@ -1385,11 +1332,11 @@ impl<'a> Parser<'a> {
                     .into()),
                 }
             }
-            _ => Err(ErrorKind::InvalidToken),
+            _ => throw_error!(InvalidToken),
         }
     }
 
-    fn parse_typeof_expression(&mut self) -> Result<TypeofExpression, ErrorKind> {
+    fn parse_typeof_expression(&mut self) -> Result<TypeofExpression, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "typeof" token
         let expr = self.parse_expression()?;
@@ -1399,7 +1346,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_new_expression(&mut self) -> Result<NewExpression, ErrorKind> {
+    fn parse_new_expression(&mut self) -> Result<NewExpression, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "new" token
         let expr = self.parse_expression()?;

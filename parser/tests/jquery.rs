@@ -19,7 +19,7 @@ fn parse_jquery() {
     let result = parser.parse();
 
     if let Err(err) = result {
-        err.print();
+        err.print(&source_code);
         panic!();
     }
     // assert!(result.is_ok());

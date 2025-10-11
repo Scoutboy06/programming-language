@@ -1,16 +1,22 @@
-use crate::parser::ErrorKind;
 use ariadne::{ColorGenerator, Fmt, Label, Report, ReportKind, Source};
 use lexer::Token;
 
+// A lightweight error that is used to construct the actual ParserError
 #[derive(Debug, PartialEq)]
-pub struct ParserError<'a> {
+pub struct ParserErrorInfo {
     pub kind: ErrorKind,
-    pub token: Token,
-    pub source: &'a str,
+    pub id: String,
 }
 
-impl<'a> ParserError<'a> {
-    pub fn print(&self) {
+/// The actual error returned by the parser
+#[derive(Debug, PartialEq)]
+pub struct ParserError {
+    pub kind: ErrorKind,
+    pub token: Token,
+    pub id: String,
+}
+impl ParserError {
+    pub fn print(&self, source: &str) {
         let mut colors = ColorGenerator::new();
 
         let a = colors.next();
@@ -22,17 +28,23 @@ impl<'a> ParserError<'a> {
 
         Report::build(
             ReportKind::Error,
-            ("source", self.token.start..self.token.end),
+            (&self.id, self.token.start..self.token.end),
         )
         .with_code(3) // TODO: Errors should have a unique code
         .with_message(msg)
         .with_label(
-            Label::new(("source", self.token.start..self.token.end))
+            Label::new((&self.id, self.token.start..self.token.end))
                 .with_message(msg.fg(a))
                 .with_color(a),
         )
         .finish()
-        .print(("source", Source::from(self.source)))
+        .eprint((&self.id, Source::from(&source)))
         .unwrap();
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ErrorKind {
+    InternalError,
+    InvalidToken,
 }

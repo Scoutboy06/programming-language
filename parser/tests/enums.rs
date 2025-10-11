@@ -47,6 +47,11 @@ fn enum_statement() {
         .into()],
     };
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, Ok(expected));
 }
 
@@ -101,6 +106,11 @@ fn enum_with_initialized_values() {
         .into()],
     };
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, Ok(expected));
 }
 
@@ -142,6 +152,11 @@ fn const_enum_statement() {
         }
         .into()],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }

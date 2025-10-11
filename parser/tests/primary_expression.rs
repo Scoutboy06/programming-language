@@ -47,6 +47,11 @@ fn assignment_number_literal() {
         .into()],
     };
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, Ok(expected));
 }
 
@@ -84,6 +89,11 @@ fn assignment_paren_literal() {
         }
         .into()],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }
@@ -140,6 +150,11 @@ fn array_literal() {
         .into()],
     };
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, Ok(expected));
 }
 
@@ -192,6 +207,11 @@ fn nested_array() {
         }
         .into()],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }
@@ -267,6 +287,11 @@ fn object_literal() {
         .into()],
     };
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, Ok(expected));
 }
 
@@ -312,6 +337,11 @@ fn object_shorthand_property() {
         }
         .into()],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }
@@ -400,6 +430,11 @@ fn object_computed_property() {
         }
         .into()],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }
@@ -496,6 +531,11 @@ fn object_method() {
         }
         .into()],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }

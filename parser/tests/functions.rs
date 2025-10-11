@@ -52,6 +52,11 @@ fn function_call() {
         .into()],
     });
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, expected);
 }
 
@@ -92,6 +97,11 @@ fn member_expression_function_call() {
         }
         .into()],
     });
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, expected);
 }
@@ -183,6 +193,11 @@ fn function_declaration() {
         }
         .into()],
     };
+
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
 
     assert_eq!(result, Ok(expected));
 }
@@ -288,6 +303,11 @@ fn function_expression() {
         .into()],
     };
 
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
     assert_eq!(result, Ok(expected));
 }
 
@@ -382,5 +402,10 @@ fn arrow_function() {
         .into()],
     };
 
-    assert_eq!(result, Ok(expected));
+    if let Err(err) = result {
+        err.print(&code);
+        panic!();
+    }
+
+    assert_eq!(result.unwrap(), expected);
 }
