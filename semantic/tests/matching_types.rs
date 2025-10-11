@@ -19,7 +19,10 @@ fn string_number_mismatch() {
 fn number_number_match() {
     let code = "let foo: string = 123;";
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 1);
 }
@@ -28,7 +31,10 @@ fn number_number_match() {
 fn string_string_match() {
     let code = "let foo: string = \"abc\";";
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 0);
 }
@@ -37,7 +43,10 @@ fn string_string_match() {
 fn boolean_boolean_match() {
     let code = "let foo: boolean = true;";
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 0);
 }
@@ -46,7 +55,10 @@ fn boolean_boolean_match() {
 fn boolean_string_mismatch() {
     let code = "let foo: boolean = \"abc\";";
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 1);
 }
@@ -55,7 +67,10 @@ fn boolean_string_mismatch() {
 fn string_boolean_mismatch() {
     let code = "let foo: string = true;";
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 1);
 }
@@ -84,7 +99,10 @@ fn variable_reference_type_mismatch() {
                         let fizz = "abc"
                         let buzz: number = fizz"#;
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert!(errors.len() == 2);
 }
@@ -93,7 +111,10 @@ fn variable_reference_type_mismatch() {
 fn record_string_number_match() {
     let code = r#"let obj: Record<string, number> = { days: 12, months: 2 }"#;
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors, []);
 }
@@ -102,7 +123,10 @@ fn record_string_number_match() {
 fn record_string_boolean_mismatch() {
     let code = r#"let obj: Record<string, boolean> = { days: 12, months: 2 }"#;
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 2);
 }
@@ -111,7 +135,10 @@ fn record_string_boolean_mismatch() {
 fn array_string_match() {
     let code = r#"let arr: number[] = [123, 456, 789];"#;
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors, []);
 }
@@ -120,7 +147,10 @@ fn array_string_match() {
 fn array_string_mismatch() {
     let code = r#"let arr: string[] = ["abc", 123, "def", 456];"#;
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 2);
 }
@@ -133,7 +163,10 @@ fn function_statement_matching_return_type_number() {
     }
     "#;
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 0);
 }
@@ -146,7 +179,10 @@ fn function_statement_mismatched_return_type_number() {
     }
     "#;
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 1);
 }
@@ -159,7 +195,10 @@ fn function_statement_adding_same_types() {
     }
     "#;
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 0);
 }
@@ -172,7 +211,10 @@ fn return_binary_operation_type_mismatch() {
     }
     "#;
     let mut parser = Parser::new(&code);
-    let ast = parser.parse().unwrap();
+    let ast = parser.parse().unwrap_or_else(|err| {
+        err.print(&code);
+        panic!();
+    });
     let errors = analyze(&ast);
     assert_eq!(errors.len(), 1);
 }
