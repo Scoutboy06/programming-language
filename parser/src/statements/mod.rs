@@ -1,4 +1,5 @@
 pub mod block_statement;
+pub mod continue_statement;
 pub mod enum_statement;
 pub mod expression_statement;
 pub mod for_statement;
@@ -12,6 +13,7 @@ pub mod variable_declaration;
 pub mod while_statement;
 
 pub use block_statement::*;
+pub use continue_statement::*;
 pub use enum_statement::*;
 pub use expression_statement::*;
 pub use for_statement::*;

@@ -1,7 +1,8 @@
 use crate::nodes::Node;
 use crate::statements::{
-    BlockStatement, EnumStatement, ExpressionStatement, ForStatement, FunctionDeclaration,
-    IfStatement, ReturnStatement, Shebang, ThrowStatement, VariableDeclaration, WhileStatement,
+    BlockStatement, ContinueStatement, EnumStatement, ExpressionStatement, ForStatement,
+    FunctionDeclaration, IfStatement, ReturnStatement, Shebang, ThrowStatement,
+    VariableDeclaration, WhileStatement,
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -19,7 +20,7 @@ pub enum Statement {
     VariableDeclaration(Box<VariableDeclaration>),
     ReturnStatement(Box<ReturnStatement>),
     BreakStatement(Box<()>),
-    ContinueStatement(Box<()>),
+    ContinueStatement(Box<ContinueStatement>),
     ThrowStatement(Box<ThrowStatement>),
     TryStatement(Box<()>),
     DebuggerStatement(Box<()>),
@@ -49,6 +50,7 @@ impl Statement {
             Self::Shebang(s) => &s.node,
             Self::ThrowStatement(s) => &s.node,
             Self::ForStatement(s) => &s.node(),
+            Self::ContinueStatement(s) => &s.node,
             _ => todo!("Statement::node()"),
         }
     }

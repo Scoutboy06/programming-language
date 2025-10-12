@@ -14,9 +14,10 @@ use crate::expressions::{
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
-    BlockStatement, EnumMember, EnumStatement, ExpressionStatement, ForClassic, ForHead, ForIn,
-    ForLeft, ForOf, ForStatement, FunctionDeclaration, IfStatement, Parameter, ReturnStatement,
-    Statement, ThrowStatement, VariableDeclaration, VariableDeclarator, WhileStatement,
+    BlockStatement, ContinueStatement, EnumMember, EnumStatement, ExpressionStatement, ForClassic,
+    ForHead, ForIn, ForLeft, ForOf, ForStatement, FunctionDeclaration, IfStatement, Parameter,
+    ReturnStatement, Statement, ThrowStatement, VariableDeclaration, VariableDeclarator,
+    WhileStatement,
 };
 use crate::utils::parser_error::{ParserError, ParserErrorInfo};
 use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
@@ -141,7 +142,34 @@ impl<'a> Parser<'a> {
                     }
                     .into())
                 }
-                _ => throw_error!(Todo),
+                Keyword::Continue => {
+                    let start_pos = self.current_token.start;
+                    let mut end_pos = self.current_token.end;
+                    self.advance(); // Consume "continue" token;
+
+                    let id = if self.current_token.is(TokenKind::Identifier) {
+                        end_pos = self.current_token.end;
+                        Some(Identifier {
+                            node: Node::new(self.current_token.start, self.current_token.end),
+                            name: self.current_token.value.expect_identifier().to_owned(),
+                        })
+                    } else {
+                        None
+                    };
+
+                    if include_basic_semi && self.current_token.is(TokenKind::SemiColon) {
+                        end_pos = self.current_token.end;
+                        self.advance(); // Consume ';' token
+                    }
+
+                    Ok(ContinueStatement {
+                        node: Node::new(start_pos, end_pos),
+                        id,
+                    }
+                    .into())
+                }
+                Keyword::Break => throw_error!(Todo),
+                _ => throw_error!(InvalidToken),
             },
             TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
             _ => {
