@@ -77,11 +77,12 @@ fn string_boolean_mismatch() {
 
 #[test]
 fn variable_reference_type_match() {
-    let code = r#"let foo = "abc"
-                        let bar: string = foo
+    let code = r#"
+        let foo = "abc"
+        let bar: string = foo
                         
-                        let n: number = 123
-                        let m: number = n"#;
+        let n: number = 123
+        let m: number = n"#;
     let mut parser = Parser::new(&code);
     let ast = parser.parse().unwrap_or_else(|err| {
         err.print(&code);

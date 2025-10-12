@@ -44,6 +44,8 @@ pub enum Operator {
     BitwiseAndEquals, // &=
     BitwiseOrEquals,  // |=
     BitwiseXorEquals, // ^=
+
+    In, // in
 }
 
 impl std::fmt::Display for Operator {
@@ -93,6 +95,8 @@ impl std::fmt::Display for Operator {
             Self::BitwiseAndEquals => "&=",
             Self::BitwiseOrEquals => "|=",
             Self::BitwiseXorEquals => "^=",
+
+            Self::In => "in",
         };
 
         write!(f, "{}", s)

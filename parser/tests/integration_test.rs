@@ -7,7 +7,7 @@ use parser::{
     },
     nodes::{program::Program, Node},
     statements::{
-        BlockStatement, ExpressionStatement, ForStatement, VariableDeclaration, VariableDeclarator,
+        BlockStatement, ExpressionStatement, ForClassic, VariableDeclaration, VariableDeclarator,
         WhileStatement,
     },
     Parser,
@@ -307,9 +307,9 @@ fn for_loop() {
     let expected = Program {
         node: Node::new(0, code.len()),
         shebang: None,
-        body: vec![ForStatement {
+        body: vec![ForClassic {
             node: Node::new(0, code.len()),
-            initializer: Some(
+            init: Some(
                 VariableDeclaration {
                     node: code.node("let i = 0", 0),
                     declarations: vec![VariableDeclarator {
@@ -332,7 +332,7 @@ fn for_loop() {
                 }
                 .into(),
             ),
-            condition: Some(
+            test: Some(
                 BinaryExpression {
                     node: code.node("i < code.length", 0),
                     left: Identifier {
@@ -359,19 +359,15 @@ fn for_loop() {
                 .into(),
             ),
             update: Some(
-                ExpressionStatement {
+                UpdateExpression {
                     node: code.node("i++", 0),
-                    expression: UpdateExpression {
-                        node: code.node("i++", 0),
-                        argument: Identifier {
-                            node: code.node("i", 2),
-                            name: "i".into(),
-                        }
-                        .into(),
-                        operator: UpdateOperator::Increment,
-                        prefix: false,
+                    argument: Identifier {
+                        node: code.node("i", 2),
+                        name: "i".into(),
                     }
                     .into(),
+                    operator: UpdateOperator::Increment,
+                    prefix: false,
                 }
                 .into(),
             ),

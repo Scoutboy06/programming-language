@@ -5,6 +5,7 @@ use lexer::Token;
 #[derive(Debug, PartialEq)]
 pub struct ParserErrorInfo {
     pub kind: ErrorKind,
+    #[cfg(debug_assertions)]
     pub id: String,
 }
 
@@ -22,6 +23,7 @@ impl ParserError {
         let a = colors.next();
 
         let msg = match self.kind {
+            ErrorKind::Todo => "TODO: This has not yet been implemented",
             ErrorKind::InternalError => "Internal error",
             ErrorKind::InvalidToken => "Invalid token",
         };
@@ -45,6 +47,7 @@ impl ParserError {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorKind {
+    Todo,
     InternalError,
     InvalidToken,
 }

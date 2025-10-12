@@ -6,8 +6,7 @@ use parser::{
     },
     nodes::{program::Program, Node},
     statements::{
-        BlockStatement, ExpressionStatement, ForInStatement, ForOfStatement, ForStatement,
-        VariableDeclaration, VariableDeclarator,
+        BlockStatement, ForClassic, ForIn, ForLeft, ForOf, VariableDeclaration, VariableDeclarator,
     },
     Parser,
 };
@@ -24,9 +23,9 @@ fn for_loop() {
     let expected = Ok(Program {
         node: Node::new(0, code.len()),
         shebang: None,
-        body: vec![ForStatement {
+        body: vec![ForClassic {
             node: code.node(&code, 0),
-            initializer: Some(
+            init: Some(
                 VariableDeclaration {
                     node: code.node("let i = 0", 0),
                     declarations: vec![VariableDeclarator {
@@ -48,7 +47,7 @@ fn for_loop() {
                 }
                 .into(),
             ),
-            condition: Some(
+            test: Some(
                 BinaryExpression {
                     node: code.node("i < 10", 0),
                     operator: Operator::LessThan,
@@ -66,19 +65,15 @@ fn for_loop() {
                 .into(),
             ),
             update: Some(
-                ExpressionStatement {
+                UpdateExpression {
                     node: code.node("i++", 0),
-                    expression: UpdateExpression {
-                        node: code.node("i++", 0),
-                        operator: UpdateOperator::Increment,
-                        argument: Identifier {
-                            node: code.node("i", 2),
-                            name: "i".into(),
-                        }
-                        .into(),
-                        prefix: false,
+                    operator: UpdateOperator::Increment,
+                    argument: Identifier {
+                        node: code.node("i", 2),
+                        name: "i".into(),
                     }
                     .into(),
+                    prefix: false,
                 }
                 .into(),
             ),
@@ -108,10 +103,10 @@ fn for_loop_without_initializer() {
     let expected = Ok(Program {
         node: Node::new(0, code.len()),
         shebang: None,
-        body: vec![ForStatement {
+        body: vec![ForClassic {
             node: code.node(&code, 0),
-            initializer: None,
-            condition: Some(
+            init: None,
+            test: Some(
                 BinaryExpression {
                     node: code.node("i < 10", 0),
                     operator: Operator::LessThan,
@@ -129,19 +124,15 @@ fn for_loop_without_initializer() {
                 .into(),
             ),
             update: Some(
-                ExpressionStatement {
+                UpdateExpression {
                     node: code.node("i++", 0),
-                    expression: UpdateExpression {
-                        node: code.node("i++", 0),
-                        operator: UpdateOperator::Increment,
-                        argument: Identifier {
-                            node: code.node("i", 1),
-                            name: "i".into(),
-                        }
-                        .into(),
-                        prefix: false,
+                    operator: UpdateOperator::Increment,
+                    argument: Identifier {
+                        node: code.node("i", 1),
+                        name: "i".into(),
                     }
                     .into(),
+                    prefix: false,
                 }
                 .into(),
             ),
@@ -171,9 +162,9 @@ fn for_loop_without_test() {
     let expected = Ok(Program {
         node: Node::new(0, code.len()),
         shebang: None,
-        body: vec![ForStatement {
+        body: vec![ForClassic {
             node: code.node(&code, 0),
-            initializer: Some(
+            init: Some(
                 VariableDeclaration {
                     node: code.node("let i = 0", 0),
                     declarations: vec![VariableDeclarator {
@@ -195,21 +186,17 @@ fn for_loop_without_test() {
                 }
                 .into(),
             ),
-            condition: None,
+            test: None,
             update: Some(
-                ExpressionStatement {
+                UpdateExpression {
                     node: code.node("i++", 0),
-                    expression: UpdateExpression {
-                        node: code.node("i++", 0),
-                        operator: UpdateOperator::Increment,
-                        argument: Identifier {
-                            node: code.node("i", 1),
-                            name: "i".into(),
-                        }
-                        .into(),
-                        prefix: false,
+                    operator: UpdateOperator::Increment,
+                    argument: Identifier {
+                        node: code.node("i", 1),
+                        name: "i".into(),
                     }
                     .into(),
+                    prefix: false,
                 }
                 .into(),
             ),
@@ -239,9 +226,9 @@ fn for_loop_without_update() {
     let expected = Ok(Program {
         node: Node::new(0, code.len()),
         shebang: None,
-        body: vec![ForStatement {
+        body: vec![ForClassic {
             node: code.node(&code, 0),
-            initializer: Some(
+            init: Some(
                 VariableDeclaration {
                     node: code.node("let i = 0", 0),
                     declarations: vec![VariableDeclarator {
@@ -263,7 +250,7 @@ fn for_loop_without_update() {
                 }
                 .into(),
             ),
-            condition: Some(
+            test: Some(
                 BinaryExpression {
                     node: code.node("i < 10", 0),
                     operator: Operator::LessThan,
@@ -307,13 +294,24 @@ fn for_in_loop() {
     let expected = Ok(Program {
         node: Node::new(0, code.len()),
         shebang: None,
-        body: vec![ForInStatement {
+        body: vec![ForIn {
             node: code.node(&code, 0),
-            left: Identifier {
-                node: code.node("let key", 0),
-                name: "key".into(),
-            }
-            .into(),
+            left: ForLeft::VariableDeclaration(
+                VariableDeclaration {
+                    node: code.node("let key", 0),
+                    declarations: vec![VariableDeclarator {
+                        node: code.node("key", 0),
+                        type_annotation: None,
+                        init: None,
+                        id: Identifier {
+                            node: code.node("key", 0),
+                            name: "key".into(),
+                        },
+                    }],
+                    kind: VariableKind::Let,
+                }
+                .into(),
+            ),
             right: Identifier {
                 node: code.node("obj", 0),
                 name: "obj".into(),
@@ -345,13 +343,21 @@ fn for_of_loop() {
     let expected = Ok(Program {
         node: Node::new(0, code.len()),
         shebang: None,
-        body: vec![ForOfStatement {
+        body: vec![ForOf {
             node: code.node(&code, 0),
-            left: Identifier {
+            left: ForLeft::VariableDeclaration(VariableDeclaration {
                 node: code.node("let key", 0),
-                name: "key".into(),
-            }
-            .into(),
+                declarations: vec![VariableDeclarator {
+                    node: code.node("key", 0),
+                    type_annotation: None,
+                    init: None,
+                    id: Identifier {
+                        node: code.node("key", 0),
+                        name: "key".into(),
+                    },
+                }],
+                kind: VariableKind::Let,
+            }),
             right: Identifier {
                 node: code.node("obj", 0),
                 name: "obj".into(),

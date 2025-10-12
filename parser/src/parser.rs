@@ -14,9 +14,9 @@ use crate::expressions::{
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
-    BlockStatement, EnumMember, EnumStatement, ExpressionStatement, ForInStatement, ForInVariable,
-    ForStatement, FunctionDeclaration, IfStatement, Parameter, ReturnStatement, Statement,
-    ThrowStatement, VariableDeclaration, VariableDeclarator, WhileStatement,
+    BlockStatement, EnumMember, EnumStatement, ExpressionStatement, ForClassic, ForHead, ForIn,
+    ForLeft, ForOf, ForStatement, FunctionDeclaration, IfStatement, Parameter, ReturnStatement,
+    Statement, ThrowStatement, VariableDeclaration, VariableDeclarator, WhileStatement,
 };
 use crate::utils::parser_error::{ParserError, ParserErrorInfo};
 use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
@@ -141,7 +141,7 @@ impl<'a> Parser<'a> {
                     }
                     .into())
                 }
-                _ => todo!(),
+                _ => throw_error!(Todo),
             },
             TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
             _ => {
@@ -361,10 +361,11 @@ impl<'a> Parser<'a> {
         self.advance();
 
         let mut declarations = Vec::new();
-        let mut end_pos = start_pos;
+        let mut end_pos;
 
         loop {
             let start = self.current_token.start;
+            end_pos = self.current_token.end;
 
             self.expect_token_kind(TokenKind::Identifier)?;
             let identifier = Identifier {
@@ -399,14 +400,6 @@ impl<'a> Parser<'a> {
 
             declarations.push(decl);
 
-            match self.current_token.kind {
-                TokenKind::Comma => break,
-                TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-                    Keyword::In | Keyword::Of => break,
-                    _ => throw_error!(InvalidToken),
-                },
-                _ => {}
-            }
             if self.current_token.kind != TokenKind::Comma {
                 break;
             }
@@ -690,70 +683,122 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a `for` loop, including `for-in` and `for-of` loops.
-    fn parse_for_statement(&mut self) -> Result<Statement, ParserErrorInfo> {
+    fn parse_for_statement(&mut self) -> Result<ForStatement, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "for" keyword token
         self.expect_and_consume_token(TokenKind::OpenParen)?;
 
-        let var_decl: Option<VariableDeclaration> = match self.current_token.kind {
-            TokenKind::SemiColon => None,
+        let head = self.parse_for_head()?;
+
+        match self.current_token.kind {
+            TokenKind::SemiColon => Ok(self.parse_for_classic(start_pos, head)?.into()),
             TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-                Keyword::Let | Keyword::Var | Keyword::Const => {
-                    Some(self.parse_variable_declaration(false)?)
+                Keyword::In => {
+                    self.advance(); // Consume "in" token
+                    Ok(self.parse_for_in_or_of(start_pos, head, false)?.into())
+                }
+                Keyword::Of => {
+                    self.advance(); // Consume "of" token
+                    Ok(self.parse_for_in_or_of(start_pos, head, true)?.into())
                 }
                 _ => throw_error!(InvalidToken),
             },
-            // TokenKind::Identifier => Some(self.parse_update_expression()),
             _ => throw_error!(InvalidToken),
+        }
+    }
+
+    fn parse_for_head(&mut self) -> Result<ForHead, ParserErrorInfo> {
+        if self.current_token.is(TokenKind::SemiColon) {
+            return Ok(ForHead::Empty);
+        }
+
+        if self.current_token.is(TokenKind::Keyword) {
+            let kw = self.current_token.value.expect_keyword();
+            if matches!(kw, Keyword::Var | Keyword::Let | Keyword::Const) {
+                let decl = self.parse_variable_declaration(false)?;
+                return Ok(ForHead::VarDecl(decl));
+            }
+        }
+
+        let expr = self.parse_expression()?;
+        Ok(ForHead::Expr(expr))
+    }
+
+    fn parse_for_classic(
+        &mut self,
+        start_pos: usize,
+        head: ForHead,
+    ) -> Result<ForClassic, ParserErrorInfo> {
+        let init: Option<Statement> = match head {
+            ForHead::Empty => None,
+            ForHead::VarDecl(decl) => Some(decl.into()),
+            ForHead::Expr(expr) => Some(Statement::ExpressionStatement(Box::new(
+                ExpressionStatement {
+                    node: Node::new(start_pos, expr.node().end),
+                    expression: expr,
+                },
+            ))),
         };
 
-        if var_decl.as_ref().is_some_and(|v| v.declarations.len() == 0) {
-            match self.current_token.kind {
-                TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-                    Keyword::In => {
-                        self.advance(); // Consume "in" token
-                        let expr = self.parse_expression()?;
-                        self.expect_and_consume_token(TokenKind::CloseParen)?;
-                        let body = self.parse_statement(true)?;
-                        Ok(ForInStatement {
-                            node: Node::new(0, 0),
-                            left: ForInVariable::VariableDeclaration(var_decl.unwrap()),
-                            right: expr,
-                            body,
-                        }
-                        .into())
-                    }
-                    Keyword::Of => todo!(),
-                    _ => throw_error!(InvalidToken),
-                },
-                _ => throw_error!(InvalidToken),
-            }
+        self.expect_and_consume_token(TokenKind::SemiColon)?;
+
+        let test: Option<Expression> = if !self.current_token.is(TokenKind::SemiColon) {
+            Some(self.parse_expression()?.into())
         } else {
-            self.expect_and_consume_token(TokenKind::SemiColon)?;
+            None
+        };
 
-            let condition = if self.current_token.is(TokenKind::SemiColon) {
-                None
-            } else {
-                Some(self.parse_expression()?)
-            };
+        self.expect_and_consume_token(TokenKind::SemiColon)?;
 
-            self.expect_and_consume_token(TokenKind::SemiColon)?;
+        let update: Option<Expression> = if !self.current_token.is(TokenKind::CloseParen) {
+            Some(self.parse_expression()?.into())
+        } else {
+            None
+        };
 
-            let update = if self.current_token.is(TokenKind::CloseParen) {
-                None
-            } else {
-                Some(self.parse_statement(false)?)
-            };
+        self.expect_and_consume_token(TokenKind::CloseParen)?;
+        let body = self.parse_statement(true)?;
 
-            self.expect_and_consume_token(TokenKind::CloseParen)?;
+        Ok(ForClassic {
+            node: Node::new(start_pos, body.node().end),
+            init,
+            test,
+            update,
+            body,
+        }
+        .into())
+    }
 
-            let body = self.parse_statement(false)?;
+    fn parse_for_in_or_of(
+        &mut self,
+        start: usize,
+        head: ForHead,
+        is_of: bool,
+    ) -> Result<ForStatement, ParserErrorInfo> {
+        let right = self.parse_expression()?;
+        self.expect_and_consume_token(TokenKind::CloseParen)?;
+        let body = self.parse_statement(true)?;
 
-            Ok(ForStatement {
-                node: Node::new(start_pos, body.node().end),
-                initializer: var_decl.map(|decl| decl.into()),
-                condition,
-                update,
+        let node = Node::new(start, body.node().end);
+        let left = match head {
+            ForHead::VarDecl(decl) => ForLeft::VariableDeclaration(decl),
+            ForHead::Expr(expr) => ForLeft::Expression(expr),
+            ForHead::Empty => throw_error!(InternalError),
+        };
+
+        if is_of {
+            Ok(ForOf {
+                node,
+                left,
+                right,
+                body,
+            }
+            .into())
+        } else {
+            Ok(ForIn {
+                node,
+                left,
+                right,
                 body,
             }
             .into())
@@ -938,7 +983,7 @@ impl<'a> Parser<'a> {
 
                     ObjectItem::KV(KV { key, value })
                 }
-                TokenKind::Dot => todo!("Spread inside object"),
+                TokenKind::Dot => throw_error!(Todo),
                 _ => throw_error!(InvalidToken),
             };
 
