@@ -1,4 +1,4 @@
-use lexer::{Keyword, Lexer, TokenKind, TokenValue};
+use lexer::{AssignmentOperator, BinaryOperator, Keyword, Lexer, TokenKind, TokenValue};
 use pretty_assertions::assert_eq;
 
 fn expect_tokens(source_code: &str, expected_tokens: &[(TokenKind, TokenValue)]) {
@@ -23,11 +23,11 @@ fn numbers() {
         &source_code,
         &vec![
             (TK::Number, TV::Number(8.0)),
-            (TK::Plus, TV::None),
+            (TK::Operator, TV::Operator(BinaryOperator::Plus.into())),
             (TK::Number, TV::Number(5.0)),
-            (TK::Minus, TV::None),
+            (TK::Operator, TV::Operator(BinaryOperator::Minus.into())),
             (TK::Number, TV::Number(2.0)),
-            (TK::Slash, TV::None),
+            (TK::Operator, TV::Operator(BinaryOperator::Div.into())),
             (TK::Number, TV::Number(2.0)),
         ],
     );
@@ -43,9 +43,12 @@ fn let_statement() {
         &vec![
             (TK::Keyword, TV::Keyword(Keyword::Let)),
             (TK::Identifier, TV::Identifier("x".into())),
-            (TK::Equals, TV::None),
+            (
+                TK::Operator,
+                TV::Operator(AssignmentOperator::Assign.into()),
+            ),
             (TK::Number, TV::Number(123.0)),
-            (TK::Plus, TV::None),
+            (TK::Operator, TV::Operator(BinaryOperator::Plus.into())),
             (TK::Number, TV::Number(456.0)),
             (TK::SemiColon, TV::None),
         ],
@@ -89,7 +92,10 @@ fn string_literal() {
         &vec![
             (TK::Keyword, TV::Keyword(Keyword::Let)),
             (TK::Identifier, TV::Identifier("x".into())),
-            (TK::Equals, TV::None),
+            (
+                TK::Operator,
+                TV::Operator(AssignmentOperator::Assign.into()),
+            ),
             (TK::String, TV::String("'This is a string literal'".into())),
             (TK::SemiColon, TV::None),
         ],
@@ -107,7 +113,10 @@ fn template_string_literal() {
         &vec![
             (TK::Keyword, TV::Keyword(Keyword::Let)),
             (TK::Identifier, TV::Identifier("x".into())),
-            (TK::Equals, TV::None),
+            (
+                TK::Operator,
+                TV::Operator(AssignmentOperator::Assign.into()),
+            ),
             (
                 TK::String,
                 TV::String(
@@ -163,7 +172,10 @@ fn if_statement_with_variables() {
             (TK::Identifier, TV::Identifier("pos".into())),
             (TK::Dot, TV::None),
             (TK::Identifier, TV::Identifier("x".into())),
-            (TK::GreaterThan, TV::None),
+            (
+                TK::Operator,
+                TV::Operator(BinaryOperator::GreaterThan.into()),
+            ),
             (TK::Identifier, TV::Identifier("window".into())),
             (TK::Dot, TV::None),
             (TK::Identifier, TV::Identifier("innerWidth".into())),

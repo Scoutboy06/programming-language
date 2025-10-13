@@ -5,19 +5,18 @@ use crate::expressions::types::{
     TypeReference,
 };
 use crate::expressions::{
-    ArrayExpression, ArrowFunctionExpression, AsUpdateOperator, AssignmentExpression,
-    BinaryExpression, BooleanLiteral, CallExpression, ComputedProperty, Expression,
-    FunctionExpression, Identifier, Key, Literal, MemberExpression, MemberProperty, Method,
-    NewExpression, NullLiteral, NumberLiteral, ObjectExpression, ObjectItem, ParenthesisExpression,
-    RegexLiteral, StringLiteral, TernaryExpression, ThisExpression, TypeofExpression,
-    UnaryExpression, UnaryKind, UpdateExpression, VariableKind, KV,
+    ArrayExpression, ArrowFunctionExpression, AssignmentExpression, BinaryExpression,
+    BooleanLiteral, CallExpression, Expression, FunctionExpression, Identifier, Literal,
+    MemberExpression, NewExpression, NullLiteral, NumberLiteral, ObjectExpression,
+    ParenthesisExpression, RegexLiteral, StringLiteral, TernaryExpression, ThisExpression,
+    TypeofExpression, UnaryExpression, UpdateExpression, VariableKind,
 };
 use crate::nodes::{program::Program, Node};
 use crate::statements::{
     BlockStatement, BreakStatement, ContinueStatement, EnumMember, EnumStatement,
-    ExpressionStatement, ForClassic, ForHead, ForIn, ForLeft, ForOf, ForStatement,
-    FunctionDeclaration, IfStatement, Parameter, ReturnStatement, Statement, ThrowStatement,
-    VariableDeclaration, VariableDeclarator, WhileStatement,
+    ExpressionStatement, ForStatement, FunctionDeclaration, IfStatement, Parameter,
+    ReturnStatement, Statement, ThrowStatement, VariableDeclaration, VariableDeclarator,
+    WhileStatement,
 };
 use crate::utils::parser_error::{ParserError, ParserErrorInfo};
 use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
@@ -65,7 +64,6 @@ impl<'a> Parser<'a> {
 
         Ok(Program {
             node: Node::new(0, source_len),
-            shebang: None,
             body,
         })
     }
@@ -194,7 +192,16 @@ impl<'a> Parser<'a> {
                     }
                     .into())
                 }
-                _ => throw_error!(InvalidToken),
+                _ => {
+                    // throw_error!(InvalidToken);
+                    use crate::utils::parser_error::{ErrorKind, ParserErrorInfo};
+                    let err = ParserErrorInfo {
+                        kind: ErrorKind::InvalidToken,
+                        #[cfg(debug_assertions)]
+                        id: concat!(file!(), ":", line!()).to_owned(),
+                    };
+                    return Err(err);
+                }
             },
             TokenKind::OpenBrace => Ok(self.parse_block_statement()?.into()),
             _ => {

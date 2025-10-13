@@ -1,12 +1,18 @@
 use super::Expression;
-use crate::nodes::Node;
-use lexer::Operator;
+use crate::nodes::{Node, Pattern};
+use lexer::AssignmentOperator;
 use parser_derive::Expr;
 
 #[derive(Debug, PartialEq, Clone, Expr)]
 pub struct AssignmentExpression {
     pub node: Node,
-    pub operator: Operator,
-    pub left: Expression,
+    pub operator: AssignmentOperator,
+    pub left: AssignmentExpressionLeft,
     pub right: Expression,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum AssignmentExpressionLeft {
+    Pattern(Pattern),
+    Expression(Expression),
 }

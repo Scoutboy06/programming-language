@@ -5,5 +5,5 @@ use parser_derive::Stmt;
 #[derive(Debug, PartialEq, Clone, Stmt)]
 pub struct ThrowStatement {
     pub node: Node,
-    pub expr: Expression,
+    pub argument: Expression,
 }

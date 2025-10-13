@@ -1,6 +1,6 @@
 use crate::expressions::types::TypeAnnotation;
 use crate::expressions::{Expression, Identifier, VariableKind};
-use crate::nodes::Node;
+use crate::nodes::{Node, Pattern};
 use parser_derive::Stmt;
 
 use super::Statement;
@@ -15,7 +15,7 @@ pub struct VariableDeclaration {
 #[derive(Debug, PartialEq, Clone)]
 pub struct VariableDeclarator {
     pub node: Node,
-    pub id: Identifier,
-    pub init: Option<Expression>,
+    pub id: Pattern,
     pub type_annotation: Option<TypeAnnotation>,
+    pub init: Option<Expression>,
 }

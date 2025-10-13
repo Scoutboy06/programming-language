@@ -16,7 +16,6 @@ fn enum_statement() {
 
     let expected = Program {
         node: Node::new(0, code.len()),
-        shebang: None,
         body: vec![EnumStatement {
             node: Node::new(0, code.len()),
             is_declare: false,

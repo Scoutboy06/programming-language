@@ -5,5 +5,5 @@ use parser_derive::Stmt;
 #[derive(Debug, Clone, PartialEq, Stmt)]
 pub struct BreakStatement {
     pub node: Node,
-    pub id: Option<Identifier>,
+    pub label: Option<Identifier>,
 }

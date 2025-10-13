@@ -2,8 +2,7 @@ use super::Statement;
 use crate::nodes::Node;
 use parser_derive::Stmt;
 
-#[derive(Debug, PartialEq, Clone, Stmt)]
-pub struct Shebang {
+#[derive(Debug, Clone, PartialEq, Stmt)]
+pub struct DebuggerStatement {
     pub node: Node,
-    pub value: String,
 }

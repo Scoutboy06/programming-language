@@ -5,5 +5,5 @@ use parser_derive::Expr;
 #[derive(Debug, Clone, PartialEq, Expr)]
 pub struct ArrayExpression {
     pub node: Node,
-    pub items: Vec<Expression>,
+    pub elements: Vec<Option<Expression>>,
 }

@@ -1,12 +1,12 @@
 use super::Expression;
 use crate::nodes::Node;
-use lexer::BinaryOperator;
+use lexer::LogicalOperator;
 use parser_derive::Expr;
 
 #[derive(Debug, PartialEq, Clone, Expr)]
-pub struct BinaryExpression {
+pub struct LogicalExpression {
     pub node: Node,
-    pub operator: BinaryOperator,
+    pub operator: LogicalOperator,
     pub left: Expression,
     pub right: Expression,
 }

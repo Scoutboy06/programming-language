@@ -1,4 +1,7 @@
-use crate::{token::RegexValue, Keyword, Token, TokenKind, TokenValue};
+use crate::{
+    token::RegexValue, AssignmentOperator, BinaryOperator, Keyword, LogicalOperator, Token,
+    TokenKind, TokenValue, UnaryOperator, UpdateOperator,
+};
 use std::{collections::VecDeque, str::Chars};
 
 pub struct Lexer<'a> {
@@ -114,12 +117,15 @@ impl<'a> Lexer<'a> {
                         match self.curr_char {
                             Some('=') => {
                                 self.advance();
-                                (TK::StrictNotEqual, TV::None)
+                                (
+                                    TK::Operator,
+                                    TV::Operator(BinaryOperator::StrictNotEquals.into()),
+                                )
                             }
-                            _ => (TK::NotEqual, TV::None),
+                            _ => (TK::Operator, TV::Operator(BinaryOperator::NotEquals.into())),
                         }
                     }
-                    _ => (TK::Exclamation, TV::None),
+                    _ => (TK::Operator, TV::Operator(UnaryOperator::LogicalNot.into())),
                 }
             }
             '+' => {
@@ -127,13 +133,16 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('+') => {
                         self.advance();
-                        (TK::Increment, TV::None)
+                        (TK::Operator, TV::Operator(UpdateOperator::Increment.into()))
                     }
                     Some('=') => {
                         self.advance();
-                        (TK::PlusEquals, TV::None)
+                        (
+                            TK::Operator,
+                            TV::Operator(AssignmentOperator::PlusEquals.into()),
+                        )
                     }
-                    _ => (TK::Plus, TV::None),
+                    _ => (TK::Operator, TV::Operator(BinaryOperator::Plus.into())),
                 }
             }
             '-' => {
@@ -141,13 +150,16 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('-') => {
                         self.advance();
-                        (TK::Decrement, TV::None)
+                        (TK::Operator, TV::Operator(UpdateOperator::Decrement.into()))
                     }
                     Some('=') => {
                         self.advance();
-                        (TK::MinusEquals, TV::None)
+                        (
+                            TK::Operator,
+                            TV::Operator(AssignmentOperator::MinusEquals.into()),
+                        )
                     }
-                    _ => (TK::Minus, TV::None),
+                    _ => (TK::Operator, TV::Operator(BinaryOperator::Minus.into())),
                 }
             }
             '*' => {
@@ -155,19 +167,25 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('=') => {
                         self.advance();
-                        (TK::TimesEquals, TV::None)
+                        (
+                            TK::Operator,
+                            TV::Operator(AssignmentOperator::TimesEquals.into()),
+                        )
                     }
                     Some('*') => {
                         self.advance();
                         match self.curr_char {
-                            Some('*') => {
+                            Some('=') => {
                                 self.advance();
-                                (TK::PowerEquals, TV::None)
+                                (
+                                    TK::Operator,
+                                    TV::Operator(AssignmentOperator::PowerEquals.into()),
+                                )
                             }
-                            _ => (TK::Exponentiation, TV::None),
+                            _ => (TK::Operator, TV::Operator(BinaryOperator::Power.into())),
                         }
                     }
-                    _ => (TK::Asterisk, TV::None),
+                    _ => (TK::Operator, TV::Operator(BinaryOperator::Mult.into())),
                 }
             }
             '/' => {
@@ -175,7 +193,10 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('=') => {
                         self.advance();
-                        (TK::DivEquals, TV::None)
+                        (
+                            TK::Operator,
+                            TV::Operator(AssignmentOperator::DivEquals.into()),
+                        )
                     }
                     Some('/') => {
                         // Single-line comment
@@ -206,13 +227,13 @@ impl<'a> Lexer<'a> {
                         }
                         (TokenKind::MultiLineComment, TokenValue::None)
                     }
-                    None => (TK::Slash, TV::None),
+                    None => (TK::Operator, TV::Operator(BinaryOperator::Div.into())),
                     _ => {
                         if let Some(regex_val) = self.maybe_consume_regex(start) {
                             (TK::RegexLiteral, regex_val)
                         } else {
                             self.advance();
-                            (TK::Slash, TV::None)
+                            (TK::Operator, TV::Operator(BinaryOperator::Div.into()))
                         }
                     }
                 }
@@ -222,9 +243,12 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('=') => {
                         self.advance();
-                        (TK::ModEquals, TV::None)
+                        (
+                            TK::Operator,
+                            TV::Operator(AssignmentOperator::ModEquals.into()),
+                        )
                     }
-                    _ => (TK::Percent, TV::None),
+                    _ => (TK::Operator, TV::Operator(BinaryOperator::Mod.into())),
                 }
             }
             '&' => {
@@ -232,9 +256,12 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('&') => {
                         self.advance();
-                        (TK::LogicalAnd, TV::None)
+                        (TK::Operator, TV::Operator(LogicalOperator::And.into()))
                     }
-                    _ => (TK::BitwiseAnd, TV::None),
+                    _ => (
+                        TK::Operator,
+                        TV::Operator(BinaryOperator::BitwiseAnd.into()),
+                    ),
                 }
             }
             '|' => {
@@ -242,14 +269,20 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('|') => {
                         self.advance();
-                        (TK::LogicalOr, TV::None)
+                        (TK::Operator, TV::Operator(LogicalOperator::Or.into()))
                     }
-                    _ => (TK::BitwiseOr, TV::None),
+                    _ => (TK::Operator, TV::Operator(BinaryOperator::BitwiseOr.into())),
                 }
             }
             '?' => {
                 self.advance();
-                (TK::QuestionMark, TV::None)
+                match self.curr_char {
+                    Some('?') => {
+                        self.advance();
+                        (TK::Operator, TV::Operator(LogicalOperator::Nullish.into()))
+                    }
+                    _ => (TK::QuestionMark, TV::None),
+                }
             }
             '(' => {
                 self.advance();
@@ -299,16 +332,22 @@ impl<'a> Lexer<'a> {
                         match self.curr_char {
                             Some('=') => {
                                 self.advance();
-                                (TK::TripleEquals, TV::None)
+                                (
+                                    TK::Operator,
+                                    TV::Operator(BinaryOperator::StrictEquals.into()),
+                                )
                             }
-                            _ => (TK::DoubleEquals, TV::None),
+                            _ => (TK::Operator, TV::Operator(BinaryOperator::Equals.into())),
                         }
                     }
                     Some('>') => {
                         self.advance();
                         (TK::ArrowFn, TV::None)
                     }
-                    _ => (TK::Equals, TV::None),
+                    _ => (
+                        TK::Operator,
+                        TV::Operator(AssignmentOperator::Assign.into()),
+                    ),
                 }
             }
             '>' => {
@@ -316,9 +355,15 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('=') => {
                         self.advance();
-                        (TK::GreaterThanOrEqual, TV::None)
+                        (
+                            TK::Operator,
+                            TV::Operator(BinaryOperator::GreaterOrEquals.into()),
+                        )
                     }
-                    _ => (TK::GreaterThan, TV::None),
+                    _ => (
+                        TK::Operator,
+                        TV::Operator(BinaryOperator::GreaterThan.into()),
+                    ),
                 }
             }
             '<' => {
@@ -326,9 +371,12 @@ impl<'a> Lexer<'a> {
                 match self.curr_char {
                     Some('=') => {
                         self.advance();
-                        (TK::LessThanOrEqual, TV::None)
+                        (
+                            TK::Operator,
+                            TV::Operator(BinaryOperator::LessOrEquals.into()),
+                        )
                     }
-                    _ => (TK::LessThan, TV::None),
+                    _ => (TK::Operator, TV::Operator(BinaryOperator::LessThan.into())),
                 }
             }
             _ => (TK::Invalid, TV::None),
