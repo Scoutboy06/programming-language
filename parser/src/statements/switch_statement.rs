@@ -9,7 +9,7 @@ pub struct SwitchStatement {
     pub cases: Vec<SwitchCase>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SwitchCase {
     node: Node,
     test: Option<Expression>,

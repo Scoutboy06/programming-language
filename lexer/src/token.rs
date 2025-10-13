@@ -122,6 +122,13 @@ impl TokenValue {
             _ => unreachable!("Expected a Regex token"),
         }
     }
+
+    pub fn expect_operator(&self) -> Operator {
+        match self {
+            Self::Operator(o) => o.to_owned(),
+            _ => unreachable!("Expected an Operator token"),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Default)]

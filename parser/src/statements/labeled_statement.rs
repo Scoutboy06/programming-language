@@ -1,8 +1,5 @@
 use super::Statement;
-use crate::{
-    expressions::{Expression, Identifier},
-    nodes::Node,
-};
+use crate::{expressions::Identifier, nodes::Node};
 use parser_derive::Stmt;
 
 #[derive(Debug, PartialEq, Clone, Stmt)]

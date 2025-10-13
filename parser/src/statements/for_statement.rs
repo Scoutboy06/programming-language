@@ -1,7 +1,7 @@
 use parser_derive::Stmt;
 
 use super::Statement;
-use crate::{expressions::Expression, impl_from, nodes::Node, statements::VariableDeclaration};
+use crate::{expressions::Expression, nodes::Node, statements::VariableDeclaration};
 
 #[derive(Debug, Clone, PartialEq, Stmt)]
 pub struct ForStatement {
@@ -12,6 +12,7 @@ pub struct ForStatement {
     pub body: Statement,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum ForInit {
     VariableDeclaration(VariableDeclaration),
     Expression(Expression),

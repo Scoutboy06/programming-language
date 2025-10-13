@@ -3,7 +3,6 @@ use parser_derive::Stmt;
 use super::Statement;
 use crate::{
     expressions::Expression,
-    impl_from,
     nodes::{Node, Pattern},
     statements::VariableDeclaration,
 };
@@ -16,6 +15,7 @@ pub struct ForInStatement {
     pub body: Statement,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum ForInLeft {
     VariableDeclaration(VariableDeclaration),
     Pattern(Pattern),

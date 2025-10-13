@@ -1,5 +1,5 @@
 use super::Node;
-use crate::statements::Statement;
+use crate::statements::{Directive, Statement};
 
 #[derive(Debug, PartialEq)]
 pub struct Program {
@@ -9,6 +9,6 @@ pub struct Program {
 
 #[derive(Debug, PartialEq)]
 pub enum ProgramBody {
-    Directive(()),
+    Directive(Directive),
     Statement(Statement),
 }

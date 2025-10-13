@@ -1,5 +1,5 @@
 use crate::expressions::types::TypeAnnotation;
-use crate::expressions::{Expression, Identifier, VariableKind};
+use crate::expressions::{Expression, VariableKind};
 use crate::nodes::{Node, Pattern};
 use parser_derive::Stmt;
 

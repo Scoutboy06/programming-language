@@ -1,7 +1,7 @@
 use super::{types::TypeAnnotation, Expression, Identifier};
 use crate::{
     nodes::{Node, Pattern},
-    statements::{BlockStatement, FunctionBody, Parameter},
+    statements::FunctionBody,
 };
 use parser_derive::Expr;
 

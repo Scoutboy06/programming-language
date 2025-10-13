@@ -1,4 +1,4 @@
-use super::{Expression, Identifier};
+use super::Expression;
 use crate::nodes::Node;
 use parser_derive::Expr;
 

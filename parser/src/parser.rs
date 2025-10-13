@@ -19,7 +19,7 @@ use crate::statements::{
     WhileStatement,
 };
 use crate::utils::parser_error::{ParserError, ParserErrorInfo};
-use lexer::{Keyword, Lexer, Operator, Token, TokenKind};
+use lexer::{AssignmentOperator, Keyword, Lexer, Operator, Token, TokenKind};
 
 pub struct Parser<'a> {
     source: &'a str,
@@ -712,7 +712,7 @@ impl<'a> Parser<'a> {
         self.advance(); // Consume "if" keyword token
         self.expect_and_consume_token(TokenKind::OpenParen)?;
 
-        let condition = self.parse_expression()?;
+        let test = self.parse_expression()?;
 
         self.expect_and_consume_token(TokenKind::CloseParen)?;
 
@@ -736,8 +736,8 @@ impl<'a> Parser<'a> {
 
         Ok(IfStatement {
             node: Node::new(start_pos, end_pos),
-            condition,
-            body,
+            test,
+            alternate: body,
             consequent,
         })
     }
@@ -888,10 +888,17 @@ impl<'a> Parser<'a> {
     /// Parses a `return` statement.
     fn parse_return_statement(&mut self) -> Result<ReturnStatement, ParserErrorInfo> {
         let start_pos = self.current_token.start;
+        let mut end_pos = self.current_token.end;
         self.advance(); // Consume "return" token
 
-        let expr = self.parse_expression()?;
-        let mut end_pos = expr.node().end;
+        // TODO: Fix this case
+        let argument = if !self.current_token.is(TokenKind::SemiColon) {
+            let expr = self.parse_expression()?;
+            end_pos = expr.node().end;
+            Some(expr)
+        } else {
+            None
+        };
 
         if self.current_token.is(TokenKind::SemiColon) {
             end_pos = self.current_token.end;
@@ -900,7 +907,7 @@ impl<'a> Parser<'a> {
 
         Ok(ReturnStatement {
             node: Node::new(start_pos, end_pos),
-            value: expr,
+            argument,
         })
     }
 
@@ -909,7 +916,7 @@ impl<'a> Parser<'a> {
         &mut self,
         lhs: Expression,
     ) -> Result<AssignmentExpression, ParserErrorInfo> {
-        let operator: Operator = if self.current_token.kind.is_assignment_operator() {
+        let operator: AssignmentOperator = if self.current_token.is_operator() {
             Ok(self.current_token.kind.as_operator().unwrap())
         } else {
             throw_error!(InternalError)
