@@ -11,6 +11,11 @@ use parser_derive::Expr;
 //     left: Pattern | Expression;
 //     right: Expression;
 // }
+//
+// es2015
+// extend interface AssignmentExpression {
+//     left: Pattern;
+// }
 #[derive(Debug, PartialEq, Clone, Expr)]
 pub struct AssignmentExpression {
     pub node: Node,

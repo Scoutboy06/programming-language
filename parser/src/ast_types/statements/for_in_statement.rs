@@ -1,7 +1,10 @@
+use super::Statement;
 use parser_derive::Stmt;
 
-use super::Statement;
-use crate::ast_types::node_objects::Node;
+use crate::ast_types::{
+    declarations::variable_declaration::VariableDeclaration, expressions::Expression,
+    node_objects::Node, patterns::pattern::Pattern,
+};
 
 // es5
 // interface ForInStatement <: Statement {

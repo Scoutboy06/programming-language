@@ -1,23 +1,17 @@
+use crate::ast_types::{node_objects::Node, template_element::TemplateElement};
+
 use super::Expression;
-use crate::nodes::Node;
 use parser_derive::Expr;
 
+// es2015
+// interface TemplateLiteral <: Expression {
+//     type: "TemplateLiteral";
+//     quasis: [ TemplateElement ];
+//     expressions: [ Expression ];
+// }
 #[derive(Debug, Clone, PartialEq, Expr)]
 pub struct TemplateLiteral {
     pub node: Node,
     pub quasis: Vec<TemplateElement>,
     pub expression: Vec<Expression>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TemplateElement {
-    pub node: Node,
-    pub tail: bool,
-    pub value: TemplateElementValue,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-struct TemplateElementValue {
-    pub cooked: String,
-    pub raw: String,
 }

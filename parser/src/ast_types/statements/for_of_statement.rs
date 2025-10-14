@@ -1,8 +1,12 @@
-use parser_derive::Stmt;
+use crate::ast_types::{expressions::Expression, node_objects::Node, statements::ForInOrOfLeft};
 
 use super::Statement;
-use crate::{expressions::Expression, nodes::Node, statements::ForInOrOfLeft};
+use parser_derive::Stmt;
 
+// es2015
+// interface ForOfStatement <: ForInStatement {
+//     type: "ForOfStatement";
+// }
 #[derive(Debug, Clone, PartialEq, Stmt)]
 pub struct ForOfStatement {
     pub node: Node,
