@@ -1,20 +1,42 @@
+// es5
+// enum UnaryOperator {
+//     "-" | "+" | "!" | "~" | "typeof" | "void" | "delete"
+// }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnaryOperator {
     LogicalNot, // !
     BitwiseNot, // ~
-    Plus,       // +x (unary plus)
-    Minus,      // -x (unary minus)
+    Plus,       // +
+    Minus,      // -
     Typeof,     // typeof
     Void,       // void
     Delete,     // delete
 }
 
+// es5
+// enum UpdateOperator {
+//     "++" | "--"
+// }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UpdateOperator {
     Increment, // ++
     Decrement, // --
 }
 
+// es5
+// enum BinaryOperator {
+//     "==" | "!=" | "===" | "!=="
+//          | "<" | "<=" | ">" | ">="
+//          | "<<" | ">>" | ">>>"
+//          | "+" | "-" | "*" | "/" | "%"
+//          | "|" | "^" | "&" | "in"
+//          | "instanceof"
+// }
+//
+// es2016
+// extend enum BinaryOperator {
+//     "**"
+// }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BinaryOperator {
     Equals,          // ==
@@ -46,6 +68,17 @@ pub enum BinaryOperator {
     Instanceof, // instanceof
 }
 
+// es5
+// enum AssignmentOperator {
+//     "=" | "+=" | "-=" | "*=" | "/=" | "%="
+//         | "<<=" | ">>=" | ">>>="
+//         | "|=" | "^=" | "&="
+// }
+//
+// es2016
+// extend enum AssignmentOperator {
+//     "**="
+// }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AssignmentOperator {
     Assign,      // =
@@ -65,6 +98,15 @@ pub enum AssignmentOperator {
     BitwiseAndEquals, // &=
 }
 
+// es5
+// enum LogicalOperator {
+//     "||" | "&&"
+// }
+//
+// es2020
+// extend enum LogicalOperator {
+//     "??"
+// }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LogicalOperator {
     Or,      // ||
