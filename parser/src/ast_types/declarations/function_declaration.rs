@@ -2,16 +2,16 @@ use crate::ast_types::{
     identifier::Identifier,
     node_objects::Node,
     patterns::pattern::Pattern,
-    statements::{FunctionBody, Statement},
+    statements::FunctionBody,
+    types::{TypeAnnotation, TypeParameterDeclaration},
 };
-use parser_derive::Stmt;
 
 // es5
 // interface FunctionDeclaration <: Function, Declaration {
 //     type: "FunctionDeclaration";
 //     id: Identifier;
 // }
-#[derive(Debug, PartialEq, Clone, Stmt)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FunctionDeclaration {
     pub node: Node,
     pub id: Identifier,

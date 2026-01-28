@@ -5,6 +5,12 @@ use crate::ast_types::node_objects::Node;
 //     type: "Literal";
 //     value: string | boolean | null | number | RegExp;
 // }
+//
+// es2020
+// extend interface Literal <: Expression {
+//     type: "Literal";
+//     value: string | boolean | null | number | RegExp | bigint;
+// }
 #[derive(Debug, Clone, PartialEq)]
 pub struct Literal {
     pub node: Node,
@@ -18,6 +24,7 @@ pub enum LiteralValue {
     Null,
     Number(f64),
     RegExp(RegExpLiteral),
+    Bigint(BigIntLiteral),
 }
 
 // es5
@@ -31,4 +38,19 @@ pub enum LiteralValue {
 pub struct RegExpLiteral {
     pattern: String,
     flags: String,
+}
+
+impl Into<LiteralValue> for RegExpLiteral {
+    fn into(self) -> LiteralValue {
+        LiteralValue::RegExp(self)
+    }
+}
+
+// es2020
+// interface BigIntLiteral <: Literal {
+//   bigint: string;
+// }
+#[derive(Debug, Clone, PartialEq)]
+pub struct BigIntLiteral {
+    bigint: String,
 }

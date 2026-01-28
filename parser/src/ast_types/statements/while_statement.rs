@@ -1,7 +1,4 @@
-use crate::ast_types::node_objects::Node;
-
-use super::Statement;
-use parser_derive::Stmt;
+use crate::ast_types::{expressions::Expression, node_objects::Node, statements::Statement};
 
 // es5
 // interface WhileStatement <: Statement {
@@ -9,7 +6,7 @@ use parser_derive::Stmt;
 //     test: Expression;
 //     body: Statement;
 // }
-#[derive(Debug, Clone, PartialEq, Stmt)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct WhileStatement {
     pub node: Node,
     pub test: Expression,

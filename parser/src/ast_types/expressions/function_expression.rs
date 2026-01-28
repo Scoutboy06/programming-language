@@ -1,15 +1,13 @@
-use parser_derive::Expr;
-
 use crate::ast_types::{
     identifier::Identifier, node_objects::Node, patterns::pattern::Pattern,
-    statements::FunctionBody,
+    statements::FunctionBody, types::TypeAnnotation,
 };
 
 // es5
 // interface FunctionExpression <: Function, Expression {
 //     type: "FunctionExpression";
 // }
-#[derive(Debug, PartialEq, Clone, Expr)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FunctionExpression {
     pub node: Node,
     pub id: Option<Identifier>,

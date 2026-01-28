@@ -1,7 +1,4 @@
-use crate::ast_types::node_objects::Node;
-
-use super::Expression;
-use parser_derive::Expr;
+use crate::ast_types::{expressions::Expression, node_objects::Node};
 
 // es5
 // interface ConditionalExpression <: Expression {
@@ -10,7 +7,7 @@ use parser_derive::Expr;
 //     alternate: Expression;
 //     consequent: Expression;
 // }
-#[derive(Debug, PartialEq, Clone, Expr)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ConditionalExpression {
     pub node: Node,
     pub test: Expression,

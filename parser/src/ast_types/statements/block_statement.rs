@@ -1,14 +1,14 @@
-use crate::ast_types::{node_objects::Node, statements::Directive};
-
-use super::Statement;
-use parser_derive::Stmt;
+use crate::ast_types::{
+    node_objects::Node,
+    statements::{Directive, Statement},
+};
 
 // es5
 // interface BlockStatement <: Statement {
 //     type: "BlockStatement";
 //     body: [ Statement ];
 // }
-#[derive(Debug, PartialEq, Clone, Stmt)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BlockStatement {
     pub node: Node,
     pub body: Vec<Statement>,
@@ -28,4 +28,14 @@ pub struct FunctionBody {
 pub enum FunctionBodyBody {
     Directive(Directive),
     Statement(Statement),
+}
+
+// es2022
+// interface StaticBlock <: BlockStatement {
+//     type: "StaticBlock";
+// }
+#[derive(Debug, Clone, PartialEq)]
+pub struct StaticBlock {
+    pub node: Node,
+    pub body: Vec<Statement>,
 }

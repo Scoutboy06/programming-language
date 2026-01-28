@@ -50,7 +50,7 @@ fn let_statement() {
             (TK::Number, TV::Number(123.0)),
             (TK::Operator, TV::Operator(BinaryOperator::Plus.into())),
             (TK::Number, TV::Number(456.0)),
-            (TK::SemiColon, TV::None),
+            (TK::Semi, TV::None),
         ],
     );
 }
@@ -97,7 +97,7 @@ fn string_literal() {
                 TV::Operator(AssignmentOperator::Assign.into()),
             ),
             (TK::String, TV::String("'This is a string literal'".into())),
-            (TK::SemiColon, TV::None),
+            (TK::Semi, TV::None),
         ],
     );
 }
@@ -124,7 +124,7 @@ fn template_string_literal() {
                         .into(),
                 ),
             ),
-            (TK::SemiColon, TV::None),
+            (TK::Semi, TV::None),
         ],
     );
 }

@@ -1,7 +1,4 @@
-use crate::ast_types::{identifier::Identifier, node_objects::Node};
-
-use super::Statement;
-use parser_derive::Stmt;
+use crate::ast_types::{identifier::Identifier, node_objects::Node, statements::Statement};
 
 // es5
 // interface LabeledStatement <: Statement {
@@ -9,7 +6,7 @@ use parser_derive::Stmt;
 //     label: Identifier;
 //     body: Statement;
 // }
-#[derive(Debug, PartialEq, Clone, Stmt)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LabeledStatement {
     pub node: Node,
     pub label: Identifier,

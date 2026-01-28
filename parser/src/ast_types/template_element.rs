@@ -9,6 +9,14 @@ use crate::ast_types::node_objects::Node;
 //         raw: string;
 //     };
 // }
+//
+// es2015
+// extend interface TemplateElement {
+//     value: {
+//         cooked: string | null;
+//         raw: string;
+//     };
+// }
 #[derive(Debug, Clone, PartialEq)]
 pub struct TemplateElement {
     pub node: Node,
@@ -18,6 +26,6 @@ pub struct TemplateElement {
 
 #[derive(Debug, Clone, PartialEq)]
 struct TemplateElementValue {
-    pub cooked: String,
+    pub cooked: Option<String>,
     pub raw: String,
 }

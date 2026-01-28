@@ -1,5 +1,4 @@
 use super::keywords::Keyword;
-use crate::operators::Operator;
 
 use string_cache::DefaultAtom as Atom;
 
@@ -25,15 +24,21 @@ impl Token {
         }
     }
 
-    pub fn is_operator(&self) -> bool {
-        matches!(self.kind, TokenKind::Operator)
+    pub fn is_keyword(&self) -> bool {
+        matches!(self.kind, TokenKind::Keyword)
     }
 
-    pub fn as_operator(&self) -> Option<Operator> {
-        use TokenValue as TV;
+    pub fn as_keyword(&self) -> Option<Keyword> {
         match self.value {
-            TV::Operator(op) => Some(op),
+            TokenValue::Keyword(kw) => Some(kw),
             _ => None,
+        }
+    }
+
+    pub fn matches_keyword(&self, other: Keyword) -> bool {
+        match self.value {
+            TokenValue::Keyword(kw) => kw == other,
+            _ => false,
         }
     }
 }
@@ -49,7 +54,6 @@ pub enum TokenValue {
     Keyword(Keyword),
     Identifier(Atom),
     Regex(RegexValue),
-    Operator(Operator),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -102,6 +106,13 @@ impl TokenValue {
         }
     }
 
+    pub fn is_keyword(&self, kw: Keyword) -> bool {
+        match self {
+            Self::Keyword(k) => *k == kw,
+            _ => false,
+        }
+    }
+
     pub fn expect_identifier(&self) -> &Atom {
         match self {
             TokenValue::Identifier(atom) => atom,
@@ -120,13 +131,6 @@ impl TokenValue {
         match std::mem::replace(self, Self::Consumed) {
             TokenValue::Regex(r) => r,
             _ => unreachable!("Expected a Regex token"),
-        }
-    }
-
-    pub fn expect_operator(&self) -> Operator {
-        match self {
-            Self::Operator(o) => o.to_owned(),
-            _ => unreachable!("Expected an Operator token"),
         }
     }
 }
@@ -149,7 +153,64 @@ pub enum TokenKind {
     Boolean,
     Null,
     RegexLiteral,
-    Operator,
+
+    // Unary Operators (Keywords + Symbols)
+    Bang,       // !
+    Tilde,      // ~
+    Typeof,     // typeof
+    Void,       // void
+    Delete,     // delete
+    PlusPlus,   // ++
+    MinusMinus, // --
+
+    // Comparison Operators
+    EqEq,     // ==
+    BangEq,   // !=
+    EqEqEq,   // ===
+    BangEqEq, // !==
+    Lt,       // <
+    LtEq,     // <=
+    Gt,       // >
+    GtEq,     // >=
+
+    // Arithmetic & Bitwise Binary Operators
+    Plus,       // +
+    Minus,      // -
+    Star,       // *
+    Slash,      // /
+    StarStar,   // **
+    Percent,    // %
+    Pipe,       // |
+    Caret,      // ^
+    Amp,        // &
+    LtLt,       // <<
+    GtGt,       // >>
+    GtGtGt,     // >>>
+    In,         // in
+    Instanceof, // instanceof
+
+    // Logical Operators
+    PipePipe,         // ||
+    AmpAmp,           // &&
+    QuestionQuestion, // ??
+
+    // Assignment Operators
+    Eq,                 // =
+    PlusEq,             // +=
+    MinusEq,            // -=
+    StarEq,             // *=
+    SlashEq,            // /=
+    PercentEq,          // %=
+    StarStarEq,         // **=
+    LtLtEq,             // <<=
+    GtGtEq,             // >>=
+    GtGtGtEq,           // >>>=
+    PipeEq,             // |=
+    CaretEq,            // ^=
+    AmpEq,              // &=
+    PipePipeEq,         // ||=
+    AmpAmpEq,           // &&=
+    QuestionQuestionEq, // ??=
 
     // Punctuation
     OpenParen,    // (
@@ -161,9 +222,10 @@ pub enum TokenKind {
     Dot,          // .
     Comma,        // ,
     Colon,        // :
-    SemiColon,    // ;
-    QuestionMark, // ?
+    Semi,         // ;
+    Question,     // ?
 
     // Other
-    ArrowFn,
+    EqGt, // =>
+    Hash, // #
 }

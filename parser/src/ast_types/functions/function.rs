@@ -14,10 +14,16 @@ use crate::ast_types::{
 // extend interface Function {
 //     generator: boolean;
 // }
+//
+// es2017
+// extend interface Function {
+//     async: boolean;
+// }
 pub struct Function {
     pub node: Node,
     pub id: Option<Identifier>,
     pub params: Vec<Pattern>,
     pub body: FunctionBody,
     pub generator: bool,
+    pub _async: bool,
 }

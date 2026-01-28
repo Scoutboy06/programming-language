@@ -1,5 +1,4 @@
-use lexer::Operator;
-use parser::nodes::Node;
+use parser::ast_types::{node_objects::Node, operators::BinaryOperator};
 use string_cache::DefaultAtom as Atom;
 
 use crate::types::ResolvedType;
@@ -30,7 +29,7 @@ pub enum ErrorData {
     UnallowedBinaryOperationTypes {
         left_type: ResolvedType,
         right_type: ResolvedType,
-        operator: Operator,
+        operator: BinaryOperator,
     },
 }
 

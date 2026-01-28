@@ -1,8 +1,8 @@
-use parser_derive::Expr;
+use parser_derive::FromVariants;
 
 use crate::ast_types::{
-    declarations::function_declaration::Parameter, expressions::Expression, identifier::Identifier,
-    node_objects::Node, statements::FunctionBody,
+    expressions::Expression, identifier::Identifier, node_objects::Node,
+    patterns::pattern::Pattern, statements::FunctionBody, types::TypeAnnotation,
 };
 
 // es2015
@@ -12,18 +12,27 @@ use crate::ast_types::{
 //     expression: boolean;
 //     generator: false;
 // }
-#[derive(Debug, Clone, PartialEq, Expr)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArrowFunctionExpression {
     pub node: Node,
     pub id: Option<Identifier>,
-    pub params: Vec<Parameter>,
+    pub params: Vec<Pattern>,
     pub return_type: Option<TypeAnnotation>,
     pub body: ArrowFunctionExpressionBody,
     pub expression: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, FromVariants)]
 pub enum ArrowFunctionExpressionBody {
     FunctionBody(FunctionBody),
     Expression(Expression),
+}
+
+impl ArrowFunctionExpressionBody {
+    pub fn node(&self) -> &Node {
+        match self {
+            ArrowFunctionExpressionBody::FunctionBody(body) => &body.node,
+            ArrowFunctionExpressionBody::Expression(expr) => expr.node(),
+        }
+    }
 }

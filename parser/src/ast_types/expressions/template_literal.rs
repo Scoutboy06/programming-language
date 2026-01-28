@@ -1,7 +1,6 @@
 use crate::ast_types::{node_objects::Node, template_element::TemplateElement};
 
 use super::Expression;
-use parser_derive::Expr;
 
 // es2015
 // interface TemplateLiteral <: Expression {
@@ -9,7 +8,7 @@ use parser_derive::Expr;
 //     quasis: [ TemplateElement ];
 //     expressions: [ Expression ];
 // }
-#[derive(Debug, Clone, PartialEq, Expr)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TemplateLiteral {
     pub node: Node,
     pub quasis: Vec<TemplateElement>,

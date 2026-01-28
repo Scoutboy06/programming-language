@@ -1,4 +1,6 @@
-use parser::{nodes::program::Program, statements::Statement};
+use parser::ast_types::{
+    declarations::declaration::Declaration, programs::Program, statements::Statement,
+};
 use wasm_encoder::{
     CodeSection, ExportSection, Function, FunctionSection, Instruction, Module, TypeSection,
     ValType,
@@ -35,7 +37,8 @@ impl<'a> Compiler<'a> for WasmCompiler<'a> {
         let mut module = Module::new();
 
         for stmt in self.program.body.iter() {
-            self.enter_statement(stmt);
+            todo!()
+            // self.enter_statement(stmt);
         }
 
         module.section(&self.types);
@@ -59,32 +62,36 @@ impl<'a> WasmCompiler<'a> {
 
     fn enter_statement(&mut self, stmt: &Statement) -> Instruction<'a> {
         match stmt {
-            Statement::FunctionDeclaration(decl) => {
-                self.push_scope();
+            Statement::Declaration(decl) => match decl.as_ref() {
+                Declaration::FunctionDeclaration(fn_decl) => {
+                    self.push_scope();
 
-                // TODO: Change this to actual data types
-                let params = decl.params.iter().map(|_param| ValType::I32);
-                let results = vec![ValType::I32];
+                    // TODO: Change this to actual data types
+                    let params = fn_decl.params.iter().map(|_param| ValType::I32);
+                    let results = vec![ValType::I32];
 
-                let type_index = self.types.len();
-                self.types.ty().function(params, results);
-                self.functions.function(type_index);
+                    let type_index = self.types.len();
+                    self.types.ty().function(params, results);
+                    self.functions.function(type_index);
 
-                let locals = vec![];
+                    let locals = vec![];
 
-                let mut _f = Function::new(locals);
+                    let mut _f = Function::new(locals);
 
-                for s in decl.body.statements.iter() {
-                    self.enter_statement(s);
+                    for b in &fn_decl.body.body {
+                        todo!()
+                        // self.enter_statement(s);
+                    }
+
+                    self.pop_scope();
+                    todo!()
                 }
-
-                self.pop_scope();
-                todo!()
-            }
+                Declaration::VariableDeclaration(_decl) => {
+                    todo!()
+                }
+            },
             Statement::ReturnStatement(_stmt) => todo!(),
-            Statement::VariableDeclaration(_decl) => {
-                todo!()
-            }
+
             _ => todo!("{:?}", &stmt),
         }
     }

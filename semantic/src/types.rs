@@ -1,7 +1,10 @@
 #![allow(unreachable_code)]
 
 use lexer::TypeKeyword;
-use parser::expressions::{types::AstType, Literal};
+use parser::ast_types::{
+    literal::{Literal, LiteralValue},
+    types::{AstType, TypeLiteral},
+};
 
 use crate::{errors::ErrorData, symbol::Symbol, CheckerContext, ErrorSeverity};
 
@@ -17,6 +20,8 @@ pub enum ResolvedType {
     Union(Vec<Self>),
     Function(Box<FunctionType>),
     Regex,
+    BigInt,
+    Void,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -62,6 +67,8 @@ impl std::fmt::Display for ResolvedType {
             Self::String => write!(f, "string"),
             Self::Boolean => write!(f, "boolean"),
             Self::Null => write!(f, "null"),
+            Self::BigInt => write!(f, "bigint"),
+            Self::Void => write!(f, "void"),
             Self::Array(inner) => match **inner {
                 Self::Union(_) | Self::Function(_) => write!(f, "({})[]", inner),
                 _ => write!(f, "{}[]", inner),
@@ -88,12 +95,13 @@ impl std::fmt::Display for ResolvedType {
 impl ResolvedType {
     pub fn from_ast_type(type_value: &AstType, ctx: &mut CheckerContext) -> Self {
         match type_value {
-            AstType::TypeLiteral(type_literal) => match type_literal.literal {
-                Literal::BooleanLiteral(_) => Self::Boolean,
-                Literal::NumberLiteral(_) => Self::Number,
-                Literal::NullLiteral(_) => Self::Null,
-                Literal::StringLiteral(_) => Self::String,
-                Literal::RegexLiteral(_) => Self::Regex,
+            AstType::TypeLiteral(type_literal) => match type_literal.literal.value {
+                LiteralValue::Boolean(_) => Self::Boolean,
+                LiteralValue::Number(_) => Self::Number,
+                LiteralValue::Null => Self::Null,
+                LiteralValue::String(_) => Self::String,
+                LiteralValue::RegExp(_) => Self::Regex,
+                LiteralValue::Bigint(_) => Self::BigInt,
             },
             AstType::KeywordType(keyword_type) => match keyword_type.kind {
                 TypeKeyword::Boolean => Self::Boolean,

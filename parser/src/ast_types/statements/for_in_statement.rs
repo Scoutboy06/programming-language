@@ -1,9 +1,6 @@
-use super::Statement;
-use parser_derive::Stmt;
-
 use crate::ast_types::{
     declarations::variable_declaration::VariableDeclaration, expressions::Expression,
-    node_objects::Node, patterns::pattern::Pattern,
+    node_objects::Node, patterns::pattern::Pattern, statements::Statement,
 };
 
 // es5
@@ -13,7 +10,7 @@ use crate::ast_types::{
 //     right: Expression;
 //     body: Statement;
 // }
-#[derive(Debug, Clone, PartialEq, Stmt)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ForInStatement {
     pub node: Node,
     pub left: ForInOrOfLeft,

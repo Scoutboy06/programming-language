@@ -4,11 +4,12 @@ pub mod types;
 pub mod visitors;
 
 use errors::{ErrorData, ErrorSeverity, SemanticError};
-use parser::nodes::{program::Program, Node};
-use string_cache::DefaultAtom as Atom;
+use parser::ast_types::{node_objects::Node, programs::Program};
 use symbol::{Symbol, SymbolTable};
 use types::ResolvedType;
 use visitors::{body_visitor::BodyVisitor, decl_visitor::DeclVisitor};
+
+use string_cache::DefaultAtom as Atom;
 
 pub struct CheckerContext {
     errors: Vec<SemanticError>,

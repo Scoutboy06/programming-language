@@ -1,7 +1,4 @@
-use crate::ast_types::node_objects::Node;
-
-use super::Statement;
-use parser_derive::Stmt;
+use crate::ast_types::{expressions::Expression, node_objects::Node, statements::Statement};
 
 // es5
 // interface IfStatement <: Statement {
@@ -10,7 +7,7 @@ use parser_derive::Stmt;
 //     consequent: Statement;
 //     alternate: Statement | null;
 // }
-#[derive(Debug, Clone, PartialEq, Stmt)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IfStatement {
     pub node: Node,
     pub test: Expression,

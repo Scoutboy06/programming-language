@@ -1,7 +1,5 @@
 use super::Expression;
-use crate::ast_types::node_objects::Node;
-use lexer::UnaryOperator;
-use parser_derive::Expr;
+use crate::ast_types::{node_objects::Node, operators::UnaryOperator};
 
 // es5
 // interface UnaryExpression <: Expression {
@@ -10,7 +8,7 @@ use parser_derive::Expr;
 //     prefix: boolean;
 //     argument: Expression;
 // }
-#[derive(Debug, PartialEq, Clone, Expr)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct UnaryExpression {
     pub node: Node,
     pub operator: UnaryOperator,

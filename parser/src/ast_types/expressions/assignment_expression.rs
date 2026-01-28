@@ -1,8 +1,7 @@
-use crate::ast_types::{node_objects::Node, patterns::pattern::Pattern};
-
-use super::Expression;
-use lexer::AssignmentOperator;
-use parser_derive::Expr;
+use crate::ast_types::{
+    expressions::Expression, node_objects::Node, operators::AssignmentOperator,
+    patterns::pattern::Pattern,
+};
 
 // es5
 // interface AssignmentExpression <: Expression {
@@ -16,7 +15,7 @@ use parser_derive::Expr;
 // extend interface AssignmentExpression {
 //     left: Pattern;
 // }
-#[derive(Debug, PartialEq, Clone, Expr)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct AssignmentExpression {
     pub node: Node,
     pub operator: AssignmentOperator,

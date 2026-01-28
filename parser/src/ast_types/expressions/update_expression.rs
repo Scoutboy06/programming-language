@@ -1,8 +1,6 @@
-use crate::ast_types::node_objects::Node;
+use crate::ast_types::{node_objects::Node, operators::UpdateOperator};
 
 use super::Expression;
-use lexer::UpdateOperator;
-use parser_derive::Expr;
 
 // es5
 // interface UpdateExpression <: Expression {
@@ -11,7 +9,7 @@ use parser_derive::Expr;
 //     argument: Expression;
 //     prefix: boolean;
 // }
-#[derive(Debug, Clone, PartialEq, Expr)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct UpdateExpression {
     pub node: Node,
     pub operator: UpdateOperator,

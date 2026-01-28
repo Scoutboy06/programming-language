@@ -1,5 +1,4 @@
-use crate::ast_types::{expressions::Expression, identifier::Identifier, node_objects::Node};
-use parser_derive::Expr;
+use crate::ast_types::{identifier::Identifier, node_objects::Node};
 
 // es2015
 // interface MetaProperty <: Expression {
@@ -7,7 +6,7 @@ use parser_derive::Expr;
 //     meta: Identifier;
 //     property: Identifier;
 // }
-#[derive(Debug, Clone, PartialEq, Expr)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MetaProperty {
     pub node: Node,
     pub meta: Identifier,

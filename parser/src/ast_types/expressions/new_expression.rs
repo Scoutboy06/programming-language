@@ -1,7 +1,6 @@
-use crate::ast_types::{node_objects::Node, spread_element::SpreadElement};
-
-use super::Expression;
-use parser_derive::Expr;
+use crate::ast_types::{
+    expressions::Expression, node_objects::Node, spread_element::SpreadElement,
+};
 
 // es5
 // interface NewExpression <: Expression {
@@ -14,7 +13,7 @@ use parser_derive::Expr;
 // extend interface NewExpression {
 //     arguments: [ Expression | SpreadElement ];
 // }
-#[derive(Debug, PartialEq, Clone, Expr)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct NewExpression {
     pub node: Node,
     pub callee: Expression,

@@ -3,12 +3,13 @@ use crate::{
     types::{FunctionType, ResolvedType},
     CheckerContext,
 };
-use parser::{
-    expressions::{
-        ArrayExpression, BinaryExpression, Expression, Key, ObjectExpression, ObjectItem,
+use parser::ast_types::{
+    declarations::{
+        function_declaration::FunctionDeclaration, variable_declaration::VariableDeclaration,
     },
-    nodes::program::Program,
-    statements::{FunctionDeclaration, ReturnStatement, Statement, VariableDeclaration},
+    expressions::{ArrayExpression, BinaryExpression, Expression, ObjectExpression},
+    programs::{program::ProgramBodyItem, Program},
+    statements::{FunctionBodyBody, ReturnStatement, Statement},
 };
 
 pub struct DeclVisitor<'a> {
@@ -18,17 +19,18 @@ pub struct DeclVisitor<'a> {
 impl<'a> DeclVisitor<'a> {
     pub fn visit_program(ast: &Program, ctx: &'a mut CheckerContext) {
         let mut visitor = Self { ctx };
-        ast.body
-            .iter()
-            .for_each(|stmt| visitor.visit_statement(stmt));
+        ast.body.iter().for_each(|body_item| match body_item {
+            ProgramBodyItem::Statement(stmt) => visitor.visit_statement(stmt),
+            ProgramBodyItem::ImportOrExportDeclaration(_) => todo!(),
+        });
     }
 
     fn visit_statement(&mut self, stmt: &Statement) {
         use Statement as S;
 
         match stmt {
-            S::VariableDeclaration(decl) => self.visit_variable_declaration(decl),
-            S::FunctionDeclaration(decl) => self.visit_function_declaration(decl),
+            // S::VariableDeclaration(decl) => self.visit_variable_declaration(decl),
+            // S::FunctionDeclaration(decl) => self.visit_function_declaration(decl),
             S::ReturnStatement(stmt) => self.visit_return_statement(stmt),
             _ => todo!("{:?}", &stmt),
         }
@@ -43,24 +45,26 @@ impl<'a> DeclVisitor<'a> {
                 self.visit_expression(init);
             });
 
-            self.ctx
-                .add_symbol(d.id.name.clone(), resolved_type, d.node.clone());
+            todo!()
+            // self.ctx
+            //     .add_symbol(d.id.name.clone(), resolved_type, d.node.clone());
         }
     }
 
     fn visit_function_declaration(&mut self, decl: &FunctionDeclaration) {
-        let args: Vec<Symbol> = decl
-            .params
-            .iter()
-            .map(|param| Symbol {
-                id: param.identifier.name.clone(),
-                resolved_type: param
-                    .type_annotation
-                    .as_ref()
-                    .map(|ann| ResolvedType::from_ast_type(&ann.type_value, &mut self.ctx)),
-                declared_at: param.node.clone(),
-            })
-            .collect();
+        let args: Vec<Symbol> = todo!();
+        //  decl
+        //     .params
+        //     .iter()
+        //     .map(|param| Symbol {
+        //         id: param.identifier.name.clone(),
+        //         resolved_type: param
+        //             .type_annotation
+        //             .as_ref()
+        //             .map(|ann| ResolvedType::from_ast_type(&ann.type_value, &mut self.ctx)),
+        //         declared_at: param.node.clone(),
+        //     })
+        //     .collect();
 
         let display_ret_type = decl.return_type.as_ref().map(|t| t.type_value.to_owned());
         let unfolded_ret_type = display_ret_type
@@ -87,8 +91,13 @@ impl<'a> DeclVisitor<'a> {
             );
         }
 
-        for stmt in decl.body.statements.iter() {
-            self.visit_statement(stmt);
+        for body in decl.body.body.iter() {
+            match body {
+                FunctionBodyBody::Statement(stmt) => {
+                    self.visit_statement(stmt);
+                }
+                _ => todo!(),
+            }
         }
     }
 
@@ -105,22 +114,23 @@ impl<'a> DeclVisitor<'a> {
     }
 
     fn visit_object_expression(&self, obj: &ObjectExpression) {
-        for item in obj.items.iter() {
-            match item {
-                ObjectItem::KV(kv) => match &kv.key {
-                    Key::Identifier(_) | Key::StringLiteral(_) => {}
-                    Key::ComputedProperty(prop) => self.visit_expression(&prop.expression),
-                },
-                ObjectItem::Identifier(_) => {}
-                ObjectItem::Method(_method) => todo!(),
-            };
-        }
+        todo!()
+        // for item in obj.items.iter() {
+        //     match item {
+        //         ObjectItem::KV(kv) => match &kv.key {
+        //             Key::Identifier(_) | Key::StringLiteral(_) => {}
+        //             Key::ComputedProperty(prop) => self.visit_expression(&prop.expression),
+        //         },
+        //         ObjectItem::Identifier(_) => {}
+        //         ObjectItem::Method(_method) => todo!(),
+        //     };
+        // }
     }
 
     fn visit_array_expression(&self, arr: &ArrayExpression) {
-        arr.items
-            .iter()
-            .for_each(|expr| self.visit_expression(expr));
+        arr.elements.iter().for_each(|elem| {
+            elem.as_ref().inspect(|e| self.visit_expression(e));
+        });
     }
 
     fn visit_binary_expression(&self, bin_expr: &BinaryExpression) {
@@ -129,6 +139,8 @@ impl<'a> DeclVisitor<'a> {
     }
 
     fn visit_return_statement(&self, stmt: &ReturnStatement) {
-        self.visit_expression(&stmt.value);
+        stmt.argument
+            .as_ref()
+            .inspect(|expr| self.visit_expression(expr));
     }
 }

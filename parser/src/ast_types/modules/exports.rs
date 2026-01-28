@@ -86,8 +86,14 @@ pub enum ExportDefaultDeclarationDeclaration {
 //     type: "ExportAllDeclaration";
 //     source: Literal;
 // }
+//
+// es2020
+// extend interface ExportAllDeclaration {
+//   exported: Identifier | null;
+// }
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExportAllDeclaration {
     pub node: Node,
     pub source: Literal,
+    pub exported: Option<Identifier>,
 }

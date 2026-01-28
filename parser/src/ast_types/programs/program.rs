@@ -1,4 +1,6 @@
-use crate::ast_types::statements::Statement;
+use crate::ast_types::{
+    modules::import_or_export_declaration::ImportOrExportDeclaration, statements::Statement,
+};
 
 // es5
 // interface Program <: Node {
@@ -14,7 +16,7 @@ use crate::ast_types::statements::Statement;
 #[derive(Debug, PartialEq, Clone)]
 pub struct Program {
     pub source_type: SourceType,
-    pub body: Vec<ProgramBody>,
+    pub body: Vec<ProgramBodyItem>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -24,7 +26,7 @@ pub enum SourceType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum ProgramBody {
+pub enum ProgramBodyItem {
     Statement(Statement),
     ImportOrExportDeclaration(ImportOrExportDeclaration),
 }

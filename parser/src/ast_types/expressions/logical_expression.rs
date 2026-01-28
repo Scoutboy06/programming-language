@@ -1,8 +1,4 @@
-use crate::ast_types::node_objects::Node;
-
-use super::Expression;
-use lexer::LogicalOperator;
-use parser_derive::Expr;
+use crate::ast_types::{expressions::Expression, node_objects::Node, operators::LogicalOperator};
 
 // es5
 // interface LogicalExpression <: Expression {
@@ -11,7 +7,7 @@ use parser_derive::Expr;
 //     left: Expression;
 //     right: Expression;
 // }
-#[derive(Debug, PartialEq, Clone, Expr)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LogicalExpression {
     pub node: Node,
     pub operator: LogicalOperator,

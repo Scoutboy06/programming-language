@@ -1,6 +1,12 @@
-use super::{Identifier, Literal};
-use crate::{impl_from, nodes::Node, statements::Parameter};
 use lexer::TypeKeyword;
+
+use crate::{
+    ast_types::{
+        declarations::function_declaration::Parameter, identifier::Identifier, literal::Literal,
+        node_objects::Node,
+    },
+    impl_from,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TypeParameterDeclaration {

@@ -1,6 +1,6 @@
-use parser_derive::Stmt;
-
-use crate::ast_types::{expressions::Expression, node_objects::Node, patterns::pattern::Pattern};
+use crate::ast_types::{
+    expressions::Expression, node_objects::Node, patterns::pattern::Pattern, types::TypeAnnotation,
+};
 
 // es5
 // interface VariableDeclaration <: Declaration {
@@ -13,7 +13,7 @@ use crate::ast_types::{expressions::Expression, node_objects::Node, patterns::pa
 // extend interface VariableDeclaration {
 //     kind: "var" | "let" | "const";
 // }
-#[derive(Debug, PartialEq, Clone, Stmt)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct VariableDeclaration {
     pub node: Node,
     pub declarations: Vec<VariableDeclarator>,

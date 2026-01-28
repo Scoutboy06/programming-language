@@ -40,6 +40,8 @@ pub enum Keyword {
     False,
     Typeof,
     Throw,
+    Import,
+    Export,
 
     // Typescript keywords
     StringType,  // : string
@@ -91,6 +93,8 @@ impl std::fmt::Display for Keyword {
             Self::False => "false",
             Self::Typeof => "typeof",
             Self::Throw => "throw",
+            Self::Import => "import",
+            Self::Export => "export",
 
             // Typescript keywords
             Self::StringType => "string",

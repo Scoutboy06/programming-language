@@ -5,6 +5,7 @@ use crate::ast_types::modules::{
 
 // es2015
 // interface ImportOrExportDeclaration <: Node { }
+#[derive(Debug, PartialEq, Clone)]
 pub enum ImportOrExportDeclaration {
     ImportDeclaration(ImportDeclaration),
     ExportNamedDeclaration(ExportNamedDeclaration),

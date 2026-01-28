@@ -1,7 +1,4 @@
-use crate::ast_types::node_objects::Node;
-
-use super::Statement;
-use parser_derive::Stmt;
+use crate::ast_types::{expressions::Expression, node_objects::Node, statements::Statement};
 
 // es5
 // interface SwitchStatement <: Statement {
@@ -9,7 +6,7 @@ use parser_derive::Stmt;
 //     discriminant: Expression;
 //     cases: [ SwitchCase ];
 // }
-#[derive(Debug, Clone, PartialEq, Stmt)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SwitchStatement {
     pub node: Node,
     pub discriminant: Expression,

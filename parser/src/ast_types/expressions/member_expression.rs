@@ -1,7 +1,10 @@
-use crate::ast_types::{expressions::Super, node_objects::Node};
+use parser_derive::FromVariants;
 
-use super::Expression;
-use parser_derive::Expr;
+use crate::ast_types::{
+    classes::class::PrivateIdentifier,
+    expressions::{Expression, Super},
+    node_objects::Node,
+};
 
 // es5
 // interface MemberExpression <: Expression, Pattern {
@@ -15,16 +18,31 @@ use parser_derive::Expr;
 // extend interface MemberExpression {
 //     object: Expression | Super;
 // }
-#[derive(Debug, PartialEq, Clone, Expr)]
+//
+// es2020
+// extend interface MemberExpression <: ChainElement {}
+//
+// es2022
+// extend interface MemberExpression {
+//     property: Expression | PrivateIdentifier;
+// }
+#[derive(Debug, PartialEq, Clone)]
 pub struct MemberExpression {
     pub node: Node,
+    pub optional: bool,
     pub object: Expression,
-    pub property: Expression,
+    pub property: MemberExpressionProperty,
     pub computed: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, FromVariants)]
 pub enum MemberExpressionObject {
     Expression(Expression),
     Super(Super),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MemberExpressionProperty {
+    Expression(Expression),
+    PrivateIdentifier(PrivateIdentifier),
 }

@@ -1,8 +1,6 @@
-use super::Statement;
 use crate::ast_types::{
     node_objects::Node, patterns::pattern::Pattern, statements::BlockStatement,
 };
-use parser_derive::Stmt;
 
 // es5
 // interface TryStatement <: Statement {
@@ -11,7 +9,7 @@ use parser_derive::Stmt;
 //     handler: CatchClause | null;
 //     finalizer: BlockStatement | null;
 // }
-#[derive(Debug, PartialEq, Clone, Stmt)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TryStatement {
     pub node: Node,
     pub block: BlockStatement,
@@ -25,9 +23,14 @@ pub struct TryStatement {
 //     param: Pattern;
 //     body: BlockStatement;
 // }
+//
+// es2019
+// extend interface CatchClause {
+//     param: Pattern | null;
+// }
 #[derive(Debug, PartialEq, Clone)]
 pub struct CatchClause {
     pub node: Node,
-    pub param: Pattern,
+    pub param: Option<Pattern>,
     pub body: BlockStatement,
 }

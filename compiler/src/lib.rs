@@ -1,6 +1,6 @@
 mod targets;
 
-use parser::{nodes::program::Program, Parser};
+use parser::{ast_types::programs::Program, Parser};
 
 #[derive(Debug, Clone, Copy)]
 pub enum CompilerTarget {

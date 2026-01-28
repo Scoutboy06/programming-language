@@ -1,14 +1,11 @@
-use crate::ast_types::node_objects::Node;
-
-use super::Expression;
-use parser_derive::Expr;
+use crate::ast_types::{expressions::Expression, node_objects::Node};
 
 // es5
 // interface SequenceExpression <: Expression {
 //     type: "SequenceExpression";
 //     expressions: [ Expression ];
 // }
-#[derive(Debug, PartialEq, Clone, Expr)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct SequenceExpression {
     pub node: Node,
     pub expressions: Vec<Expression>,

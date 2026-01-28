@@ -1,8 +1,6 @@
-use crate::ast_types::node_objects::Node;
+use crate::ast_types::{node_objects::Node, operators::BinaryOperator};
 
 use super::Expression;
-use lexer::BinaryOperator;
-use parser_derive::Expr;
 
 // es5
 // interface BinaryExpression <: Expression {
@@ -11,7 +9,7 @@ use parser_derive::Expr;
 //     left: Expression;
 //     right: Expression;
 // }
-#[derive(Debug, PartialEq, Clone, Expr)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BinaryExpression {
     pub node: Node,
     pub operator: BinaryOperator,

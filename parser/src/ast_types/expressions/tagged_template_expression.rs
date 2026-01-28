@@ -1,7 +1,7 @@
-use crate::ast_types::{expressions::TemplateLiteral, node_objects::Node};
-
-use super::Expression;
-use parser_derive::Expr;
+use crate::ast_types::{
+    expressions::{Expression, TemplateLiteral},
+    node_objects::Node,
+};
 
 // es2015
 // interface TaggedTemplateExpression <: Expression {
@@ -9,7 +9,7 @@ use parser_derive::Expr;
 //     tag: Expression;
 //     quasi: TemplateLiteral;
 // }
-#[derive(Debug, Clone, PartialEq, Expr)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TaggedTemplateExpression {
     pub node: Node,
     pub tag: Expression,

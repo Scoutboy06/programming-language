@@ -1,7 +1,10 @@
-use crate::ast_types::{expressions::Super, node_objects::Node};
+use parser_derive::FromVariants;
 
-use super::Expression;
-use parser_derive::Expr;
+use crate::ast_types::{
+    expressions::{Expression, Super},
+    node_objects::Node,
+    spread_element::SpreadElement,
+};
 
 // es5
 // interface CallExpression <: Expression {
@@ -15,20 +18,33 @@ use parser_derive::Expr;
 //     callee: Expression | Super;
 //     arguments: [ Expression | SpreadElement ];
 // }
-#[derive(Debug, PartialEq, Clone, Expr)]
+//
+// es2020
+// extend interface CallExpression <: ChainElement {}
+#[derive(Debug, PartialEq, Clone)]
 pub struct CallExpression {
     pub node: Node,
+    pub optional: bool,
     pub callee: CallExpressionCallee,
     pub arguments: Vec<Expression>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, FromVariants)]
 pub enum CallExpressionCallee {
     Expression(Expression),
     Super(Super),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+impl CallExpressionCallee {
+    pub fn node(&self) -> &Node {
+        match self {
+            CallExpressionCallee::Expression(expr) => expr.node(),
+            CallExpressionCallee::Super(sup) => &sup.node,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, FromVariants)]
 pub enum CallExpressionArgument {
     Expression(Expression),
     SpreadElement(SpreadElement),

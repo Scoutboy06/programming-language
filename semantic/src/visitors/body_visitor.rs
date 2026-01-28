@@ -1,15 +1,15 @@
 #![allow(unreachable_code)]
 
-use lexer::Operator;
-use parser::{
-    expressions::{
-        ArrayExpression, BinaryExpression, Expression, Identifier, Key, Literal, ObjectExpression,
-        ObjectItem,
+use parser::ast_types::{
+    declarations::{
+        function_declaration::FunctionDeclaration, variable_declaration::VariableDeclaration,
     },
-    nodes::program::Program,
-    statements::{
-        BlockStatement, FunctionDeclaration, ReturnStatement, Statement, VariableDeclaration,
-    },
+    expressions::{ArrayExpression, BinaryExpression, Expression, ObjectExpression},
+    identifier::Identifier,
+    literal::{Literal, LiteralValue},
+    operators::Operator,
+    programs::{program::ProgramBodyItem, Program},
+    statements::{BlockStatement, FunctionBody, ReturnStatement, Statement},
 };
 
 use crate::{
@@ -25,16 +25,17 @@ pub struct BodyVisitor<'a> {
 impl<'a> BodyVisitor<'a> {
     pub fn visit_program(ast: &Program, ctx: &'a mut CheckerContext) {
         let mut visitor = Self { ctx };
-        ast.body
-            .iter()
-            .for_each(|stmt| visitor.visit_statement(stmt, None));
+        ast.body.iter().for_each(|body_item| match body_item {
+            ProgramBodyItem::Statement(stmt) => visitor.visit_statement(stmt, None),
+            ProgramBodyItem::ImportOrExportDeclaration(_) => todo!(),
+        });
     }
 
     fn visit_statement(&mut self, stmt: &Statement, expected_ret_type: Option<&ResolvedType>) {
         use Statement as S;
         match stmt {
-            S::VariableDeclaration(decl) => self.visit_variable_declaration(decl),
-            S::FunctionDeclaration(decl) => self.visit_function_declaration(decl),
+            // S::VariableDeclaration(decl) => self.visit_variable_declaration(decl),
+            // S::FunctionDeclaration(decl) => self.visit_function_declaration(decl),
             S::ReturnStatement(stmt) => self.visit_return_statement(stmt, expected_ret_type),
             _ => todo!("{:?}", &stmt),
         }
@@ -45,27 +46,28 @@ impl<'a> BodyVisitor<'a> {
         stmt: &BlockStatement,
         expected_ret_type: Option<&ResolvedType>,
     ) {
-        for s in stmt.statements.iter() {
+        for s in stmt.body.iter() {
             self.visit_statement(s, expected_ret_type);
         }
     }
 
     fn visit_variable_declaration(&mut self, decl: &VariableDeclaration) {
         for d in decl.declarations.iter() {
-            let symbol_name = d.id.name.to_owned();
-            let expected_type = {
-                let symbol = self.ctx.get_symbol(symbol_name.to_owned());
-                symbol.unwrap().resolved_type.clone()
-            };
-
-            if let Some(init) = &d.init {
-                let init_t = self.visit_expression(init, expected_type.as_ref());
-
-                let symbol = self.ctx.get_symbol_mut(symbol_name).unwrap();
-                if symbol.resolved_type.is_none() {
-                    symbol.resolved_type = Some(init_t);
-                }
-            }
+            todo!();
+            // let symbol_name = d.id.name.to_owned();
+            // let expected_type = {
+            //     let symbol = self.ctx.get_symbol(symbol_name.to_owned());
+            //     symbol.unwrap().resolved_type.clone()
+            // };
+            //
+            // if let Some(init) = &d.init {
+            //     let init_t = self.visit_expression(init, expected_type.as_ref());
+            //
+            //     let symbol = self.ctx.get_symbol_mut(symbol_name).unwrap();
+            //     if symbol.resolved_type.is_none() {
+            //         symbol.resolved_type = Some(init_t);
+            //     }
+            // }
         }
     }
 
@@ -90,12 +92,13 @@ impl<'a> BodyVisitor<'a> {
         lit: &Literal,
         expected_type: Option<&ResolvedType>,
     ) -> ResolvedType {
-        let expr_type = match lit {
-            Literal::BooleanLiteral(_) => ResolvedType::Boolean,
-            Literal::StringLiteral(_) => ResolvedType::String,
-            Literal::NullLiteral(_) => ResolvedType::Null,
-            Literal::NumberLiteral(_) => ResolvedType::Number,
-            Literal::RegexLiteral(_) => ResolvedType::Regex,
+        let expr_type = match lit.value {
+            LiteralValue::Boolean(_) => ResolvedType::Boolean,
+            LiteralValue::String(_) => ResolvedType::String,
+            LiteralValue::Null => ResolvedType::Null,
+            LiteralValue::Number(_) => ResolvedType::Number,
+            LiteralValue::RegExp(_) => ResolvedType::Regex,
+            LiteralValue::Bigint(_) => ResolvedType::BigInt,
         };
 
         if expected_type.is_some_and(|t| expr_type != *t) {
@@ -104,7 +107,7 @@ impl<'a> BodyVisitor<'a> {
                     expected_type: expected_type.unwrap().to_owned(),
                     received_type: expr_type.to_owned(),
                 },
-                lit.node().clone(),
+                lit.node.clone(),
                 ErrorSeverity::Critical,
             );
         }
@@ -176,36 +179,37 @@ impl<'a> BodyVisitor<'a> {
         let mut key_type = ResolvedType::Unknown;
         let mut value_type = ResolvedType::Unknown;
 
-        obj.items.iter().for_each(|item| match item {
-            ObjectItem::KV(kv) => {
-                match &kv.key {
-                    Key::Identifier(_) | Key::StringLiteral(_) => {
-                        if expected_key_type.is_some_and(|t| !t.includes(&ResolvedType::String)) {
-                            self.ctx.report_error(
-                                ErrorData::TypeMismatch {
-                                    expected_type: expected_key_type.unwrap().to_owned(),
-                                    received_type: ResolvedType::String,
-                                },
-                                kv.key.node().clone(),
-                                ErrorSeverity::Critical,
-                            );
-                        }
-                        key_type.extend(&ResolvedType::String);
-                    }
-                    Key::ComputedProperty(key) => {
-                        let expr_t = self.visit_expression(&key.expression, expected_key_type);
-                        key_type.extend(&expr_t);
-                    }
-                };
-                self.visit_expression(&kv.value, expected_value_type);
-            }
-            ObjectItem::Identifier(id) => {
-                let id_t = self.visit_identifier(id, expected_type);
-                key_type.extend(&ResolvedType::String);
-                value_type.extend(&id_t);
-            }
-            ObjectItem::Method(_method) => todo!(),
-        });
+        todo!();
+        // obj.items.iter().for_each(|item| match item {
+        //     ObjectItem::KV(kv) => {
+        //         match &kv.key {
+        //             Key::Identifier(_) | Key::StringLiteral(_) => {
+        //                 if expected_key_type.is_some_and(|t| !t.includes(&ResolvedType::String)) {
+        //                     self.ctx.report_error(
+        //                         ErrorData::TypeMismatch {
+        //                             expected_type: expected_key_type.unwrap().to_owned(),
+        //                             received_type: ResolvedType::String,
+        //                         },
+        //                         kv.key.node().clone(),
+        //                         ErrorSeverity::Critical,
+        //                     );
+        //                 }
+        //                 key_type.extend(&ResolvedType::String);
+        //             }
+        //             Key::ComputedProperty(key) => {
+        //                 let expr_t = self.visit_expression(&key.expression, expected_key_type);
+        //                 key_type.extend(&expr_t);
+        //             }
+        //         };
+        //         self.visit_expression(&kv.value, expected_value_type);
+        //     }
+        //     ObjectItem::Identifier(id) => {
+        //         let id_t = self.visit_identifier(id, expected_type);
+        //         key_type.extend(&ResolvedType::String);
+        //         value_type.extend(&id_t);
+        //     }
+        //     ObjectItem::Method(_method) => todo!(),
+        // });
 
         ResolvedType::Object(Box::new(ObjectType {
             key_type,
@@ -237,10 +241,11 @@ impl<'a> BodyVisitor<'a> {
         };
         let mut item_type = ResolvedType::Unknown;
 
-        arr.items.iter().for_each(|it| {
-            let expr_t = self.visit_expression(it, expected_item_type);
-            item_type.extend(&expr_t);
-        });
+        todo!();
+        // arr.items.iter().for_each(|it| {
+        //     let expr_t = self.visit_expression(it, expected_item_type);
+        //     item_type.extend(&expr_t);
+        // });
 
         ResolvedType::Array(Box::new(item_type))
     }
@@ -250,49 +255,50 @@ impl<'a> BodyVisitor<'a> {
         expr: &BinaryExpression,
         expected_type: Option<&ResolvedType>,
     ) -> ResolvedType {
-        let left_t = self.visit_expression(&expr.left, expected_type);
-        let right_t = self.visit_expression(&expr.right, expected_type);
-
-        use Operator as OP;
-        use ResolvedType as RT;
-        let is_allowed_operation: bool = match expr.operator {
-            OP::Plus => match (&left_t, &right_t) {
-                (RT::String, RT::String) => true,
-                (RT::Number, RT::Number) => true,
-                _ => false,
-            },
-            OP::Minus
-            | OP::Mult
-            | OP::Div
-            | OP::Mod
-            | OP::Power
-            | OP::BitwiseAnd
-            | OP::BitwiseOr
-            | OP::BitwiseXor
-            | OP::BitwiseNot
-            | OP::BitwiseLeftShift
-            | OP::BitwiseRightShift
-            | OP::ZeroFillRightShift => {
-                left_t == ResolvedType::Number && right_t == ResolvedType::Number
-            }
-            OP::Equals | OP::NotEquals => left_t.includes(&right_t) || right_t.includes(&left_t),
-            OP::StrictEquals | OP::StrictNotEquals => left_t == right_t,
-            _ => false,
-        };
-
-        if !is_allowed_operation {
-            self.ctx.report_error(
-                ErrorData::TypeMismatch {
-                    expected_type: left_t,
-                    received_type: right_t,
-                },
-                expr.left.node().to_owned(),
-                ErrorSeverity::Critical,
-            );
-            return ResolvedType::Unknown;
-        }
-
-        left_t
+        todo!()
+        // let left_t = self.visit_expression(&expr.left, expected_type);
+        // let right_t = self.visit_expression(&expr.right, expected_type);
+        //
+        // use Operator as OP;
+        // use ResolvedType as RT;
+        // let is_allowed_operation: bool = match expr.operator {
+        //     OP::Plus => match (&left_t, &right_t) {
+        //         (RT::String, RT::String) => true,
+        //         (RT::Number, RT::Number) => true,
+        //         _ => false,
+        //     },
+        //     OP::Minus
+        //     | OP::Mult
+        //     | OP::Div
+        //     | OP::Mod
+        //     | OP::Power
+        //     | OP::BitwiseAnd
+        //     | OP::BitwiseOr
+        //     | OP::BitwiseXor
+        //     | OP::BitwiseNot
+        //     | OP::BitwiseLeftShift
+        //     | OP::BitwiseRightShift
+        //     | OP::ZeroFillRightShift => {
+        //         left_t == ResolvedType::Number && right_t == ResolvedType::Number
+        //     }
+        //     OP::Equals | OP::NotEquals => left_t.includes(&right_t) || right_t.includes(&left_t),
+        //     OP::StrictEquals | OP::StrictNotEquals => left_t == right_t,
+        //     _ => false,
+        // };
+        //
+        // if !is_allowed_operation {
+        //     self.ctx.report_error(
+        //         ErrorData::TypeMismatch {
+        //             expected_type: left_t,
+        //             received_type: right_t,
+        //         },
+        //         expr.left.node().to_owned(),
+        //         ErrorSeverity::Critical,
+        //     );
+        //     return ResolvedType::Unknown;
+        // }
+        //
+        // left_t
     }
 
     fn visit_function_declaration(&mut self, decl: &FunctionDeclaration) {
@@ -301,7 +307,15 @@ impl<'a> BodyVisitor<'a> {
             .as_ref()
             .map(|t| ResolvedType::from_ast_type(&t.type_value, &mut self.ctx));
 
-        self.visit_block_statement(&decl.body, ret_t.as_ref());
+        self.visit_function_body(&decl.body, ret_t.as_ref());
+    }
+
+    fn visit_function_body(
+        &mut self,
+        body: &FunctionBody,
+        expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
     }
 
     fn visit_return_statement(
@@ -309,6 +323,43 @@ impl<'a> BodyVisitor<'a> {
         stmt: &ReturnStatement,
         expected_ret_type: Option<&ResolvedType>,
     ) {
-        self.visit_expression(&stmt.value, expected_ret_type);
+        let returned_type = stmt
+            .argument
+            .as_ref()
+            .map(|arg| self.visit_expression(arg, expected_ret_type));
+
+        match (&returned_type, expected_ret_type) {
+            (Some(ret_t), Some(expected_t)) if *expected_t != *ret_t => {
+                self.ctx.report_error(
+                    ErrorData::TypeMismatch {
+                        expected_type: expected_t.to_owned(),
+                        received_type: ret_t.to_owned(),
+                    },
+                    stmt.node.clone(),
+                    ErrorSeverity::Critical,
+                );
+            }
+            (Some(_), None) => {
+                self.ctx.report_error(
+                    ErrorData::TypeMismatch {
+                        expected_type: ResolvedType::Void,
+                        received_type: returned_type.unwrap(),
+                    },
+                    stmt.node.clone(),
+                    ErrorSeverity::Critical,
+                );
+            }
+            (None, Some(expected_t)) if *expected_t != ResolvedType::Void => {
+                self.ctx.report_error(
+                    ErrorData::TypeMismatch {
+                        expected_type: expected_t.to_owned(),
+                        received_type: ResolvedType::Void,
+                    },
+                    stmt.node.clone(),
+                    ErrorSeverity::Critical,
+                );
+            }
+            _ => {}
+        }
     }
 }

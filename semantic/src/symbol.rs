@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use parser::nodes::Node;
+use parser::ast_types::node_objects::Node;
 use string_cache::DefaultAtom as Atom;
 
 use crate::types::ResolvedType;

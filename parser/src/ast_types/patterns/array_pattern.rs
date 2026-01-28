@@ -1,4 +1,4 @@
-use crate::ast_types::patterns::pattern::Pattern;
+use crate::ast_types::{node_objects::Node, patterns::pattern::Pattern};
 
 // es2015
 // interface ArrayPattern <: Pattern {
@@ -7,5 +7,6 @@ use crate::ast_types::patterns::pattern::Pattern;
 // }
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArrayPattern {
+    pub node: Node,
     pub elements: Vec<Option<Pattern>>,
 }
