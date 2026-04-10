@@ -1,0 +1,104 @@
+---
+source: parser/tests/primary_expression.rs
+assertion_line: 53
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            Declaration(
+                VariableDeclaration(
+                    VariableDeclaration {
+                        node: Node {
+                            start: 0,
+                            end: 24,
+                        },
+                        declarations: [
+                            VariableDeclarator {
+                                node: Node {
+                                    start: 6,
+                                    end: 23,
+                                },
+                                id: Identifier(
+                                    Identifier {
+                                        node: Node {
+                                            start: 6,
+                                            end: 10,
+                                        },
+                                        name: Atom('nums' type=inline),
+                                    },
+                                ),
+                                type_annotation: None,
+                                init: Some(
+                                    ArrayExpression(
+                                        ArrayExpression {
+                                            node: Node {
+                                                start: 13,
+                                                end: 23,
+                                            },
+                                            elements: [
+                                                Some(
+                                                    ArrayExpression(
+                                                        ArrayExpression {
+                                                            node: Node {
+                                                                start: 14,
+                                                                end: 17,
+                                                            },
+                                                            elements: [
+                                                                Some(
+                                                                    Literal(
+                                                                        Literal {
+                                                                            node: Node {
+                                                                                start: 15,
+                                                                                end: 16,
+                                                                            },
+                                                                            value: Number(
+                                                                                1.0,
+                                                                            ),
+                                                                        },
+                                                                    ),
+                                                                ),
+                                                            ],
+                                                        },
+                                                    ),
+                                                ),
+                                                None,
+                                                Some(
+                                                    ArrayExpression(
+                                                        ArrayExpression {
+                                                            node: Node {
+                                                                start: 19,
+                                                                end: 22,
+                                                            },
+                                                            elements: [
+                                                                Some(
+                                                                    Literal(
+                                                                        Literal {
+                                                                            node: Node {
+                                                                                start: 20,
+                                                                                end: 21,
+                                                                            },
+                                                                            value: Number(
+                                                                                2.0,
+                                                                            ),
+                                                                        },
+                                                                    ),
+                                                                ),
+                                                            ],
+                                                        },
+                                                    ),
+                                                ),
+                                            ],
+                                        },
+                                    ),
+                                ),
+                            },
+                        ],
+                        kind: Const,
+                    },
+                ),
+            ),
+        ),
+    ],
+}

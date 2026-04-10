@@ -1,97 +1,16 @@
-use lexer::Operator;
-use parser::{
-    expressions::{
-        literal::VariableKind, BinaryExpression, Identifier, NumberLiteral, UpdateExpression,
-        UpdateOperator,
-    },
-    nodes::{program::Program, Node},
-    statements::{
-        BlockStatement, ForClassic, ForIn, ForLeft, ForOf, VariableDeclaration, VariableDeclarator,
-    },
-    Parser,
-};
-use pretty_assertions::assert_eq;
-mod helpers;
-use helpers::NodeConstructor;
+use parser::Parser;
 
 #[test]
 fn for_loop() {
     let code = "for(let i = 0; i < 10; i++) {}";
     let mut parser = Parser::new(&code);
     let result = parser.parse();
-
-    let expected = Ok(Program {
-        node: Node::new(0, code.len()),
-        shebang: None,
-        body: vec![ForClassic {
-            node: code.node(&code, 0),
-            init: Some(
-                VariableDeclaration {
-                    node: code.node("let i = 0", 0),
-                    declarations: vec![VariableDeclarator {
-                        node: code.node("i = 0", 0),
-                        id: Identifier {
-                            node: code.node("i", 0),
-                            name: "i".into(),
-                        },
-                        init: Some(
-                            NumberLiteral {
-                                node: code.node("0", 0),
-                                value: 0.0,
-                            }
-                            .into(),
-                        ),
-                        type_annotation: None,
-                    }],
-                    kind: VariableKind::Let,
-                }
-                .into(),
-            ),
-            test: Some(
-                BinaryExpression {
-                    node: code.node("i < 10", 0),
-                    operator: Operator::LessThan,
-                    left: Identifier {
-                        node: code.node("i", 1),
-                        name: "i".into(),
-                    }
-                    .into(),
-                    right: NumberLiteral {
-                        node: code.node("10", 0),
-                        value: 10.0,
-                    }
-                    .into(),
-                }
-                .into(),
-            ),
-            update: Some(
-                UpdateExpression {
-                    node: code.node("i++", 0),
-                    operator: UpdateOperator::Increment,
-                    argument: Identifier {
-                        node: code.node("i", 2),
-                        name: "i".into(),
-                    }
-                    .into(),
-                    prefix: false,
-                }
-                .into(),
-            ),
-            body: BlockStatement {
-                node: code.node("{}", 0),
-                statements: Vec::new(),
-            }
-            .into(),
-        }
-        .into()],
-    });
-
     if let Err(err) = result {
         err.print(&code);
         panic!();
     }
-
-    assert_eq!(result, expected);
+    let program = result.unwrap();
+    insta::assert_snapshot!(format!("{:#?}", program));
 }
 
 #[test]
@@ -99,58 +18,12 @@ fn for_loop_without_initializer() {
     let code = "for(; i < 10; i++) {}";
     let mut parser = Parser::new(&code);
     let result = parser.parse();
-
-    let expected = Ok(Program {
-        node: Node::new(0, code.len()),
-        shebang: None,
-        body: vec![ForClassic {
-            node: code.node(&code, 0),
-            init: None,
-            test: Some(
-                BinaryExpression {
-                    node: code.node("i < 10", 0),
-                    operator: Operator::LessThan,
-                    left: Identifier {
-                        node: code.node("i", 0),
-                        name: "i".into(),
-                    }
-                    .into(),
-                    right: NumberLiteral {
-                        node: code.node("10", 0),
-                        value: 10.0,
-                    }
-                    .into(),
-                }
-                .into(),
-            ),
-            update: Some(
-                UpdateExpression {
-                    node: code.node("i++", 0),
-                    operator: UpdateOperator::Increment,
-                    argument: Identifier {
-                        node: code.node("i", 1),
-                        name: "i".into(),
-                    }
-                    .into(),
-                    prefix: false,
-                }
-                .into(),
-            ),
-            body: BlockStatement {
-                node: code.node("{}", 0),
-                statements: Vec::new(),
-            }
-            .into(),
-        }
-        .into()],
-    });
-
     if let Err(err) = result {
         err.print(&code);
         panic!();
     }
-
-    assert_eq!(result, expected);
+    let program = result.unwrap();
+    insta::assert_snapshot!(format!("{:#?}", program));
 }
 
 #[test]
@@ -158,63 +31,12 @@ fn for_loop_without_test() {
     let code = "for(let i = 0;; i++) {}";
     let mut parser = Parser::new(&code);
     let result = parser.parse();
-
-    let expected = Ok(Program {
-        node: Node::new(0, code.len()),
-        shebang: None,
-        body: vec![ForClassic {
-            node: code.node(&code, 0),
-            init: Some(
-                VariableDeclaration {
-                    node: code.node("let i = 0", 0),
-                    declarations: vec![VariableDeclarator {
-                        node: code.node("i = 0", 0),
-                        id: Identifier {
-                            node: code.node("i", 0),
-                            name: "i".into(),
-                        },
-                        init: Some(
-                            NumberLiteral {
-                                node: code.node("0", 0),
-                                value: 0.0,
-                            }
-                            .into(),
-                        ),
-                        type_annotation: None,
-                    }],
-                    kind: VariableKind::Let,
-                }
-                .into(),
-            ),
-            test: None,
-            update: Some(
-                UpdateExpression {
-                    node: code.node("i++", 0),
-                    operator: UpdateOperator::Increment,
-                    argument: Identifier {
-                        node: code.node("i", 1),
-                        name: "i".into(),
-                    }
-                    .into(),
-                    prefix: false,
-                }
-                .into(),
-            ),
-            body: BlockStatement {
-                node: code.node("{}", 0),
-                statements: Vec::new(),
-            }
-            .into(),
-        }
-        .into()],
-    });
-
     if let Err(err) = result {
         err.print(&code);
         panic!();
     }
-
-    assert_eq!(result, expected);
+    let program = result.unwrap();
+    insta::assert_snapshot!(format!("{:#?}", program));
 }
 
 #[test]
@@ -222,67 +44,12 @@ fn for_loop_without_update() {
     let code = "for(let i = 0; i < 10;) {}";
     let mut parser = Parser::new(&code);
     let result = parser.parse();
-
-    let expected = Ok(Program {
-        node: Node::new(0, code.len()),
-        shebang: None,
-        body: vec![ForClassic {
-            node: code.node(&code, 0),
-            init: Some(
-                VariableDeclaration {
-                    node: code.node("let i = 0", 0),
-                    declarations: vec![VariableDeclarator {
-                        node: code.node("i = 0", 0),
-                        id: Identifier {
-                            node: code.node("i", 0),
-                            name: "i".into(),
-                        },
-                        init: Some(
-                            NumberLiteral {
-                                node: code.node("0", 0),
-                                value: 0.0,
-                            }
-                            .into(),
-                        ),
-                        type_annotation: None,
-                    }],
-                    kind: VariableKind::Let,
-                }
-                .into(),
-            ),
-            test: Some(
-                BinaryExpression {
-                    node: code.node("i < 10", 0),
-                    operator: Operator::LessThan,
-                    left: Identifier {
-                        node: code.node("i", 1),
-                        name: "i".into(),
-                    }
-                    .into(),
-                    right: NumberLiteral {
-                        node: code.node("10", 0),
-                        value: 10.0,
-                    }
-                    .into(),
-                }
-                .into(),
-            ),
-            update: None,
-            body: BlockStatement {
-                node: code.node("{}", 0),
-                statements: Vec::new(),
-            }
-            .into(),
-        }
-        .into()],
-    });
-
     if let Err(err) = result {
         err.print(&code);
         panic!();
     }
-
-    assert_eq!(result, expected);
+    let program = result.unwrap();
+    insta::assert_snapshot!(format!("{:#?}", program));
 }
 
 #[test]
@@ -290,48 +57,12 @@ fn for_in_loop() {
     let code = "for(let key in obj) {}";
     let mut parser = Parser::new(&code);
     let result = parser.parse();
-
-    let expected = Ok(Program {
-        node: Node::new(0, code.len()),
-        shebang: None,
-        body: vec![ForIn {
-            node: code.node(&code, 0),
-            left: ForLeft::VariableDeclaration(
-                VariableDeclaration {
-                    node: code.node("let key", 0),
-                    declarations: vec![VariableDeclarator {
-                        node: code.node("key", 0),
-                        type_annotation: None,
-                        init: None,
-                        id: Identifier {
-                            node: code.node("key", 0),
-                            name: "key".into(),
-                        },
-                    }],
-                    kind: VariableKind::Let,
-                }
-                .into(),
-            ),
-            right: Identifier {
-                node: code.node("obj", 0),
-                name: "obj".into(),
-            }
-            .into(),
-            body: BlockStatement {
-                node: code.node("{}", 0),
-                statements: Vec::new(),
-            }
-            .into(),
-        }
-        .into()],
-    });
-
     if let Err(err) = result {
         err.print(&code);
         panic!();
     }
-
-    assert_eq!(result, expected);
+    let program = result.unwrap();
+    insta::assert_snapshot!(format!("{:#?}", program));
 }
 
 #[test]
@@ -339,43 +70,10 @@ fn for_of_loop() {
     let code = "for(let key of obj) {}";
     let mut parser = Parser::new(&code);
     let result = parser.parse();
-
-    let expected = Ok(Program {
-        node: Node::new(0, code.len()),
-        shebang: None,
-        body: vec![ForOf {
-            node: code.node(&code, 0),
-            left: ForLeft::VariableDeclaration(VariableDeclaration {
-                node: code.node("let key", 0),
-                declarations: vec![VariableDeclarator {
-                    node: code.node("key", 0),
-                    type_annotation: None,
-                    init: None,
-                    id: Identifier {
-                        node: code.node("key", 0),
-                        name: "key".into(),
-                    },
-                }],
-                kind: VariableKind::Let,
-            }),
-            right: Identifier {
-                node: code.node("obj", 0),
-                name: "obj".into(),
-            }
-            .into(),
-            body: BlockStatement {
-                node: code.node("{}", 0),
-                statements: Vec::new(),
-            }
-            .into(),
-        }
-        .into()],
-    });
-
     if let Err(err) = result {
         err.print(&code);
         panic!();
     }
-
-    assert_eq!(result, expected);
+    let program = result.unwrap();
+    insta::assert_snapshot!(format!("{:#?}", program));
 }

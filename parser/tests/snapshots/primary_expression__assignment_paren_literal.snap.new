@@ -1,0 +1,54 @@
+---
+source: parser/tests/primary_expression.rs
+assertion_line: 27
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            Declaration(
+                VariableDeclaration(
+                    VariableDeclaration {
+                        node: Node {
+                            start: 0,
+                            end: 15,
+                        },
+                        declarations: [
+                            VariableDeclarator {
+                                node: Node {
+                                    start: 6,
+                                    end: 15,
+                                },
+                                id: Identifier(
+                                    Identifier {
+                                        node: Node {
+                                            start: 6,
+                                            end: 7,
+                                        },
+                                        name: Atom('a' type=inline),
+                                    },
+                                ),
+                                type_annotation: None,
+                                init: Some(
+                                    Literal(
+                                        Literal {
+                                            node: Node {
+                                                start: 11,
+                                                end: 15,
+                                            },
+                                            value: Number(
+                                                50.5,
+                                            ),
+                                        },
+                                    ),
+                                ),
+                            },
+                        ],
+                        kind: Const,
+                    },
+                ),
+            ),
+        ),
+    ],
+}

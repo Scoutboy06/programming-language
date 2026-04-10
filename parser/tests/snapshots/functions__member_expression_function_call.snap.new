@@ -1,0 +1,74 @@
+---
+source: parser/tests/functions.rs
+assertion_line: 27
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            ExpressionStatement(
+                ExpressionStatement {
+                    node: Node {
+                        start: 0,
+                        end: 17,
+                    },
+                    expression: CallExpression(
+                        CallExpression {
+                            node: Node {
+                                start: 0,
+                                end: 17,
+                            },
+                            optional: false,
+                            callee: Expression(
+                                MemberExpression(
+                                    MemberExpression {
+                                        node: Node {
+                                            start: 0,
+                                            end: 11,
+                                        },
+                                        optional: false,
+                                        object: Identifier(
+                                            Identifier {
+                                                node: Node {
+                                                    start: 0,
+                                                    end: 7,
+                                                },
+                                                name: Atom('console' type=inline),
+                                            },
+                                        ),
+                                        property: Expression(
+                                            Identifier(
+                                                Identifier {
+                                                    node: Node {
+                                                        start: 8,
+                                                        end: 11,
+                                                    },
+                                                    name: Atom('log' type=inline),
+                                                },
+                                            ),
+                                        ),
+                                        computed: false,
+                                    },
+                                ),
+                            ),
+                            arguments: [
+                                Literal(
+                                    Literal {
+                                        node: Node {
+                                            start: 12,
+                                            end: 16,
+                                        },
+                                        value: Number(
+                                            50.5,
+                                        ),
+                                    },
+                                ),
+                            ],
+                        },
+                    ),
+                },
+            ),
+        ),
+    ],
+}

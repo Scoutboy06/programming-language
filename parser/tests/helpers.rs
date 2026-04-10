@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use parser::nodes::Node;
+use parser::ast_types::node_objects::Node;
 
 pub trait NodeConstructor {
     fn find_n(&self, target: &str, n: usize) -> Option<usize>;

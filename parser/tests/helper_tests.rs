@@ -1,7 +1,7 @@
+use parser::ast_types::node_objects::Node;
 use pretty_assertions::assert_eq;
 mod helpers;
 use helpers::NodeConstructor;
-use parser::nodes::Node;
 
 #[test]
 fn helper_find_n() {

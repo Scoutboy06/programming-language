@@ -1,0 +1,73 @@
+---
+source: parser/tests/if_statements.rs
+assertion_line: 70
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            IfStatement(
+                IfStatement {
+                    node: Node {
+                        start: 6,
+                        end: 68,
+                    },
+                    test: Identifier(
+                        Identifier {
+                            node: Node {
+                                start: 9,
+                                end: 12,
+                            },
+                            name: Atom('foo' type=inline),
+                        },
+                    ),
+                    consequent: ReturnStatement(
+                        ReturnStatement {
+                            node: Node {
+                                start: 23,
+                                end: 35,
+                            },
+                            argument: Some(
+                                Literal(
+                                    Literal {
+                                        node: Node {
+                                            start: 30,
+                                            end: 34,
+                                        },
+                                        value: Boolean(
+                                            true,
+                                        ),
+                                    },
+                                ),
+                            ),
+                        },
+                    ),
+                    alternate: Some(
+                        ReturnStatement(
+                            ReturnStatement {
+                                node: Node {
+                                    start: 55,
+                                    end: 68,
+                                },
+                                argument: Some(
+                                    Literal(
+                                        Literal {
+                                            node: Node {
+                                                start: 62,
+                                                end: 67,
+                                            },
+                                            value: Boolean(
+                                                false,
+                                            ),
+                                        },
+                                    ),
+                                ),
+                            },
+                        ),
+                    ),
+                },
+            ),
+        ),
+    ],
+}
