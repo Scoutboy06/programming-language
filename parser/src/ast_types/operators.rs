@@ -15,6 +15,14 @@ pub enum UnaryOperator {
     Delete,     // delete
 }
 
+impl UnaryOperator {
+    /// Returns the precedence of the unary operator.
+    /// In JavaScript, unary operators have precedence 14.
+    pub fn precedence(&self) -> u8 {
+        14
+    }
+}
+
 // es5
 // enum UpdateOperator {
 //     "++" | "--"
@@ -23,6 +31,14 @@ pub enum UnaryOperator {
 pub enum UpdateOperator {
     Increment, // ++
     Decrement, // --
+}
+
+impl UpdateOperator {
+    /// Returns the precedence of the update operator.
+    /// In JavaScript, update operators (++/--) have precedence 15 (highest).
+    pub fn precedence(&self) -> u8 {
+        15
+    }
 }
 
 // es5
@@ -71,48 +87,38 @@ pub enum BinaryOperator {
 }
 
 impl BinaryOperator {
+    /// Returns the precedence of the binary operator.
+    /// Precedence values follow JavaScript operator precedence rules.
     pub fn precedence(&self) -> u8 {
         match self {
-            // Level 3: Logical OR (||) and Nullish Coalescing (??)
-            // (Note: Logical operators are often handled in their own parse_logical_expression,
-            // but if they are in BinaryOperator, they sit here.)
-
-            // Level 4: Bitwise OR
-            BinaryOperator::BitwiseOr => 4,
-
-            // Level 5: Bitwise XOR
-            BinaryOperator::BitwiseXor => 5,
-
-            // Level 6: Bitwise AND
-            BinaryOperator::BitwiseAnd => 6,
-
-            // Level 7: Equality operators
-            BinaryOperator::Equals
-            | BinaryOperator::NotEquals
-            | BinaryOperator::StrictEquals
-            | BinaryOperator::StrictNotEquals => 7,
-
-            // Level 8: Relational operators
+            // Exponentiation
+            BinaryOperator::Power => 12,
+            // Multiplicative
+            BinaryOperator::Mult | BinaryOperator::Div | BinaryOperator::Mod => 11,
+            // Additive
+            BinaryOperator::Plus | BinaryOperator::Minus => 10,
+            // Shift
+            BinaryOperator::LeftShift
+            | BinaryOperator::RightShift
+            | BinaryOperator::ZeroFillRightShift => 9,
+            // Relational
             BinaryOperator::LessThan
             | BinaryOperator::LessOrEquals
             | BinaryOperator::GreaterThan
             | BinaryOperator::GreaterOrEquals
             | BinaryOperator::In
             | BinaryOperator::Instanceof => 8,
-
-            // Level 9: Bitwise Shift operators
-            BinaryOperator::LeftShift
-            | BinaryOperator::RightShift
-            | BinaryOperator::ZeroFillRightShift => 9,
-
-            // Level 10: Additive operators
-            BinaryOperator::Plus | BinaryOperator::Minus => 10,
-
-            // Level 11: Multiplicative operators
-            BinaryOperator::Mult | BinaryOperator::Div | BinaryOperator::Mod => 11,
-
-            // Level 12: Exponentiation (Highest Binary)
-            BinaryOperator::Power => 12,
+            // Equality
+            BinaryOperator::Equals
+            | BinaryOperator::NotEquals
+            | BinaryOperator::StrictEquals
+            | BinaryOperator::StrictNotEquals => 7,
+            // Bitwise AND
+            BinaryOperator::BitwiseAnd => 6,
+            // Bitwise XOR
+            BinaryOperator::BitwiseXor => 5,
+            // Bitwise OR
+            BinaryOperator::BitwiseOr => 4,
         }
     }
 }
@@ -186,6 +192,14 @@ pub enum AssignmentOperator {
     NullishEq, // ??=
 }
 
+impl AssignmentOperator {
+    /// Returns the precedence of the assignment operator.
+    /// Assignment operators have precedence 2 in JavaScript.
+    pub fn precedence(&self) -> u8 {
+        2
+    }
+}
+
 // es5
 // enum LogicalOperator {
 //     "||" | "&&"
@@ -202,15 +216,38 @@ pub enum LogicalOperator {
     Nullish, // ??
 }
 
+impl LogicalOperator {
+    /// Returns the precedence of the logical operator.
+    /// || = 3, && = 4, ?? = 3 (same as ||)
+    pub fn precedence(&self) -> u8 {
+        match self {
+            LogicalOperator::Or => 3,
+            LogicalOperator::Nullish => 3,
+            LogicalOperator::And => 4,
+        }
+    }
+}
+
 pub trait TokenKindExt {
     fn as_unary_op(&self) -> Option<UnaryOperator>;
+    fn is_unary_op(&self) -> bool {
+        self.as_unary_op().is_some()
+    }
     fn as_update_op(&self) -> Option<UpdateOperator>;
+    fn is_update_op(&self) -> bool {
+        self.as_update_op().is_some()
+    }
     fn as_binary_op(&self) -> Option<BinaryOperator>;
+    fn is_binary_op(&self) -> bool {
+        self.as_binary_op().is_some()
+    }
     fn as_assignment_op(&self) -> Option<AssignmentOperator>;
+    fn is_assignment_op(&self) -> bool {
+        self.as_assignment_op().is_some()
+    }
     fn as_logical_op(&self) -> Option<LogicalOperator>;
-
-    fn get_precedence(&self) -> Option<u8> {
-        self.as_binary_op().map(|bin_op| bin_op.precedence())
+    fn is_logical_op(&self) -> bool {
+        self.as_logical_op().is_some()
     }
 }
 
@@ -304,4 +341,16 @@ pub enum Operator {
     Binary(BinaryOperator),
     Assignment(AssignmentOperator),
     Logical(LogicalOperator),
+}
+
+impl Operator {
+    pub fn precedence(&self) -> u8 {
+        match self {
+            Operator::Unary(op) => op.precedence(),
+            Operator::Update(op) => op.precedence(),
+            Operator::Binary(op) => op.precedence(),
+            Operator::Assignment(op) => op.precedence(),
+            Operator::Logical(op) => op.precedence(),
+        }
+    }
 }

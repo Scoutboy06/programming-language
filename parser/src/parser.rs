@@ -14,7 +14,9 @@ use crate::ast_types::identifier::Identifier;
 use crate::ast_types::literal::{Literal, LiteralValue};
 use crate::ast_types::modules::import_or_export_declaration::ImportOrExportDeclaration;
 use crate::ast_types::node_objects::Node;
-use crate::ast_types::operators::{AssignmentOperator, TokenKindExt, UnaryOperator};
+use crate::ast_types::operators::{
+    AssignmentOperator, BinaryOperator, LogicalOperator, Operator, TokenKindExt, UnaryOperator,
+};
 use crate::ast_types::patterns::pattern::Pattern;
 use crate::ast_types::programs::program::{ProgramBodyItem, SourceType};
 use crate::ast_types::programs::Program;
@@ -259,50 +261,105 @@ impl<'a> Parser<'a> {
 
     /// Parses an expression (e.g., arithmetic operations, logical operations, or function calls).
     fn parse_expression(&mut self) -> Result<Expression, ParserErrorInfo> {
+        self.parse_expression_prec(0)
+    }
+
+    /// Precedence climbing expression parser
+    fn parse_expression_prec(&mut self, min_prec: u8) -> Result<Expression, ParserErrorInfo> {
         let mut lhs = self.parse_primary_expression()?;
 
-        use TokenKind as TK;
         loop {
-            match self.current_token.kind {
-                TK::OpenParen => {
-                    let call_exp = self.parse_call_expression(lhs.into())?;
-                    lhs = Expression::CallExpression(Box::new(call_exp));
+            // Handle postfix update operators (++/--)
+            if let Some(operator) = self.current_token.kind.as_update_op() {
+                let expr = UpdateExpression {
+                    node: Node::new(lhs.node().start, self.current_token.end),
+                    operator,
+                    argument: lhs,
+                    prefix: false,
+                };
+                self.advance();
+                lhs = expr.into();
+                continue;
+            }
+
+            // Determine operator kind and precedence
+            let (op_prec, is_right_assoc, op_kind) =
+                if let Some(op) = self.current_token.kind.as_binary_op() {
+                    (
+                        op.precedence(),
+                        op == BinaryOperator::Power,
+                        Some(Operator::Binary(op)),
+                    )
+                } else if let Some(op) = self.current_token.kind.as_logical_op() {
+                    (op.precedence(), false, Some(Operator::Logical(op)))
+                } else if let Some(op) = self.current_token.kind.as_assignment_op() {
+                    (op.precedence(), true, Some(Operator::Assignment(op)))
+                } else {
+                    (0, false, None)
+                };
+
+            let op_kind = match op_kind {
+                Some(kind) => kind,
+                None => break,
+            };
+
+            if op_prec < min_prec {
+                break;
+            }
+
+            match op_kind {
+                Operator::Binary(op) => {
+                    self.advance();
+                    let next_min_prec = if is_right_assoc { op_prec } else { op_prec + 1 };
+                    let rhs = self.parse_expression_prec(next_min_prec)?;
+                    let node = Node::new(lhs.node().start, rhs.node().end);
+                    lhs = Expression::BinaryExpression(Box::new(BinaryExpression {
+                        node,
+                        left: lhs,
+                        right: rhs,
+                        operator: op,
+                    }));
                 }
-                TK::Dot | TK::OpenBracket => {
-                    let mem_exp = self.parse_member_expression(lhs)?;
-                    lhs = Expression::MemberExpression(Box::new(mem_exp));
+                Operator::Logical(op) => {
+                    self.advance();
+                    let rhs = self.parse_expression_prec(op_prec + 1)?;
+                    let node = Node::new(lhs.node().start, rhs.node().end);
+                    // You may want to introduce a LogicalExpression AST node instead of reusing BinaryExpression
+                    lhs = Expression::BinaryExpression(Box::new(BinaryExpression {
+                        node,
+                        left: lhs,
+                        right: rhs,
+                        // This is a placeholder: you may want to add a LogicalExpression variant or map logical ops to binary ops as needed
+                        operator: match op {
+                            LogicalOperator::Or => BinaryOperator::BitwiseOr, // Placeholder
+                            LogicalOperator::And => BinaryOperator::BitwiseAnd, // Placeholder
+                            LogicalOperator::Nullish => BinaryOperator::BitwiseOr, // Placeholder
+                        },
+                    }));
                 }
-                TK::PlusPlus | TK::MinusMinus => {
-                    let expr = UpdateExpression {
-                        node: Node::new(lhs.node().start, self.current_token.end),
-                        operator: self.current_token.kind.as_update_op().unwrap(),
-                        argument: lhs,
-                        prefix: true,
+                Operator::Assignment(op) => {
+                    self.advance();
+                    // For assignment, left must be a pattern
+                    let left_pattern = match lhs.clone() {
+                        Expression::Identifier(id) => Pattern::Identifier(id),
+                        // Add more conversions as needed
+                        _ => throw_error!(InvalidToken),
                     };
-                    self.advance(); // Consume update operator
-                    lhs = expr.into();
+                    let rhs = self.parse_expression_prec(op_prec)?;
+                    let node = Node::new(lhs.node().start, rhs.node().end);
+                    lhs = Expression::AssignmentExpression(Box::new(AssignmentExpression {
+                        node,
+                        left: left_pattern,
+                        right: rhs,
+                        operator: op,
+                    }));
                 }
-                TK::Question => {
-                    throw_error!(Todo)
-                    // self.advance(); // consume '?' token
-                    // let truthy_expr = self.parse_expression()?;
-                    // self.expect_and_consume_token(TokenKind::Colon)?;
-                    // let falsy_expr = self.parse_expression()?;
-                    // lhs = TernaryExpression {
-                    //     node: Node::new(lhs.node().start, falsy_expr.node().end),
-                    //     truthy_expr: Box::new(truthy_expr),
-                    //     falsy_expr: Box::new(falsy_expr),
-                    // }
-                    // .into();
-                    // break;
-                }
-                _ => break,
+                _ => unreachable!(),
             }
         }
 
         Ok(lhs)
     }
-
     /// Parses literal values, such as numbers, strings, booleans, null, arrays, objects, member expressions, and parenthesised expressions
     fn parse_primary_expression(&mut self) -> Result<Expression, ParserErrorInfo> {
         match self.current_token.kind {
