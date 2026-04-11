@@ -7,7 +7,7 @@ use crate::ast_types::declarations::variable_declaration::{
 use crate::ast_types::expressions::{
     ArrayExpression, ArrowFunctionExpression, ArrowFunctionExpressionBody, AssignmentExpression,
     BinaryExpression, CallExpression, CallExpressionCallee, Expression, FunctionExpression,
-    MemberExpression, MemberExpressionProperty, NewExpression, ObjectExpression,
+    LogicalExpression, MemberExpression, MemberExpressionProperty, NewExpression, ObjectExpression,
     ObjectExpressionProperty, ThisExpression, UnaryExpression, UpdateExpression,
 };
 use crate::ast_types::identifier::Identifier;
@@ -324,18 +324,13 @@ impl<'a> Parser<'a> {
                     self.advance();
                     let rhs = self.parse_expression_prec(op_prec + 1)?;
                     let node = Node::new(lhs.node().start, rhs.node().end);
-                    // You may want to introduce a LogicalExpression AST node instead of reusing BinaryExpression
-                    lhs = Expression::BinaryExpression(Box::new(BinaryExpression {
+                    lhs = LogicalExpression {
                         node,
                         left: lhs,
                         right: rhs,
-                        // This is a placeholder: you may want to add a LogicalExpression variant or map logical ops to binary ops as needed
-                        operator: match op {
-                            LogicalOperator::Or => BinaryOperator::BitwiseOr, // Placeholder
-                            LogicalOperator::And => BinaryOperator::BitwiseAnd, // Placeholder
-                            LogicalOperator::Nullish => BinaryOperator::BitwiseOr, // Placeholder
-                        },
-                    }));
+                        operator: op,
+                    }
+                    .into();
                 }
                 Operator::Assignment(op) => {
                     self.advance();
@@ -347,12 +342,13 @@ impl<'a> Parser<'a> {
                     };
                     let rhs = self.parse_expression_prec(op_prec)?;
                     let node = Node::new(lhs.node().start, rhs.node().end);
-                    lhs = Expression::AssignmentExpression(Box::new(AssignmentExpression {
+                    lhs = AssignmentExpression {
                         node,
                         left: left_pattern,
                         right: rhs,
                         operator: op,
-                    }));
+                    }
+                    .into();
                 }
                 _ => unreachable!(),
             }

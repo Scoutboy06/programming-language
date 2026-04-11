@@ -1,6 +1,5 @@
 ---
 source: parser/tests/functions.rs
-assertion_line: 14
 expression: "format!(\"{:#?}\", program)"
 ---
 Program {

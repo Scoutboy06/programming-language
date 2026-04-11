@@ -1,6 +1,5 @@
 ---
 source: parser/tests/primary_expression.rs
-assertion_line: 40
 expression: "format!(\"{:#?}\", program)"
 ---
 Program {

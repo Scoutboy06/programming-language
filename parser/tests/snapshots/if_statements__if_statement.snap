@@ -1,0 +1,78 @@
+---
+source: parser/tests/if_statements.rs
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            IfStatement(
+                IfStatement {
+                    node: Node {
+                        start: 0,
+                        end: 28,
+                    },
+                    test: LogicalExpression(
+                        LogicalExpression {
+                            node: Node {
+                                start: 4,
+                                end: 24,
+                            },
+                            operator: Or,
+                            left: LogicalExpression(
+                                LogicalExpression {
+                                    node: Node {
+                                        start: 4,
+                                        end: 15,
+                                    },
+                                    operator: And,
+                                    left: Identifier(
+                                        Identifier {
+                                            node: Node {
+                                                start: 4,
+                                                end: 7,
+                                            },
+                                            name: Atom('val' type=inline),
+                                        },
+                                    ),
+                                    right: Literal(
+                                        Literal {
+                                            node: Node {
+                                                start: 11,
+                                                end: 15,
+                                            },
+                                            value: Boolean(
+                                                true,
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                            right: Literal(
+                                Literal {
+                                    node: Node {
+                                        start: 19,
+                                        end: 24,
+                                    },
+                                    value: Boolean(
+                                        false,
+                                    ),
+                                },
+                            ),
+                        },
+                    ),
+                    consequent: BlockStatement(
+                        BlockStatement {
+                            node: Node {
+                                start: 26,
+                                end: 28,
+                            },
+                            body: [],
+                        },
+                    ),
+                    alternate: None,
+                },
+            ),
+        ),
+    ],
+}

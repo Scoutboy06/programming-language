@@ -1,0 +1,112 @@
+---
+source: parser/tests/if_statements.rs
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            IfStatement(
+                IfStatement {
+                    node: Node {
+                        start: 0,
+                        end: 83,
+                    },
+                    test: LogicalExpression(
+                        LogicalExpression {
+                            node: Node {
+                                start: 4,
+                                end: 15,
+                            },
+                            operator: And,
+                            left: Identifier(
+                                Identifier {
+                                    node: Node {
+                                        start: 4,
+                                        end: 7,
+                                    },
+                                    name: Atom('val' type=inline),
+                                },
+                            ),
+                            right: Literal(
+                                Literal {
+                                    node: Node {
+                                        start: 11,
+                                        end: 15,
+                                    },
+                                    value: Boolean(
+                                        true,
+                                    ),
+                                },
+                            ),
+                        },
+                    ),
+                    consequent: BlockStatement(
+                        BlockStatement {
+                            node: Node {
+                                start: 17,
+                                end: 47,
+                            },
+                            body: [
+                                ReturnStatement(
+                                    ReturnStatement {
+                                        node: Node {
+                                            start: 28,
+                                            end: 40,
+                                        },
+                                        argument: Some(
+                                            Literal(
+                                                Literal {
+                                                    node: Node {
+                                                        start: 35,
+                                                        end: 39,
+                                                    },
+                                                    value: Boolean(
+                                                        true,
+                                                    ),
+                                                },
+                                            ),
+                                        ),
+                                    },
+                                ),
+                            ],
+                        },
+                    ),
+                    alternate: Some(
+                        BlockStatement(
+                            BlockStatement {
+                                node: Node {
+                                    start: 53,
+                                    end: 83,
+                                },
+                                body: [
+                                    ReturnStatement(
+                                        ReturnStatement {
+                                            node: Node {
+                                                start: 64,
+                                                end: 76,
+                                            },
+                                            argument: Some(
+                                                Literal(
+                                                    Literal {
+                                                        node: Node {
+                                                            start: 71,
+                                                            end: 75,
+                                                        },
+                                                        value: Number(
+                                                            50.5,
+                                                        ),
+                                                    },
+                                                ),
+                                            ),
+                                        },
+                                    ),
+                                ],
+                            },
+                        ),
+                    ),
+                },
+            ),
+        ),
+    ],
+}

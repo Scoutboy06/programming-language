@@ -1,0 +1,116 @@
+---
+source: parser/tests/if_statements.rs
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            IfStatement(
+                IfStatement {
+                    node: Node {
+                        start: 0,
+                        end: 61,
+                    },
+                    test: LogicalExpression(
+                        LogicalExpression {
+                            node: Node {
+                                start: 3,
+                                end: 14,
+                            },
+                            operator: And,
+                            left: Identifier(
+                                Identifier {
+                                    node: Node {
+                                        start: 3,
+                                        end: 6,
+                                    },
+                                    name: Atom('foo' type=inline),
+                                },
+                            ),
+                            right: Literal(
+                                Literal {
+                                    node: Node {
+                                        start: 10,
+                                        end: 14,
+                                    },
+                                    value: Boolean(
+                                        true,
+                                    ),
+                                },
+                            ),
+                        },
+                    ),
+                    consequent: BlockStatement(
+                        BlockStatement {
+                            node: Node {
+                                start: 16,
+                                end: 18,
+                            },
+                            body: [],
+                        },
+                    ),
+                    alternate: Some(
+                        IfStatement(
+                            IfStatement {
+                                node: Node {
+                                    start: 29,
+                                    end: 61,
+                                },
+                                test: LogicalExpression(
+                                    LogicalExpression {
+                                        node: Node {
+                                            start: 32,
+                                            end: 44,
+                                        },
+                                        operator: Or,
+                                        left: Literal(
+                                            Literal {
+                                                node: Node {
+                                                    start: 32,
+                                                    end: 37,
+                                                },
+                                                value: Boolean(
+                                                    false,
+                                                ),
+                                            },
+                                        ),
+                                        right: Identifier(
+                                            Identifier {
+                                                node: Node {
+                                                    start: 41,
+                                                    end: 44,
+                                                },
+                                                name: Atom('bar' type=inline),
+                                            },
+                                        ),
+                                    },
+                                ),
+                                consequent: BlockStatement(
+                                    BlockStatement {
+                                        node: Node {
+                                            start: 46,
+                                            end: 48,
+                                        },
+                                        body: [],
+                                    },
+                                ),
+                                alternate: Some(
+                                    BlockStatement(
+                                        BlockStatement {
+                                            node: Node {
+                                                start: 59,
+                                                end: 61,
+                                            },
+                                            body: [],
+                                        },
+                                    ),
+                                ),
+                            },
+                        ),
+                    ),
+                },
+            ),
+        ),
+    ],
+}
