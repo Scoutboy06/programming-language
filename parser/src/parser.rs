@@ -132,6 +132,7 @@ impl<'a> Parser<'a> {
                         if peek.is(TokenKind::Keyword)
                             && peek.value.expect_keyword() == Keyword::Enum
                         {
+                            self.advance();
                             throw_error!(Todo);
                             // return Ok(self.parse_enum_declaration(true, false)?.into());
                         }
@@ -1070,67 +1071,72 @@ impl<'a> Parser<'a> {
                     }
                     .into()
                 }
-                // TokenKind::Identifier => {
-                //     match self.lexer.peek_token().kind {
-                //         TokenKind::OpenParen => ObjectItem::Method(self.parse_method_definition()?),
-                //         TokenKind::Colon => {
-                //             let key = Identifier {
-                //                 node: Node::new(self.current_token.start, self.current_token.end),
-                //                 name: self.current_token.value.expect_identifier().clone(),
-                //             }
-                //             .into();
-                //             self.advance(); // Consume Identifier token
-                //             self.advance(); // Consume ":" token
-                //             let value = self.parse_expression()?;
-                //             ObjectItem::KV(KV { key, value })
-                //         }
-                //         _ => {
-                //             let id = Identifier {
-                //                 node: Node::new(self.current_token.start, self.current_token.end),
-                //                 name: self.current_token.value.expect_identifier().clone(),
-                //             };
-                //             self.advance(); // Consume Identifier token
-                //             ObjectItem::Identifier(id)
-                //         }
-                //     }
-                // }
-                // TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-                //     Keyword::Async => ObjectItem::Method(self.parse_method_definition()?),
-                //     Keyword::StringType
-                //     | Keyword::NumberType
-                //     | Keyword::BooleanType
-                //     | Keyword::Type => {
-                //         let key = StringLiteral {
-                //             node: Node::new(self.current_token.start, self.current_token.end),
-                //             value: self.current_token.value.expect_keyword().to_string(),
-                //         }
-                //         .into();
-                //         self.advance(); // Consume keyword token
-                //         self.expect_and_consume_token(TokenKind::Colon)?;
-                //         let value = self.parse_expression()?;
-                //         ObjectItem::KV(KV { key, value })
-                //     }
-                //     _ => throw_error!(InvalidToken),
-                // },
-                // TokenKind::OpenBracket => {
-                //     let start_pos = self.current_token.start;
-                //
-                //     self.advance(); // Consume "[" token
-                //     let expression = self.parse_expression()?;
-                //     self.expect_token_kind(TokenKind::CloseBracket)?;
-                //     let key = Key::ComputedProperty(ComputedProperty {
-                //         node: Node::new(start_pos, self.current_token.end),
-                //         expression,
-                //     });
-                //     self.advance(); // Consume "]" token
-                //
-                //     self.expect_and_consume_token(TokenKind::Colon)?;
-                //
-                //     let value = self.parse_expression()?;
-                //
-                //     ObjectItem::KV(KV { key, value })
-                // }
-                // TokenKind::Dot => throw_error!(Todo),
+                TokenKind::Identifier => {
+                    match self.lexer.peek_token().kind {
+                        TokenKind::OpenParen => {
+                            throw_error!(Todo)
+                        }
+                        TokenKind::Colon => {
+                            let id = Identifier {
+                                node: Node::new(self.current_token.start, self.current_token.end),
+                                name: self.current_token.value.expect_identifier().clone(),
+                            };
+                            self.advance(); // Consume Identifier token
+
+                            // TODO: Allow shorthand syntax, like { a } instead of { a: a }
+                            self.expect_and_consume_token(TokenKind::Colon)?;
+
+                            let value = self.parse_expression()?;
+
+                            ObjectExpressionProperty::Property(Property {
+                                node: Node::new(id.node.start, value.node().end),
+                                key: id.into(),
+                                value,
+                                kind: PropertyKind::Init,
+                                method: false,
+                                shorthand: false,
+                                computed: false,
+                            })
+                        }
+                        // TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+                        //     Keyword::Async => ObjectItem::Method(self.parse_method_definition()?),
+                        //     Keyword::StringType
+                        //     | Keyword::NumberType
+                        //     | Keyword::BooleanType
+                        //     | Keyword::Type => {
+                        //         let key = StringLiteral {
+                        //             node: Node::new(self.current_token.start, self.current_token.end),
+                        //             value: self.current_token.value.expect_keyword().to_string(),
+                        //         }
+                        //         .into();
+                        //         self.advance(); // Consume keyword token
+                        //         self.expect_and_consume_token(TokenKind::Colon)?;
+                        //         let value = self.parse_expression()?;
+                        //         ObjectItem::KV(KV { key, value })
+                        //     }
+                        _ => throw_error!(InvalidToken),
+                    }
+                }
+                TokenKind::OpenBracket => {
+                    throw_error!(Todo)
+                    //     let start_pos = self.current_token.start;
+                    //
+                    //     self.advance(); // Consume "[" token
+                    //     let expression = self.parse_expression()?;
+                    //     self.expect_token_kind(TokenKind::CloseBracket)?;
+                    //     let key = Key::ComputedProperty(ComputedProperty {
+                    //         node: Node::new(start_pos, self.current_token.end),
+                    //         expression,
+                    //     });
+                    //     self.advance(); // Consume "]" token
+                    //
+                    //     self.expect_and_consume_token(TokenKind::Colon)?;
+                    //
+                    //     let value = self.parse_expression()?;
+                    //
+                    //     ObjectItem::KV(KV { key, value })
+                }
+                TokenKind::Dot => throw_error!(Todo),
                 _ => throw_error!(InvalidToken),
             };
 

@@ -104,7 +104,7 @@ impl<'a> Lexer<'a> {
             }
             '"' | '\'' | '`' => (
                 TK::String,
-                TV::String(self.parse_string_literal(false).into()),
+                TV::String(self.parse_string_literal(true).into()),
             ),
             '!' => {
                 self.advance();
