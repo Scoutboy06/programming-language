@@ -1,0 +1,150 @@
+---
+source: parser/tests/primary_expression.rs
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            Declaration(
+                VariableDeclaration(
+                    VariableDeclaration {
+                        node: Node {
+                            start: 0,
+                            end: 59,
+                        },
+                        declarations: [
+                            VariableDeclarator {
+                                node: Node {
+                                    start: 4,
+                                    end: 58,
+                                },
+                                id: Identifier(
+                                    Identifier {
+                                        node: Node {
+                                            start: 4,
+                                            end: 7,
+                                        },
+                                        name: Atom('obj' type=inline),
+                                    },
+                                ),
+                                type_annotation: None,
+                                init: Some(
+                                    ObjectExpression(
+                                        ObjectExpression {
+                                            node: Node {
+                                                start: 10,
+                                                end: 58,
+                                            },
+                                            properties: [
+                                                Property(
+                                                    Property {
+                                                        node: Node {
+                                                            start: 12,
+                                                            end: 24,
+                                                        },
+                                                        key: Identifier(
+                                                            Identifier {
+                                                                node: Node {
+                                                                    start: 13,
+                                                                    end: 16,
+                                                                },
+                                                                name: Atom('key' type=inline),
+                                                            },
+                                                        ),
+                                                        value: Identifier(
+                                                            Identifier {
+                                                                node: Node {
+                                                                    start: 19,
+                                                                    end: 24,
+                                                                },
+                                                                name: Atom('value' type=inline),
+                                                            },
+                                                        ),
+                                                        kind: Init,
+                                                        method: false,
+                                                        shorthand: false,
+                                                        computed: true,
+                                                    },
+                                                ),
+                                                Property(
+                                                    Property {
+                                                        node: Node {
+                                                            start: 26,
+                                                            end: 36,
+                                                        },
+                                                        key: Literal(
+                                                            Literal {
+                                                                node: Node {
+                                                                    start: 27,
+                                                                    end: 30,
+                                                                },
+                                                                value: Number(
+                                                                    123.0,
+                                                                ),
+                                                            },
+                                                        ),
+                                                        value: Literal(
+                                                            Literal {
+                                                                node: Node {
+                                                                    start: 33,
+                                                                    end: 36,
+                                                                },
+                                                                value: Number(
+                                                                    456.0,
+                                                                ),
+                                                            },
+                                                        ),
+                                                        kind: Init,
+                                                        method: false,
+                                                        shorthand: false,
+                                                        computed: true,
+                                                    },
+                                                ),
+                                                Property(
+                                                    Property {
+                                                        node: Node {
+                                                            start: 38,
+                                                            end: 56,
+                                                        },
+                                                        key: Literal(
+                                                            Literal {
+                                                                node: Node {
+                                                                    start: 39,
+                                                                    end: 46,
+                                                                },
+                                                                value: String(
+                                                                    "hello",
+                                                                ),
+                                                            },
+                                                        ),
+                                                        value: Literal(
+                                                            Literal {
+                                                                node: Node {
+                                                                    start: 49,
+                                                                    end: 56,
+                                                                },
+                                                                value: String(
+                                                                    "world",
+                                                                ),
+                                                            },
+                                                        ),
+                                                        kind: Init,
+                                                        method: false,
+                                                        shorthand: false,
+                                                        computed: true,
+                                                    },
+                                                ),
+                                            ],
+                                        },
+                                    ),
+                                ),
+                            },
+                        ],
+                        kind: Var,
+                    },
+                ),
+            ),
+        ),
+    ],
+}

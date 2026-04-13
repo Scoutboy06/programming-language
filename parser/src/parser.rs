@@ -1136,23 +1136,25 @@ impl<'a> Parser<'a> {
                     }
                 }
                 TokenKind::OpenBracket => {
-                    throw_error!(Todo)
-                    //     let start_pos = self.current_token.start;
-                    //
-                    //     self.advance(); // Consume "[" token
-                    //     let expression = self.parse_expression()?;
-                    //     self.expect_token_kind(TokenKind::CloseBracket)?;
-                    //     let key = Key::ComputedProperty(ComputedProperty {
-                    //         node: Node::new(start_pos, self.current_token.end),
-                    //         expression,
-                    //     });
-                    //     self.advance(); // Consume "]" token
-                    //
-                    //     self.expect_and_consume_token(TokenKind::Colon)?;
-                    //
-                    //     let value = self.parse_expression()?;
-                    //
-                    //     ObjectItem::KV(KV { key, value })
+                    let bracket_start = self.current_token.start;
+
+                    self.advance(); // Consume "[" token
+                    let key = self.parse_expression()?;
+                    self.expect_and_consume_token(TokenKind::CloseBracket)?;
+
+                    self.expect_and_consume_token(TokenKind::Colon)?;
+
+                    let value = self.parse_expression()?;
+
+                    ObjectExpressionProperty::Property(Property {
+                        node: Node::new(bracket_start, value.node().end),
+                        key,
+                        value,
+                        kind: PropertyKind::Init,
+                        method: false,
+                        shorthand: false,
+                        computed: true,
+                    })
                 }
                 TokenKind::Dot => throw_error!(Todo),
                 _ => throw_error!(InvalidToken),
