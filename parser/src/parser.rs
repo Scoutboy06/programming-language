@@ -1114,6 +1114,24 @@ impl<'a> Parser<'a> {
                         //         let value = self.parse_expression()?;
                         //         ObjectItem::KV(KV { key, value })
                         //     }
+                        TokenKind::Comma | TokenKind::CloseBrace => {
+                            // Shorthand property, like { a } instead of { a: a }
+                            let id = Identifier {
+                                node: Node::new(self.current_token.start, self.current_token.end),
+                                name: self.current_token.value.expect_identifier().clone(),
+                            };
+                            self.advance(); // Consume Identifier token
+
+                            ObjectExpressionProperty::Property(Property {
+                                node: id.node,
+                                key: id.clone().into(),
+                                value: id.into(),
+                                kind: PropertyKind::Init,
+                                method: false,
+                                shorthand: true,
+                                computed: false,
+                            })
+                        }
                         _ => throw_error!(InvalidToken),
                     }
                 }
