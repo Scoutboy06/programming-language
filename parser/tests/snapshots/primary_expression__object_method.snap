@@ -1,0 +1,102 @@
+---
+source: parser/tests/primary_expression.rs
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            Declaration(
+                VariableDeclaration(
+                    VariableDeclaration {
+                        node: Node {
+                            start: 0,
+                            end: 29,
+                        },
+                        declarations: [
+                            VariableDeclarator {
+                                node: Node {
+                                    start: 4,
+                                    end: 28,
+                                },
+                                id: Identifier(
+                                    Identifier {
+                                        node: Node {
+                                            start: 4,
+                                            end: 7,
+                                        },
+                                        name: Atom('obj' type=inline),
+                                    },
+                                ),
+                                type_annotation: None,
+                                init: Some(
+                                    ObjectExpression(
+                                        ObjectExpression {
+                                            node: Node {
+                                                start: 10,
+                                                end: 28,
+                                            },
+                                            properties: [
+                                                Property(
+                                                    Property {
+                                                        node: Node {
+                                                            start: 12,
+                                                            end: 26,
+                                                        },
+                                                        key: Identifier(
+                                                            Identifier {
+                                                                node: Node {
+                                                                    start: 12,
+                                                                    end: 17,
+                                                                },
+                                                                name: Atom('print' type=inline),
+                                                            },
+                                                        ),
+                                                        value: FunctionExpression(
+                                                            FunctionExpression {
+                                                                node: Node {
+                                                                    start: 17,
+                                                                    end: 26,
+                                                                },
+                                                                id: None,
+                                                                generator: false,
+                                                                params: [
+                                                                    Identifier(
+                                                                        Identifier {
+                                                                            node: Node {
+                                                                                start: 18,
+                                                                                end: 22,
+                                                                            },
+                                                                            name: Atom('name' type=inline),
+                                                                        },
+                                                                    ),
+                                                                ],
+                                                                return_type: None,
+                                                                body: FunctionBody {
+                                                                    node: Node {
+                                                                        start: 24,
+                                                                        end: 26,
+                                                                    },
+                                                                    body: [],
+                                                                },
+                                                            },
+                                                        ),
+                                                        kind: Init,
+                                                        method: true,
+                                                        shorthand: false,
+                                                        computed: false,
+                                                    },
+                                                ),
+                                            ],
+                                        },
+                                    ),
+                                ),
+                            },
+                        ],
+                        kind: Var,
+                    },
+                ),
+            ),
+        ),
+    ],
+}

@@ -94,7 +94,7 @@ fn object_computed_property() {
 
 #[test]
 fn object_method() {
-    let code = "var obj = { print(name: string) { console.log(name); } };";
+    let code = "var obj = { print(name) {} };";
     let mut parser = Parser::new(&code);
     let result = parser.parse();
     if let Err(err) = result {

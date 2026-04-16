@@ -257,7 +257,22 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_pattern(&mut self) -> Result<Pattern, ParserErrorInfo> {
-        throw_error!(Todo)
+        // A pattern is similar to an expression, but only allows certain forms (e.g., identifiers, object patterns, array patterns).
+        match self.current_token.kind {
+            TokenKind::Identifier => {
+                let pattern: Pattern = Identifier {
+                    node: Node::new(self.current_token.start, self.current_token.end),
+                    name: self.current_token.value.expect_identifier().clone(),
+                }
+                .into();
+                self.advance(); // Consume Identifier token
+                Ok(pattern)
+            }
+            TokenKind::OpenBracket => throw_error!(Todo),
+            TokenKind::OpenBrace => throw_error!(Todo),
+            TokenKind::Dot => throw_error!(Todo),
+            _ => throw_error!(InvalidToken),
+        }
     }
 
     /// Parses an expression (e.g., arithmetic operations, logical operations, or function calls).
@@ -605,11 +620,15 @@ impl<'a> Parser<'a> {
         let mut return_type: Option<TypeAnnotation> = None;
         let mut id: Option<Identifier> = None;
 
-        self.advance(); // Consume "function" keyword token
+        if self.current_token.is(TokenKind::Keyword)
+            && self.current_token.value.expect_keyword() == Keyword::Function
+        {
+            self.advance(); // Consume "function" token
 
-        if self.current_token.is(TokenKind::Star) {
-            generator = true;
-            self.advance(); // Consume "*" token
+            if self.current_token.is(TokenKind::Star) {
+                generator = true;
+                self.advance(); // Consume "*" token
+            }
         }
 
         if self.current_token.is(TokenKind::Identifier) {
@@ -1074,7 +1093,24 @@ impl<'a> Parser<'a> {
                 TokenKind::Identifier => {
                     match self.lexer.peek_token().kind {
                         TokenKind::OpenParen => {
-                            throw_error!(Todo)
+                            let key = Identifier {
+                                node: Node::new(self.current_token.start, self.current_token.end),
+                                name: self.current_token.value.expect_identifier().clone(),
+                            };
+                            self.advance(); // Consume Identifier token
+
+                            let value = self.parse_function_expression()?;
+
+                            Property {
+                                node: Node::new(key.node.start, value.node.end),
+                                key: key.into(),
+                                value: value.into(),
+                                kind: PropertyKind::Init, // TODO: Support getters/setters
+                                method: true,
+                                shorthand: false,
+                                computed: false,
+                            }
+                            .into()
                         }
                         TokenKind::Colon => {
                             let id = Identifier {
@@ -1088,7 +1124,7 @@ impl<'a> Parser<'a> {
 
                             let value = self.parse_expression()?;
 
-                            ObjectExpressionProperty::Property(Property {
+                            Property {
                                 node: Node::new(id.node.start, value.node().end),
                                 key: id.into(),
                                 value,
@@ -1096,7 +1132,8 @@ impl<'a> Parser<'a> {
                                 method: false,
                                 shorthand: false,
                                 computed: false,
-                            })
+                            }
+                            .into()
                         }
                         // TokenKind::Keyword => match self.current_token.value.expect_keyword() {
                         //     Keyword::Async => ObjectItem::Method(self.parse_method_definition()?),
@@ -1122,7 +1159,7 @@ impl<'a> Parser<'a> {
                             };
                             self.advance(); // Consume Identifier token
 
-                            ObjectExpressionProperty::Property(Property {
+                            Property {
                                 node: id.node,
                                 key: id.clone().into(),
                                 value: id.into(),
@@ -1130,7 +1167,8 @@ impl<'a> Parser<'a> {
                                 method: false,
                                 shorthand: true,
                                 computed: false,
-                            })
+                            }
+                            .into()
                         }
                         _ => throw_error!(InvalidToken),
                     }
@@ -1146,7 +1184,7 @@ impl<'a> Parser<'a> {
 
                     let value = self.parse_expression()?;
 
-                    ObjectExpressionProperty::Property(Property {
+                    Property {
                         node: Node::new(bracket_start, value.node().end),
                         key,
                         value,
@@ -1154,7 +1192,8 @@ impl<'a> Parser<'a> {
                         method: false,
                         shorthand: false,
                         computed: true,
-                    })
+                    }
+                    .into()
                 }
                 TokenKind::Dot => throw_error!(Todo),
                 _ => throw_error!(InvalidToken),
