@@ -285,6 +285,13 @@ impl<'a> Parser<'a> {
         let mut lhs = self.parse_primary_expression()?;
 
         loop {
+            // Handle function calls
+            if self.current_token.is(TokenKind::OpenParen) {
+                let call_expr = self.parse_call_expression(CallExpressionCallee::Expression(lhs))?;
+                lhs = call_expr.into();
+                continue;
+            }
+
             // Handle postfix update operators (++/--)
             if let Some(operator) = self.current_token.kind.as_update_op() {
                 let expr = UpdateExpression {

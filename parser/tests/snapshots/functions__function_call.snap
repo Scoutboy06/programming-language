@@ -49,7 +49,7 @@ Program {
                                             end: 22,
                                         },
                                         value: String(
-                                            "\"abc123\"",
+                                            "abc123",
                                         ),
                                     },
                                 ),
