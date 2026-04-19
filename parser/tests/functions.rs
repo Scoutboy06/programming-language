@@ -29,7 +29,7 @@ fn member_expression_function_call() {
 
 #[test]
 fn function_declaration() {
-    let code = "function add(n1: number, n2: number): number {
+    let code = "function add(n1, n2) {
         return n1 + n2;
     }";
     let mut parser = Parser::new(&code);
@@ -44,7 +44,7 @@ fn function_declaration() {
 
 #[test]
 fn function_expression() {
-    let code = "const sum = function(n1: number, n2: number): number {
+    let code = "const sum = function(n1, n2) {
         return n1 + n2;
     }";
     let mut parser = Parser::new(&code);
@@ -59,7 +59,7 @@ fn function_expression() {
 
 #[test]
 fn arrow_function() {
-    let code = "const sum = (n1: number, n2: number): number => n1 + n2;";
+    let code = "const sum = (n1, n2) => n1 + n2;";
     let mut parser = Parser::new(&code);
     let result = parser.parse();
     if let Err(err) = result {

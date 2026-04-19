@@ -1,0 +1,102 @@
+---
+source: parser/tests/functions.rs
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            Declaration(
+                VariableDeclaration(
+                    VariableDeclaration {
+                        node: Node {
+                            start: 0,
+                            end: 32,
+                        },
+                        declarations: [
+                            VariableDeclarator {
+                                node: Node {
+                                    start: 6,
+                                    end: 31,
+                                },
+                                id: Identifier(
+                                    Identifier {
+                                        node: Node {
+                                            start: 6,
+                                            end: 9,
+                                        },
+                                        name: Atom('sum' type=inline),
+                                    },
+                                ),
+                                type_annotation: None,
+                                init: Some(
+                                    ArrowFunctionExpression(
+                                        ArrowFunctionExpression {
+                                            node: Node {
+                                                start: 12,
+                                                end: 31,
+                                            },
+                                            id: None,
+                                            params: [
+                                                Identifier(
+                                                    Identifier {
+                                                        node: Node {
+                                                            start: 13,
+                                                            end: 15,
+                                                        },
+                                                        name: Atom('n1' type=inline),
+                                                    },
+                                                ),
+                                                Identifier(
+                                                    Identifier {
+                                                        node: Node {
+                                                            start: 17,
+                                                            end: 19,
+                                                        },
+                                                        name: Atom('n2' type=inline),
+                                                    },
+                                                ),
+                                            ],
+                                            return_type: None,
+                                            body: Expression(
+                                                BinaryExpression(
+                                                    BinaryExpression {
+                                                        node: Node {
+                                                            start: 24,
+                                                            end: 31,
+                                                        },
+                                                        operator: Plus,
+                                                        left: Identifier(
+                                                            Identifier {
+                                                                node: Node {
+                                                                    start: 24,
+                                                                    end: 26,
+                                                                },
+                                                                name: Atom('n1' type=inline),
+                                                            },
+                                                        ),
+                                                        right: Identifier(
+                                                            Identifier {
+                                                                node: Node {
+                                                                    start: 29,
+                                                                    end: 31,
+                                                                },
+                                                                name: Atom('n2' type=inline),
+                                                            },
+                                                        ),
+                                                    },
+                                                ),
+                                            ),
+                                            expression: true,
+                                        },
+                                    ),
+                                ),
+                            },
+                        ],
+                        kind: Const,
+                    },
+                ),
+            ),
+        ),
+    ],
+}
