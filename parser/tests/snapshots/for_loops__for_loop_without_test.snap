@@ -1,0 +1,92 @@
+---
+source: parser/tests/for_loops.rs
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            ForStatement(
+                ForStatement {
+                    node: Node {
+                        start: 0,
+                        end: 23,
+                    },
+                    init: Some(
+                        VariableDeclaration(
+                            VariableDeclaration {
+                                node: Node {
+                                    start: 4,
+                                    end: 13,
+                                },
+                                declarations: [
+                                    VariableDeclarator {
+                                        node: Node {
+                                            start: 8,
+                                            end: 13,
+                                        },
+                                        id: Identifier(
+                                            Identifier {
+                                                node: Node {
+                                                    start: 8,
+                                                    end: 9,
+                                                },
+                                                name: Atom('i' type=inline),
+                                            },
+                                        ),
+                                        type_annotation: None,
+                                        init: Some(
+                                            Literal(
+                                                Literal {
+                                                    node: Node {
+                                                        start: 12,
+                                                        end: 13,
+                                                    },
+                                                    value: Number(
+                                                        0.0,
+                                                    ),
+                                                },
+                                            ),
+                                        ),
+                                    },
+                                ],
+                                kind: Let,
+                            },
+                        ),
+                    ),
+                    test: None,
+                    update: Some(
+                        UpdateExpression(
+                            UpdateExpression {
+                                node: Node {
+                                    start: 16,
+                                    end: 19,
+                                },
+                                operator: Increment,
+                                argument: Identifier(
+                                    Identifier {
+                                        node: Node {
+                                            start: 16,
+                                            end: 17,
+                                        },
+                                        name: Atom('i' type=inline),
+                                    },
+                                ),
+                                prefix: false,
+                            },
+                        ),
+                    ),
+                    body: BlockStatement(
+                        BlockStatement {
+                            node: Node {
+                                start: 21,
+                                end: 23,
+                            },
+                            body: [],
+                        },
+                    ),
+                },
+            ),
+        ),
+    ],
+}

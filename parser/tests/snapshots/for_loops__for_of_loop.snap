@@ -1,0 +1,66 @@
+---
+source: parser/tests/for_loops.rs
+expression: "format!(\"{:#?}\", program)"
+---
+Program {
+    source_type: Script,
+    body: [
+        Statement(
+            ForOfStatement(
+                ForOfStatement {
+                    node: Node {
+                        start: 0,
+                        end: 22,
+                    },
+                    left: VariableDeclaration(
+                        VariableDeclaration {
+                            node: Node {
+                                start: 4,
+                                end: 11,
+                            },
+                            declarations: [
+                                VariableDeclarator {
+                                    node: Node {
+                                        start: 8,
+                                        end: 11,
+                                    },
+                                    id: Identifier(
+                                        Identifier {
+                                            node: Node {
+                                                start: 8,
+                                                end: 11,
+                                            },
+                                            name: Atom('key' type=inline),
+                                        },
+                                    ),
+                                    type_annotation: None,
+                                    init: None,
+                                },
+                            ],
+                            kind: Let,
+                        },
+                    ),
+                    right: Identifier(
+                        Identifier {
+                            node: Node {
+                                start: 15,
+                                end: 18,
+                            },
+                            name: Atom('obj' type=inline),
+                        },
+                    ),
+                    body: BlockStatement(
+                        BlockStatement {
+                            node: Node {
+                                start: 20,
+                                end: 22,
+                            },
+                            body: [],
+                        },
+                    ),
+                    _await: false,
+                },
+            ),
+        ),
+    ],
+}

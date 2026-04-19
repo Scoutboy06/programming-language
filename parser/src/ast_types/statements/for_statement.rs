@@ -25,3 +25,12 @@ pub enum ForInit {
     VariableDeclaration(VariableDeclaration),
     Expression(Expression),
 }
+
+/// Represents the head of a for loop before we know which type it is
+/// Used during parsing to disambiguate between ForStatement, ForInStatement, and ForOfStatement
+#[derive(Debug, Clone)]
+pub enum ForHead {
+    Empty,
+    VarDecl(VariableDeclaration),
+    Expr(Expression),
+}

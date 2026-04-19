@@ -22,9 +22,9 @@ use crate::ast_types::programs::program::{ProgramBodyItem, SourceType};
 use crate::ast_types::programs::Program;
 use crate::ast_types::property::{Property, PropertyKind};
 use crate::ast_types::statements::{
-    BlockStatement, BreakStatement, ContinueStatement, ExpressionStatement, ForInit, ForStatement,
-    FunctionBody, FunctionBodyBody, IfStatement, ReturnStatement, Statement, ThrowStatement,
-    WhileStatement,
+    BlockStatement, BreakStatement, ContinueStatement, ExpressionStatement, ForHead, ForInit,
+    ForInOrOfLeft, ForInStatement, ForOfStatement, ForStatement, FunctionBody, FunctionBodyBody,
+    IfStatement, ReturnStatement, Statement, ThrowStatement, WhileStatement,
 };
 use crate::ast_types::types::{
     ArrayType, AstType, KeywordType, TypeAnnotation, TypeParameter, TypeParameterDeclaration,
@@ -841,129 +841,122 @@ impl<'a> Parser<'a> {
     }
 
     /// Parses a `for` loop, including `for-in` and `for-of` loops.
-    fn parse_for_statement(&mut self) -> Result<ForStatement, ParserErrorInfo> {
+    fn parse_for_statement(&mut self) -> Result<Statement, ParserErrorInfo> {
         let start_pos = self.current_token.start;
         self.advance(); // Consume "for" keyword token
         self.expect_and_consume_token(TokenKind::OpenParen)?;
 
-        throw_error!(Todo);
+        let head = self.parse_for_head()?;
 
-        // let head = self.parse_for_head()?;
-
-        // match self.current_token.kind {
-        //     TokenKind::Semi => Ok(self.parse_for_classic(start_pos, head)?.into()),
-        //     TokenKind::Keyword => match self.current_token.value.expect_keyword() {
-        //         Keyword::In => {
-        //             self.advance(); // Consume "in" token
-        //             Ok(self.parse_for_in_or_of(start_pos, head, false)?.into())
-        //         }
-        //         Keyword::Of => {
-        //             self.advance(); // Consume "of" token
-        //             Ok(self.parse_for_in_or_of(start_pos, head, true)?.into())
-        //         }
-        //         _ => throw_error!(InvalidToken),
-        //     },
-        //     _ => throw_error!(InvalidToken),
-        // }
+        match self.current_token.kind {
+            TokenKind::Semi => Ok(self.parse_for_classic(start_pos, head)?.into()),
+            TokenKind::Keyword => match self.current_token.value.expect_keyword() {
+                Keyword::In => {
+                    self.advance(); // Consume "in" token
+                    Ok(self.parse_for_in_or_of(start_pos, head, false)?.into())
+                }
+                Keyword::Of => {
+                    self.advance(); // Consume "of" token
+                    Ok(self.parse_for_in_or_of(start_pos, head, true)?.into())
+                }
+                _ => throw_error!(InvalidToken),
+            },
+            _ => throw_error!(InvalidToken),
+        }
     }
 
-    // fn parse_for_head(&mut self) -> Result<ForHead, ParserErrorInfo> {
-    //     if self.current_token.is(TokenKind::Semi) {
-    //         return Ok(ForHead::Empty);
-    //     }
-    //
-    //     if self.current_token.is(TokenKind::Keyword) {
-    //         let kw = self.current_token.value.expect_keyword();
-    //         if matches!(kw, Keyword::Var | Keyword::Let | Keyword::Const) {
-    //             let decl = self.parse_variable_declaration(false)?;
-    //             return Ok(ForHead::VarDecl(decl));
-    //         }
-    //     }
-    //
-    //     let expr = self.parse_expression()?;
-    //     Ok(ForHead::Expr(expr))
-    // }
-    //
-    // fn parse_for_classic(
-    //     &mut self,
-    //     start_pos: usize,
-    //     head: ForHead,
-    // ) -> Result<ForStatement, ParserErrorInfo> {
-    //     let init: Option<ForInit> = match head {
-    //         ForHead::Empty => None,
-    //         ForHead::VarDecl(decl) => Some(decl.into()),
-    //         ForHead::Expr(expr) => Some(Statement::ExpressionStatement(Box::new(
-    //             ExpressionStatement {
-    //                 node: Node::new(start_pos, expr.node().end),
-    //                 expression: expr,
-    //             },
-    //         ))),
-    //     };
-    //
-    //     self.expect_and_consume_token(TokenKind::Semi)?;
-    //
-    //     let test: Option<Expression> = if !self.current_token.is(TokenKind::Semi) {
-    //         Some(self.parse_expression()?.into())
-    //     } else {
-    //         None
-    //     };
-    //
-    //     self.expect_and_consume_token(TokenKind::Semi)?;
-    //
-    //     let update: Option<Expression> = if !self.current_token.is(TokenKind::CloseParen) {
-    //         Some(self.parse_expression()?.into())
-    //     } else {
-    //         None
-    //     };
-    //
-    //     self.expect_and_consume_token(TokenKind::CloseParen)?;
-    //     let body = self.parse_statement(true)?;
-    //
-    //     Ok(ForStatement {
-    //         node: Node::new(start_pos, body.node().end),
-    //         init,
-    //         test,
-    //         update,
-    //         body,
-    //     }
-    //     .into())
-    // }
-    //
-    // fn parse_for_in_or_of(
-    //     &mut self,
-    //     start: usize,
-    //     head: ForHead,
-    //     is_of: bool,
-    // ) -> Result<ForStatement, ParserErrorInfo> {
-    //     let right = self.parse_expression()?;
-    //     self.expect_and_consume_token(TokenKind::CloseParen)?;
-    //     let body = self.parse_statement(true)?;
-    //
-    //     let node = Node::new(start, body.node().end);
-    //     let left = match head {
-    //         ForHead::VarDecl(decl) => ForLeft::VariableDeclaration(decl),
-    //         ForHead::Expr(expr) => ForLeft::Expression(expr),
-    //         ForHead::Empty => throw_error!(InternalError),
-    //     };
-    //
-    //     if is_of {
-    //         Ok(ForOfStatement {
-    //             node,
-    //             left,
-    //             right,
-    //             body,
-    //         }
-    //         .into())
-    //     } else {
-    //         Ok(ForInStatement {
-    //             node,
-    //             left,
-    //             right,
-    //             body,
-    //         }
-    //         .into())
-    //     }
-    // }
+    fn parse_for_head(&mut self) -> Result<ForHead, ParserErrorInfo> {
+        if self.current_token.is(TokenKind::Semi) {
+            return Ok(ForHead::Empty);
+        }
+
+        if self.current_token.is(TokenKind::Keyword) {
+            let kw = self.current_token.value.expect_keyword();
+            if matches!(kw, Keyword::Var | Keyword::Let | Keyword::Const) {
+                let decl = self.parse_variable_declaration(false)?;
+                return Ok(ForHead::VarDecl(decl));
+            }
+        }
+
+        let expr = self.parse_expression()?;
+        Ok(ForHead::Expr(expr))
+    }
+
+    fn parse_for_classic(
+        &mut self,
+        start_pos: usize,
+        head: ForHead,
+    ) -> Result<ForStatement, ParserErrorInfo> {
+        let init: Option<ForInit> = match head {
+            ForHead::Empty => None,
+            ForHead::VarDecl(decl) => Some(ForInit::VariableDeclaration(decl)),
+            ForHead::Expr(expr) => Some(ForInit::Expression(expr)),
+        };
+
+        self.expect_and_consume_token(TokenKind::Semi)?;
+
+        let test: Option<Expression> = if !self.current_token.is(TokenKind::Semi) {
+            Some(self.parse_expression()?)
+        } else {
+            None
+        };
+
+        self.expect_and_consume_token(TokenKind::Semi)?;
+
+        let update: Option<Expression> = if !self.current_token.is(TokenKind::CloseParen) {
+            Some(self.parse_expression()?)
+        } else {
+            None
+        };
+
+        self.expect_and_consume_token(TokenKind::CloseParen)?;
+        let body = self.parse_statement(true)?;
+
+        Ok(ForStatement {
+            node: Node::new(start_pos, body.node().end),
+            init,
+            test,
+            update,
+            body,
+        })
+    }
+
+    fn parse_for_in_or_of(
+        &mut self,
+        start: usize,
+        head: ForHead,
+        is_of: bool,
+    ) -> Result<Statement, ParserErrorInfo> {
+        let right = self.parse_expression()?;
+        self.expect_and_consume_token(TokenKind::CloseParen)?;
+        let body = self.parse_statement(true)?;
+
+        let node = Node::new(start, body.node().end);
+        let left = match head {
+            ForHead::VarDecl(decl) => ForInOrOfLeft::VariableDeclaration(decl),
+            ForHead::Expr(expr) => ForInOrOfLeft::Pattern(Pattern::try_from_expression(expr)?),
+            ForHead::Empty => throw_error!(InternalError),
+        };
+
+        if is_of {
+            Ok(ForOfStatement {
+                node,
+                left,
+                right,
+                body,
+                _await: false,
+            }
+            .into())
+        } else {
+            Ok(ForInStatement {
+                node,
+                left,
+                right,
+                body,
+            }
+            .into())
+        }
+    }
 
     /// Parses `while` loop
     fn parse_while_statement(&mut self) -> Result<WhileStatement, ParserErrorInfo> {
