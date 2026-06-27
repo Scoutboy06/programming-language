@@ -5,9 +5,11 @@ use crate::{
 };
 use parser::ast_types::{
     declarations::{
-        function_declaration::FunctionDeclaration, variable_declaration::VariableDeclaration,
+        declaration::Declaration, function_declaration::FunctionDeclaration,
+        variable_declaration::VariableDeclaration,
     },
     expressions::{ArrayExpression, BinaryExpression, Expression, ObjectExpression},
+    patterns::pattern::Pattern,
     programs::{program::ProgramBodyItem, Program},
     statements::{FunctionBodyBody, ReturnStatement, Statement},
 };
@@ -29,10 +31,35 @@ impl<'a> DeclVisitor<'a> {
         use Statement as S;
 
         match stmt {
-            // S::VariableDeclaration(decl) => self.visit_variable_declaration(decl),
-            // S::FunctionDeclaration(decl) => self.visit_function_declaration(decl),
+            S::BlockStatement(stmt) => stmt.body.iter().for_each(|s| self.visit_statement(s)),
+            S::BreakStatement(stmt) => todo!("{:?}", &stmt),
+            S::ContinueStatement(stmt) => todo!("{:?}", &stmt),
+            S::DebuggerStatement(stmt) => todo!("{:?}", &stmt),
+            S::Declaration(decl) => self.visit_declaration(decl),
+            S::Directive(dir) => todo!("{:?}", &dir),
+            S::DoWhileStatement(stmt) => todo!("{:?}", &stmt),
+            S::EmptyStatement(_) => {}
+            S::ExpressionStatement(expr) => todo!("{:?}", &expr),
+            S::ForInStatement(stmt) => todo!("{:?}", &stmt),
+            S::ForOfStatement(stmt) => todo!("{:?}", &stmt),
+            S::ForStatement(stmt) => todo!("{:?}", &stmt),
+            S::IfStatement(stmt) => todo!("{:?}", &stmt),
+            S::LabeledStatement(stmt) => todo!("{:?}", &stmt),
             S::ReturnStatement(stmt) => self.visit_return_statement(stmt),
-            _ => todo!("{:?}", &stmt),
+            S::SwitchStatement(stmt) => todo!("{:?}", &stmt),
+            S::ThrowStatement(stmt) => todo!("{:?}", &stmt),
+            S::TryStatement(stmt) => todo!("{:?}", &stmt),
+            S::WhileStatement(stmt) => todo!("{:?}", &stmt),
+            S::WithStatement(stmt) => todo!("{:?}", &stmt),
+        }
+    }
+
+    fn visit_declaration(&mut self, decl: &Declaration) {
+        match decl {
+            Declaration::FunctionDeclaration(func_decl) => {
+                self.visit_function_declaration(func_decl)
+            }
+            Declaration::VariableDeclaration(var_decl) => self.visit_variable_declaration(var_decl),
         }
     }
 
@@ -45,9 +72,13 @@ impl<'a> DeclVisitor<'a> {
                 self.visit_expression(init);
             });
 
-            todo!()
-            // self.ctx
-            //     .add_symbol(d.id.name.clone(), resolved_type, d.node.clone());
+            let id = match &d.id {
+                Pattern::Identifier(id) => id,
+                _ => todo!(),
+            }
+            .to_owned();
+
+            self.ctx.add_symbol(id.name, resolved_type, d.node.clone());
         }
     }
 

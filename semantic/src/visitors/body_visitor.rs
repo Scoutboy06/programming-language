@@ -2,14 +2,20 @@
 
 use parser::ast_types::{
     declarations::{
-        function_declaration::FunctionDeclaration, variable_declaration::VariableDeclaration,
+        declaration::Declaration, function_declaration::FunctionDeclaration,
+        variable_declaration::VariableDeclaration,
     },
     expressions::{ArrayExpression, BinaryExpression, Expression, ObjectExpression},
     identifier::Identifier,
     literal::{Literal, LiteralValue},
     operators::Operator,
     programs::{program::ProgramBodyItem, Program},
-    statements::{BlockStatement, FunctionBody, ReturnStatement, Statement},
+    statements::{
+        BlockStatement, BreakStatement, ContinueStatement, DebuggerStatement, Directive,
+        DoWhileStatement, EmptyStatement, ExpressionStatement, ForInStatement, ForOfStatement,
+        ForStatement, FunctionBody, IfStatement, LabeledStatement, ReturnStatement, Statement,
+        SwitchStatement, ThrowStatement, TryStatement, WhileStatement, WithStatement,
+    },
 };
 
 use crate::{
@@ -34,10 +40,208 @@ impl<'a> BodyVisitor<'a> {
     fn visit_statement(&mut self, stmt: &Statement, expected_ret_type: Option<&ResolvedType>) {
         use Statement as S;
         match stmt {
-            // S::VariableDeclaration(decl) => self.visit_variable_declaration(decl),
-            // S::FunctionDeclaration(decl) => self.visit_function_declaration(decl),
+            S::BlockStatement(stmt) => self.visit_block_statement(stmt, expected_ret_type),
+            S::BreakStatement(stmt) => self.visit_break_statement(stmt, expected_ret_type),
+            S::ContinueStatement(stmt) => self.visit_continue_statement(stmt, expected_ret_type),
+            S::DebuggerStatement(stmt) => self.visit_debugger_statement(stmt, expected_ret_type),
+            S::Declaration(decl) => self.visit_declaration(decl, expected_ret_type),
+            S::Directive(dir) => self.visit_directive(dir, expected_ret_type),
+            S::DoWhileStatement(stmt) => self.visit_do_while_statement(stmt, expected_ret_type),
+            S::EmptyStatement(_stmt) => {}
+            S::ExpressionStatement(stmt) => {
+                self.visit_expression_statement(stmt, expected_ret_type)
+            }
+            S::ForInStatement(stmt) => self.visit_for_in_statement(stmt, expected_ret_type),
+            S::ForOfStatement(stmt) => self.visit_for_of_statement(stmt, expected_ret_type),
+            S::ForStatement(stmt) => self.visit_for_statement(stmt, expected_ret_type),
+            S::IfStatement(stmt) => self.visit_if_statement(stmt, expected_ret_type),
+            S::LabeledStatement(stmt) => self.visit_labeled_statement(stmt, expected_ret_type),
+            S::SwitchStatement(stmt) => self.visit_switch_statement(stmt, expected_ret_type),
             S::ReturnStatement(stmt) => self.visit_return_statement(stmt, expected_ret_type),
-            _ => todo!("{:?}", &stmt),
+            S::ThrowStatement(stmt) => self.visit_throw_statement(stmt, expected_ret_type),
+            S::TryStatement(stmt) => self.visit_try_statement(stmt, expected_ret_type),
+            S::WhileStatement(stmt) => self.visit_while_statement(stmt, expected_ret_type),
+            S::WithStatement(stmt) => self.visit_with_statement(stmt, expected_ret_type),
+        }
+    }
+
+    fn visit_break_statement(
+        &mut self,
+        _stmt: &BreakStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_continue_statement(
+        &mut self,
+        _stmt: &ContinueStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_debugger_statement(
+        &mut self,
+        _stmt: &DebuggerStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_declaration(&mut self, decl: &Declaration, expected_ret_type: Option<&ResolvedType>) {
+        match &decl {
+            Declaration::FunctionDeclaration(func_decl) => {
+                self.visit_function_declaration(func_decl)
+            }
+            Declaration::VariableDeclaration(var_decl) => {
+                self.visit_variable_declaration(var_decl, expected_ret_type)
+            }
+        }
+    }
+
+    fn visit_directive(&mut self, _dir: &Directive, _expected_ret_type: Option<&ResolvedType>) {
+        todo!()
+    }
+
+    fn visit_do_while_statement(
+        &mut self,
+        _stmt: &DoWhileStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_expression_statement(
+        &mut self,
+        _stmt: &ExpressionStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_for_in_statement(
+        &mut self,
+        _stmt: &ForInStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_for_of_statement(
+        &mut self,
+        _stmt: &ForOfStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_for_statement(
+        &mut self,
+        _stmt: &ForStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_if_statement(
+        &mut self,
+        _stmt: &IfStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_labeled_statement(
+        &mut self,
+        _stmt: &LabeledStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_switch_statement(
+        &mut self,
+        _stmt: &SwitchStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_throw_statement(
+        &mut self,
+        _stmt: &ThrowStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_try_statement(
+        &mut self,
+        _stmt: &TryStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_while_statement(
+        &mut self,
+        _stmt: &WhileStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_with_statement(
+        &mut self,
+        _stmt: &WithStatement,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+    }
+
+    fn visit_return_statement(
+        &mut self,
+        stmt: &ReturnStatement,
+        expected_ret_type: Option<&ResolvedType>,
+    ) {
+        let returned_type = stmt
+            .argument
+            .as_ref()
+            .map(|arg| self.visit_expression(arg, expected_ret_type));
+
+        match (&returned_type, expected_ret_type) {
+            (Some(ret_t), Some(expected_t)) if *expected_t != *ret_t => {
+                self.ctx.report_error(
+                    ErrorData::TypeMismatch {
+                        expected_type: expected_t.to_owned(),
+                        received_type: ret_t.to_owned(),
+                    },
+                    stmt.node.clone(),
+                    ErrorSeverity::Critical,
+                );
+            }
+            (Some(_), None) => {
+                self.ctx.report_error(
+                    ErrorData::TypeMismatch {
+                        expected_type: ResolvedType::Void,
+                        received_type: returned_type.unwrap(),
+                    },
+                    stmt.node.clone(),
+                    ErrorSeverity::Critical,
+                );
+            }
+            (None, Some(expected_t)) if *expected_t != ResolvedType::Void => {
+                self.ctx.report_error(
+                    ErrorData::TypeMismatch {
+                        expected_type: expected_t.to_owned(),
+                        received_type: ResolvedType::Void,
+                    },
+                    stmt.node.clone(),
+                    ErrorSeverity::Critical,
+                );
+            }
+            _ => {}
         }
     }
 
@@ -51,24 +255,36 @@ impl<'a> BodyVisitor<'a> {
         }
     }
 
-    fn visit_variable_declaration(&mut self, decl: &VariableDeclaration) {
+    fn visit_variable_declaration(
+        &mut self,
+        decl: &VariableDeclaration,
+        expected_ret_type: Option<&ResolvedType>,
+    ) {
         for d in decl.declarations.iter() {
-            todo!();
-            // let symbol_name = d.id.name.to_owned();
-            // let expected_type = {
-            //     let symbol = self.ctx.get_symbol(symbol_name.to_owned());
-            //     symbol.unwrap().resolved_type.clone()
-            // };
-            //
-            // if let Some(init) = &d.init {
-            //     let init_t = self.visit_expression(init, expected_type.as_ref());
-            //
-            //     let symbol = self.ctx.get_symbol_mut(symbol_name).unwrap();
-            //     if symbol.resolved_type.is_none() {
-            //         symbol.resolved_type = Some(init_t);
-            //     }
-            // }
+            self.visit_variable_declarator(decl, expected_ret_type);
         }
+    }
+
+    fn visit_variable_declarator(
+        &mut self,
+        _decl: &VariableDeclaration,
+        _expected_ret_type: Option<&ResolvedType>,
+    ) {
+        todo!()
+        // let symbol_name = d.id.name.to_owned();
+        // let expected_type = {
+        //     let symbol = self.ctx.get_symbol(symbol_name.to_owned());
+        //     symbol.unwrap().resolved_type.clone()
+        // };
+        //
+        // if let Some(init) = &d.init {
+        //     let init_t = self.visit_expression(init, expected_type.as_ref());
+        //
+        //     let symbol = self.ctx.get_symbol_mut(symbol_name).unwrap();
+        //     if symbol.resolved_type.is_none() {
+        //         symbol.resolved_type = Some(init_t);
+        //     }
+        // }
     }
 
     fn visit_expression(
@@ -312,54 +528,9 @@ impl<'a> BodyVisitor<'a> {
 
     fn visit_function_body(
         &mut self,
-        body: &FunctionBody,
-        expected_ret_type: Option<&ResolvedType>,
+        _body: &FunctionBody,
+        _expected_ret_type: Option<&ResolvedType>,
     ) {
         todo!()
-    }
-
-    fn visit_return_statement(
-        &mut self,
-        stmt: &ReturnStatement,
-        expected_ret_type: Option<&ResolvedType>,
-    ) {
-        let returned_type = stmt
-            .argument
-            .as_ref()
-            .map(|arg| self.visit_expression(arg, expected_ret_type));
-
-        match (&returned_type, expected_ret_type) {
-            (Some(ret_t), Some(expected_t)) if *expected_t != *ret_t => {
-                self.ctx.report_error(
-                    ErrorData::TypeMismatch {
-                        expected_type: expected_t.to_owned(),
-                        received_type: ret_t.to_owned(),
-                    },
-                    stmt.node.clone(),
-                    ErrorSeverity::Critical,
-                );
-            }
-            (Some(_), None) => {
-                self.ctx.report_error(
-                    ErrorData::TypeMismatch {
-                        expected_type: ResolvedType::Void,
-                        received_type: returned_type.unwrap(),
-                    },
-                    stmt.node.clone(),
-                    ErrorSeverity::Critical,
-                );
-            }
-            (None, Some(expected_t)) if *expected_t != ResolvedType::Void => {
-                self.ctx.report_error(
-                    ErrorData::TypeMismatch {
-                        expected_type: expected_t.to_owned(),
-                        received_type: ResolvedType::Void,
-                    },
-                    stmt.node.clone(),
-                    ErrorSeverity::Critical,
-                );
-            }
-            _ => {}
-        }
     }
 }
